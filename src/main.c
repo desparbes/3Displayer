@@ -11,21 +11,9 @@
 
 void initZBuffer(float *zBuffer)
 {
-    int w, h;
-    for (h = 0; h < HEIGHT; h++) {
-	for (w = 0; w < WIDTH; w++) {
-	    zBuffer[w + h * WIDTH] = -1.;
-	}
-    }
-}
-
-void initSolid(Solid *solid, const char *obj)
-{
-    //surfaceSolid(solid, {-2,-2,-5}, 4, 4, 10, 51);
-    //equationSolid(solid, 0, 2 * M_PI, 9, -M_PI_2, M_PI_2, 7);
-    //loadSolid(solid, "cube.obj");
-    loadSolid(solid, obj);
-    //loadSolid(lol, "triangle_2.obj");
+    int size = WIDTH * HEIGHT;
+    for (int i = 0; i < size; i++)
+	zBuffer[i] = -1.;
 }
 
 void initUserCamera(void)
@@ -39,7 +27,7 @@ void initUserCamera(void)
 void initScene(Solid *solid, const char *obj)
 {
     normalizePoint(&light, &light);
-    initSolid(solid, obj);
+    loadSolid(solid, obj);
     initUserCamera();
 }
 

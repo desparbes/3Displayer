@@ -197,7 +197,7 @@ int loadSolid(Solid *solid, const char *fileName)
     return 0;
 }
 
-void equation(float s, float t, Point *p)
+static void equation(float s, float t, Point *p)
 {
     //sphere
     //setPoint(p, sin(s) * cos(t), cos(s) * cos(t), sin(t));
