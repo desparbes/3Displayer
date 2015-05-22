@@ -247,7 +247,7 @@ void equationSolid(Solid *solid,
     setTexture(&solid->coords[2], 1., 0.);
     setTexture(&solid->coords[3], 1., 1.);
 
-    if ((solid->textures[0] = SDL_LoadBMP("white.bmp")) == NULL) {
+    if ((solid->textures[0] = SDL_LoadBMP("textures/white.bmp")) == NULL) {
 	fprintf(stderr, "error loading texture: white.bmp\n");
 	exit(EXIT_FAILURE);
     }

@@ -141,7 +141,7 @@ void SDL_INIT()
     SDL_WM_SetCaption("3Displayer", NULL);
     SDL_EnableKeyRepeat(1, 10);
     //SDL_ShowCursor(SDL_DISABLE);
-}
+}    
 
 void drawScene(Solid *solid)
 {
@@ -154,7 +154,7 @@ void drawScene(Solid *solid)
     //vertexSolid(&solid, red);
     //wireframeSolid(&solid, red);
     //segmentSolid(&solid, red);
-    drawSolid(solid);
+    //drawSolid(solid);
     //normalSolid(solid, &green);
     //drawSolid(&lol);
     projectSegment(&PointO, &I, &red);

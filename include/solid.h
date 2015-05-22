@@ -4,7 +4,6 @@
 #include "data.h"
 
 int loadSolid(Solid *solid, const char *fileName);
-void equation(float s, float t, Point *p);
 void equationSolid(Solid *solid,
 		   float minS, float maxS, int precisionS,
 		   float minT, float maxT, int precisionT);
