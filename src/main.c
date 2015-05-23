@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL/SDL.h>
-#include <math.h>
 
 #include "project.h"
 #include "data.h"
@@ -16,19 +15,28 @@ void initZBuffer(float *zBuffer)
 	zBuffer[i] = -1.;
 }
 
-void initUserCamera(void)
+void initCamera(void)
 {
-    setPoint(&user.position, 0., -5., 0.);
-    setPoint(&user.i, 1., 0., 0.);
-    setPoint(&user.j, 0., 1., 0.);
-    setPoint(&user.k, 0., 0., 1.);
+    setPoint(&camera.O, 0., -5., 0.);
+    setPoint(&camera.i, 1., 0., 0.);
+    setPoint(&camera.j, 0., 1., 0.);
+    setPoint(&camera.k, 0., 0., 1.);
+}
+
+void initOrigin(void)
+{
+    setPoint(&origin.O, 0., 0., 0.);
+    setPoint(&origin.i, 1., 0., 0.);
+    setPoint(&origin.j, 0., 1., 0.);
+    setPoint(&origin.k, 0., 0., 1.);
 }
 
 void initScene(Solid *solid, const char *obj)
 {
     normalizePoint(&light, &light);
     loadSolid(solid, obj);
-    initUserCamera();
+    initCamera();
+    initOrigin();
 }
 
 void handleMouseEvent(SDL_Event *event, Solid *solid)
@@ -54,11 +62,11 @@ void handleMouseEvent(SDL_Event *event, Solid *solid)
 	switch (event->button.button) {
 	case SDL_BUTTON_WHEELDOWN:
 	    //rho += ANGLE;
-	    scaleSolid(solid, &PointO, 0.7);
+	    scaleSolid(solid, getOriginSolid(solid), 0.5);
 	    break;
 	case SDL_BUTTON_WHEELUP:
 	    //rho -= ANGLE;
-	    scaleSolid(solid, &PointO, 1.3);
+	    scaleSolid(solid, getOriginSolid(solid), 2.);
 	    break;
 	case SDL_BUTTON_RIGHT:
 	    theta = phi = rho = 0.;
@@ -75,34 +83,34 @@ void handleKeyDownEvent(SDL_Event *event, int *stop)
 {
     switch (event->key.keysym.sym) {
     case SDLK_LEFT:
-	translatePoint(&user.position, -SPEED * user.i.x,
-		       -SPEED * user.i.y, -SPEED * user.i.z);
+	translatePoint(&camera.O, -SPEED * camera.i.x,
+		       -SPEED * camera.i.y, -SPEED * camera.i.z);
 	break;
     case SDLK_RIGHT:
-	translatePoint(&user.position, SPEED * user.i.x,
-		       SPEED * user.i.y, SPEED * user.i.z);
+	translatePoint(&camera.O, SPEED * camera.i.x,
+		       SPEED * camera.i.y, SPEED * camera.i.z);
 	break;
     case SDLK_UP:
-	translatePoint(&user.position, SPEED * user.j.x,
-		       SPEED * user.j.y, SPEED * user.j.z);
+	translatePoint(&camera.O, SPEED * camera.j.x,
+		       SPEED * camera.j.y, SPEED * camera.j.z);
 	break;
     case SDLK_DOWN:
-	translatePoint(&user.position, -SPEED * user.j.x,
-		       -SPEED * user.j.y, -SPEED * user.j.z);
+	translatePoint(&camera.O, -SPEED * camera.j.x,
+		       -SPEED * camera.j.y, -SPEED * camera.j.z);
 	break;
     case SDLK_KP_PLUS:
-	translatePoint(&user.position, SPEED * user.k.x,
-		       SPEED * user.k.y, SPEED * user.k.z);
+	translatePoint(&camera.O, SPEED * camera.k.x,
+		       SPEED * camera.k.y, SPEED * camera.k.z);
 	break;
     case SDLK_KP_MINUS:
-	translatePoint(&user.position, -SPEED * user.k.x,
-		       -SPEED * user.k.y, -SPEED * user.k.z);
+	translatePoint(&camera.O, -SPEED * camera.k.x,
+		       -SPEED * camera.k.y, -SPEED * camera.k.z);
 	break;
     case SDLK_ESCAPE:
 	*stop = 1;
 	break;
     case SDLK_r:
-	initUserCamera();
+	initCamera();
 	break;
     default:
 	break;
@@ -130,12 +138,12 @@ void handleEvent(SDL_Event *event, int *stop, Solid *solid)
 void SDL_INIT()
 {
     if (SDL_Init(SDL_INIT_VIDEO) == -1) {
-	fprintf(stderr, "Error initializing SDL: %s", SDL_GetError());
+	fprintf(stderr, "Error SDL_Init: %s", SDL_GetError());
 	exit(EXIT_FAILURE);
     }
     if((screen = SDL_SetVideoMode(WIDTH, HEIGHT, BIT,
 				  SDL_HWSURFACE | SDL_DOUBLEBUF)) == NULL) {
-	fprintf(stderr, "SDL_SetVideoMode: %s", SDL_GetError());
+	fprintf(stderr, "Error SDL_SetVideoMode: %s", SDL_GetError());
 	exit(EXIT_FAILURE);
     }
     SDL_WM_SetCaption("3Displayer", NULL);
@@ -154,12 +162,10 @@ void drawScene(Solid *solid)
     //vertexSolid(&solid, red);
     //wireframeSolid(&solid, red);
     //segmentSolid(&solid, red);
-    //drawSolid(solid);
+    drawSolid(solid);
     //normalSolid(solid, &green);
     //drawSolid(&lol);
-    projectSegment(&PointO, &I, &red);
-    projectSegment(&PointO, &J, &green);
-    projectSegment(&PointO, &K, &blue);
+    drawOrigin(&origin);
 }
 
 int main(int argc, char *argv[])
@@ -168,8 +174,6 @@ int main(int argc, char *argv[])
 	fprintf(stderr, ".obj stp\n");
 	exit(EXIT_FAILURE);
     }
-    wCoef = WIDTH / (2 * tan(WFOV * M_PI / 360));
-    hCoef = -HEIGHT / (2 * tan(HFOV * M_PI / 360));
     Solid solid;
     //Solid lol;
     initScene(&solid, argv[1]);

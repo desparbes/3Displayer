@@ -40,6 +40,5 @@ void translatePoint(Point *A, float x, float y, float z);
 void translateSolid(Solid *solid, float x, float y, float z);
 
 void setPixel(const Coord *A, const Color *color);
-void drawPixel(const Coord *A, const Color *color);
 
 #endif //BASIC_H

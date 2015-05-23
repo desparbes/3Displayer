@@ -36,12 +36,12 @@ typedef struct Color {
     unsigned char b;
 } Color;
 
-typedef struct Camera {
-    Point position;
+typedef struct Frame {
+    Point O;
     Point i;
     Point j;
     Point k;
-} Camera;
+} Frame;
 
 typedef struct Vertex {
     int point;
@@ -60,6 +60,7 @@ typedef struct Solid {
     int numCoords;
     int numTextures;
     int numFaces;
+    Point origin;
     Point *vertices;
     Point *normals;
     Texture *coords;
@@ -67,19 +68,14 @@ typedef struct Solid {
     Face *faces;
 } Solid;
 
-extern float wCoef;
-extern float hCoef;
 extern Color red;
 extern Color green;
 extern Color blue;
 extern Point light;
 extern SDL_Surface *screen;
 extern float *zBuffer;
-extern Camera user;
-extern Point PointO;
-extern Point I;
-extern Point J;
-extern Point K;
+extern Frame camera;
+extern Frame origin;
 
 void setPoint(Point *p, float x, float y, float z);
 void setCoord(Coord *c, int w, int h);

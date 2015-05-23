@@ -2,9 +2,6 @@
 #include "math.h"
 #include "data.h"
 
-float wCoef;
-float hCoef;
-
 Color red = {
     .r = 255,
     .g = 0,
@@ -31,32 +28,8 @@ Point light = {
 
 SDL_Surface *screen;
 float *zBuffer;
-Camera user;
-
-Point PointO = {
-    0,
-    0,
-    0
-};
-
-Point I = {
-    1,
-    0,
-    0
-};
-
-Point J = {
-    0,
-    1,
-    0
-};
-
-Point K = {
-    0,
-    0,
-    1
-};
-
+Frame camera;
+Frame origin;
 
 void setPoint(Point *p, float x, float y, float z)
 {

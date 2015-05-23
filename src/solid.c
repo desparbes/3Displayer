@@ -10,6 +10,24 @@
 #include "project.h"
 #include "solid.h"
 
+Point *getOriginSolid(Solid *solid)
+{
+    return &solid->origin;
+}
+
+void calculateOriginSolid(Solid *solid)
+{
+    for (int i = 0; i < solid->numVertices; i++) {
+	solid->origin.x += solid->vertices[i].x;
+	solid->origin.y += solid->vertices[i].y;
+	solid->origin.z += solid->vertices[i].z;
+    }
+    solid->origin.x /= solid->numVertices;
+    solid->origin.y /= solid->numVertices;
+    solid->origin.z /= solid->numVertices;
+}
+    
+    
 void wireframeSolid(const Solid *solid, const Color *color)
 {
     int i, k;
@@ -192,7 +210,7 @@ int loadSolid(Solid *solid, const char *fileName)
 	    }
 	}
     }
-
+    calculateOriginSolid(solid);
     fclose(file);
     return 0;
 }
@@ -326,12 +344,12 @@ void equationSolid(Solid *solid,
 	}
 	p++;
     }
+    calculateOriginSolid(solid);
 }
 
 void freeSolid(Solid *solid)
 {
-    int i;
-    for (i = 0; i < solid->numTextures; i++)
+    for (int i = 0; i < solid->numTextures; i++)
 	SDL_FreeSurface(solid->textures[i]);
 
     free(solid->vertices);
@@ -343,8 +361,7 @@ void freeSolid(Solid *solid)
 
 void drawSolid(const Solid * solid)
 {
-    int i;
-    for (i = 0; i < solid->numFaces; i++)
+    for (int i = 0; i < solid->numFaces; i++)
 	projectTriangle(&solid->vertices[solid->faces[i].vertices[0].point],
 			&solid->vertices[solid->faces[i].vertices[1].point],
 			&solid->vertices[solid->faces[i].vertices[2].point],

@@ -3,6 +3,7 @@
 
 #include "data.h"
 
+Point *getOriginSolid(Solid *solid);
 int loadSolid(Solid *solid, const char *fileName);
 void equationSolid(Solid *solid,
 		   float minS, float maxS, int precisionS,

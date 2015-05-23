@@ -168,20 +168,20 @@ void rotVector(const Point *u, const Point *v, float angle, Point *w)
 
 void direction(float theta, float phi, float rho)
 {
-    user.j.x = sin(theta);
-    user.j.y = cos(theta);
-    user.j.z = 0.;
+    camera.j.x = sin(theta);
+    camera.j.y = cos(theta);
+    camera.j.z = 0.;
 
-    user.i.x = user.j.y;
-    user.i.y = -user.j.x;
-    user.i.z = 0.;
+    camera.i.x = camera.j.y;
+    camera.i.y = -camera.j.x;
+    camera.i.z = 0.;
 
     Point a;
-    rotVector(&user.j, &user.i, phi, &a);
-    user.j = a;
-    rotVector(&user.i, &user.j, rho, &a);
-    user.i = a;
-    vectorProduct(&user.i, &user.j, &user.k);
+    rotVector(&camera.j, &camera.i, phi, &a);
+    camera.j = a;
+    rotVector(&camera.i, &camera.j, rho, &a);
+    camera.i = a;
+    vectorProduct(&camera.i, &camera.j, &camera.k);
 }
 
 void translatePoint(Point *A, float x, float y, float z)
@@ -203,10 +203,4 @@ void setPixel(const Coord *A, const Color *color)
     Uint32 pixel = SDL_MapRGB(screen->format,
 			      color->r, color->g, color->b);
     *((Uint32 *) (screen->pixels) + A->w + A->h * screen->w) = pixel;
-}
-
-void drawPixel(const Coord *A, const Color *color)
-{
-    if (A->h >= 0 && A->h < HEIGHT && A->w >= 0 && A->w < WIDTH)
-	setPixel(A, color);
 }

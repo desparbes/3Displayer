@@ -12,6 +12,12 @@ static inline int max(int a, int b)
     return (a > b) ? a : b;
 }
 
+void drawPixel(const Coord *A, const Color *color)
+{
+    if (A->h >= 0 && A->h < HEIGHT && A->w >= 0 && A->w < WIDTH)
+	setPixel(A, color);
+}
+
 void drawSegment(const Coord *A, const Coord *B,
 		 float depthA, float depthB,
 		 const Color *color)
@@ -168,11 +174,13 @@ void drawTriangle(const Coord *A, const Coord *B, const Coord *C,
 	    float beta = (float) relativeProduct(&AM, &AC) / det;
 	    float gamma = 1. - alpha - beta;
 
-	    depthM = depthABC / (gamma * depthBC + beta * depthCA + alpha * depthAB);
+	    depthM = depthABC / 
+		(gamma * depthBC + beta * depthCA + alpha * depthAB);
 
 	    if (zBuffer[M.w + M.h * WIDTH] == -1
 		|| zBuffer[M.w + M.h * WIDTH] > depthM) {
-		scale = scaleABC / (gamma * scaleBC + beta * scaleCA + alpha * scaleAB);
+		scale = scaleABC / 
+		    (gamma * scaleBC + beta * scaleCA + alpha * scaleAB);
 		N.x = (gamma * u.x + beta * v.x +
 		       alpha * w.x) / (gamma / depthA +
 				       beta / depthB + alpha / depthC);
@@ -204,4 +212,11 @@ void drawTriangle(const Coord *A, const Coord *B, const Coord *C,
 	    diffRect(&M, C, &CM);
 	}
     }
+}
+
+void drawOrigin(Frame *origin)
+{
+    projectSegment(&origin->O, &origin->i, &red);
+    projectSegment(&origin->O, &origin->j, &green);
+    projectSegment(&origin->O, &origin->k, &blue);
 }
