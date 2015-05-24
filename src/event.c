@@ -60,6 +60,8 @@ void handleMouseButtonUpEvent(SDL_Event *event)
     case SDL_BUTTON_RIGHT:
 	state.rightClickDown = 0;
 	break;
+    default:
+	break;
     }
 }
 
@@ -68,6 +70,8 @@ void handleMouseButtonDownEvent(SDL_Event *event)
     switch (event->button.button) {
     case SDL_BUTTON_RIGHT:
 	state.rightClickDown = 1;
+	break;
+    default:
 	break;
     }
 }
@@ -114,6 +118,8 @@ void handleKeyDownEvent(SDL_Event *event, int *stop)
     case SDLK_ESCAPE:
 	*stop = 1;
 	break;
+    default:
+	break;
     }
 }
 
@@ -134,6 +140,8 @@ void handleKeyUpEvent(SDL_Event *event)
 	break;
    case SDLK_f:
 	state.frame = (state.frame + 1) % 2;
+	break;
+    default:
 	break;
     }
 }
