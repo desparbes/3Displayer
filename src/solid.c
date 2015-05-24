@@ -178,27 +178,33 @@ int loadSolid(Solid *solid, const char *fileName, const char *bmpName)
     while (fscanf(file, "%s", str) != EOF) {
 	if (strcmp(str, "v") == 0) {
 	    if (fscanf
-		(file, "%f %f %f\n", &solid->vertices[a].y,
-		 &solid->vertices[a].z, &solid->vertices[a].x) != 3) {
+		(file, "%f %f %f\n", 
+		 &solid->vertices[a].y,
+		 &solid->vertices[a].z, 
+		 &solid->vertices[a].x) != 3) {
 		fprintf(stderr, "Vertices: ");
 		return -1;
 	    }
 	    a++;
 	} else if (strcmp(str, "vn") == 0) {
 	    if (fscanf
-		(file, "%f %f %f\n", &solid->normals[b].y,
-		 &solid->normals[b].z, &solid->normals[b].x) != 3) {
+		(file, "%f %f %f\n", 
+		 &solid->normals[b].y,
+		 &solid->normals[b].z, 
+		 &solid->normals[b].x) != 3) {
 		fprintf(stderr, "Normals: ");
 		return -1;
 	    }
 	    b++;
 	} else if (strcmp(str, "vt") == 0) {
 	    if (fscanf
-		(file, "%f %f\n", &solid->coords[c].x,
+		(file, "%f %f\n", 
+		 &solid->coords[c].x,
 		 &solid->coords[c].y) != 2) {
 		fprintf(stderr, "Texture coordinates: ");
 		return -1;
 	    }
+	    solid->coords[c].y = 1 - solid->coords[c].y;
 	    c++;
 	} else if (strcmp(str, "f") == 0) {
 
