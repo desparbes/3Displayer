@@ -1,5 +1,6 @@
 set(
   3DISPLAYER_SRC
+  event.c
   main.c
   draw.c
   project.c

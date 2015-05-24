@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "scene.h"
+#include "event.h"
 #include "point.h"
 #include "frame.h"
 #include "solid.h"
@@ -11,15 +12,6 @@
 static struct {
     Frame camera;
     Frame origin;
-
-    float translationSpeed;
-    float rotationSpeed;
-    
-    int draw; // boolean : 1 draw the scene, else don't
-    int wireframe; // boolean : 1 wireframe the scene, else don't
-    int normal; // boolean : 1 display the normals of scene, else don't
-    int vertex; // boolean : 1 display the vertex of the scene, else don't
-    int frame; // boolean : 1 display the frame of the scene, else dont't
 
     Point light;
 
@@ -67,125 +59,8 @@ static void initSDL()
     SDL_EnableKeyRepeat(1, 10);
 }
 
-static void handleMouseEvent(SDL_Event *event)
-{
-    static float theta = 0., phi = 0., rho = 0.;
-    static int mouseWidth = 0, mouseHeight = 0;
-    static int rightClickDown = 0;
-    switch (event->type) {
-    case SDL_MOUSEMOTION:
-	if (rightClickDown) {
-	    if (mouseWidth > event->motion.x)
-		theta -= scene.rotationSpeed;
-	    else if (mouseWidth < event->motion.x)
-		theta += scene.rotationSpeed;
-	    else if (mouseHeight > event->motion.y)
-		phi += scene.rotationSpeed;
-	    else if (mouseHeight < event->motion.y)
-		phi -= scene.rotationSpeed;
-	}
-	mouseWidth = event->motion.x;
-	mouseHeight = event->motion.y;
-	break;
-    case SDL_MOUSEBUTTONUP:
-	switch (event->button.button) {
-	case SDL_BUTTON_RIGHT:
-	    rightClickDown = 0;
-	    break;
-	}
-	break;
-    case SDL_MOUSEBUTTONDOWN:
-	switch (event->button.button) {
-	case SDL_BUTTON_RIGHT:
-	    rightClickDown = 1;
-	    break;
-	}
-	break;
-    }
-    printf("%d\n", rightClickDown);
-    setDirectionFrame(&scene.camera, theta, phi, rho);
-}
-
-static void handleKeyboardEvent(SDL_Event *event, int *stop)
-{
-    switch (event->key.keysym.sym) {
-    case SDLK_LEFT:
-	translateFrame(&scene.camera, 
-		       -scene.translationSpeed * scene.camera.i.x,
-		       -scene.translationSpeed * scene.camera.i.y,
-		       -scene.translationSpeed * scene.camera.i.z);
-	break;
-    case SDLK_RIGHT:
-	translateFrame(&scene.camera, 
-		       scene.translationSpeed * scene.camera.i.x,
-		       scene.translationSpeed * scene.camera.i.y, 
-		       scene.translationSpeed * scene.camera.i.z);
-	break;
-    case SDLK_UP:
-	translateFrame(&scene.camera, 
-		       scene.translationSpeed * scene.camera.j.x,
-		       scene.translationSpeed * scene.camera.j.y, 
-		       scene.translationSpeed * scene.camera.j.z);
-	break;
-    case SDLK_DOWN:
-	translateFrame(&scene.camera, 
-		       -scene.translationSpeed * scene.camera.j.x,
-		       -scene.translationSpeed * scene.camera.j.y, 
-		       -scene.translationSpeed * scene.camera.j.z);
-	break;
-    case SDLK_KP_PLUS:
-	translateFrame(&scene.camera, 
-		       scene.translationSpeed * scene.camera.k.x,
-		       scene.translationSpeed * scene.camera.k.y, 
-		       scene.translationSpeed * scene.camera.k.z);
-	break;
-    case SDLK_KP_MINUS:
-	translateFrame(&scene.camera, 
-		       -scene.translationSpeed * scene.camera.k.x,
-		       -scene.translationSpeed * scene.camera.k.y, 
-		       -scene.translationSpeed * scene.camera.k.z);
-	break;
-    case SDLK_ESCAPE:
-	*stop = 1;
-	break;
-    case SDLK_r:
-        resetFrame(&scene.camera);
-	break;
-    default:
-	break;
-    }
-}
-
-static void handleEvent(SDL_Event *event, int *stop)
-{
-    switch (event->type) {
-    case SDL_QUIT:
-	*stop = 1;
-	break;
-    case SDL_KEYDOWN:
-	handleKeyboardEvent(event, stop);
-	break;
-    case SDL_MOUSEMOTION:
-    case SDL_MOUSEBUTTONUP:
-    case SDL_MOUSEBUTTONDOWN:
-	handleMouseEvent(event);
-	break;
-    default:
-	break;
-    }
-}
-
 void initScene()
 {
-    scene.translationSpeed = 0.1;
-    scene.rotationSpeed = 0.01;
-
-    scene.draw = 1;
-    scene.wireframe = 0;
-    scene.normal = 0;
-    scene.vertex = 0;
-    scene.frame = 1;
-
     scene.nbSolid = 0;
     scene.bufferSize = 4;
     scene.wfov = 80;
@@ -198,6 +73,7 @@ void initScene()
     initLight(&scene.light, 1., -0.5, -2.);
     resetFrame(&scene.camera);
     resetFrame(&scene.origin);
+    resetEvent();
 
     scene.solidBuffer = malloc(scene.bufferSize * sizeof(Solid*));
     scene.zBuffer = malloc(scene.screenWidth * scene.screenHeight * 
@@ -209,7 +85,27 @@ void updateScene(int *stop)
 {
     SDL_Event event;
     SDL_WaitEvent(&event);
-    handleEvent(&event, stop);    
+
+    switch (event.type) {
+    case SDL_QUIT:
+	*stop = 1;
+	break;
+    case SDL_KEYDOWN:
+	handleKeyDownEvent(&event, stop);
+	break;
+    case SDL_KEYUP:
+	handleKeyUpEvent(&event);
+	break;
+    case SDL_MOUSEMOTION:
+	handleMouseMotionEvent(&event);
+	break;
+    case SDL_MOUSEBUTTONUP:
+	handleMouseButtonUpEvent(&event);
+	break;
+    case SDL_MOUSEBUTTONDOWN:
+	handleMouseButtonDownEvent(&event);
+	break;
+    }  
 }
 
 void addSolidToScene(Solid *solid)
@@ -235,19 +131,19 @@ void drawScene()
     SDL_FillRect(scene.screen, NULL, SDL_MapRGB(scene.screen->format, 0, 0, 0));
     resetZBuffer(scene.zBuffer);
     Color color;
-    if (scene.draw)
+    if (getDrawEvent())
 	for (int i = 0; i < scene.nbSolid; i++)
 	    drawSolid(scene.solidBuffer[i]);
-    if (scene.wireframe)
+    if (getWireframeEvent())
 	for (int i = 0; i < scene.nbSolid; i++)
 	    wireframeSolid(scene.solidBuffer[i], setColor(&color, 255, 0, 0));
-    if (scene.normal)
+    if (getNormalEvent())
 	for (int i = 0; i < scene.nbSolid; i++)
 	    normalSolid(scene.solidBuffer[i], setColor(&color, 0, 255, 0));
-    if (scene.vertex)
+    if (getVertexEvent())
 	for (int i = 0; i < scene.nbSolid; i++)
 	    vertexSolid(scene.solidBuffer[i], setColor(&color, 0, 0, 255));
-    if (scene.frame)
+    if (getFrameEvent())
 	drawFrame(&scene.origin);
     SDL_Flip(scene.screen);
 }
