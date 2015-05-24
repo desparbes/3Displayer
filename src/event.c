@@ -141,6 +141,9 @@ void handleKeyUpEvent(SDL_Event *event)
    case SDLK_f:
 	state.frame = (state.frame + 1) % 2;
 	break;
+    case SDLK_r:
+	resetFrame(getCamera(), 0., -5., 0.);
+	break;
     default:
 	break;
     }

@@ -5,13 +5,13 @@
 #include "color.h"
 #include "project.h"
 
-void resetFrame(Frame *frame)
+void resetFrame(Frame *frame, float x, float y, float z)
 {
-    setPoint(&frame->O, 0., 0., 0.);
+    setPoint(&frame->O, x, y, z);
     setPoint(&frame->i, 1., 0., 0.);
     setPoint(&frame->j, 0., 1., 0.);
     setPoint(&frame->k, 0., 0., 1.);
-}
+}    
 
 void rotateFrame(Frame *frame, float theta, float phi, float rho)
 {

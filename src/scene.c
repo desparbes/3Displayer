@@ -36,7 +36,6 @@ static void resetZBuffer(float *zBuffer)
 	zBuffer[i] = -1.;
 }
 
-
 static void initLight(Point *light, float x, float y, float z)
 {
     setPoint(light, x, y, z);
@@ -71,8 +70,8 @@ void initScene()
     scene.farplan = 20.;
     
     initLight(&scene.light, 1., -0.5, -2.);
-    resetFrame(&scene.camera);
-    resetFrame(&scene.origin);
+    resetFrame(&scene.camera, 0., -5., 0.);
+    resetFrame(&scene.origin, 0., 0., 0.);
     resetEvent();
 
     scene.solidBuffer = malloc(scene.bufferSize * sizeof(Solid*));
