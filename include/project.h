@@ -1,10 +1,11 @@
 #ifndef PROJECT_H
 #define PROJECT_H
 
-#include "data.h"
-#include "project.h"
-#include "basic.h"
-#include "draw.h"
+#include "point.h"
+#include "texture.h"
+#include "color.h"
+#include "coord.h"
+#include "SDL/SDL.h"
 
 // return the vector between user.position and the intersection of
 // (AB) and the NEARPLAN

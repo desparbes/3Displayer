@@ -4,7 +4,7 @@ project(3Displayer)
 if (NOT DEFINED CMAKE_ENABLE_C99)
   set(CMAKE_ENABLE_C99 "-std=gnu99")
 endif(NOT DEFINED CMAKE_ENABLE_C99)
-set(CMAKE_C_FLAGS "${CMAKE_ENABLE_C99} -Wall") 
+set(CMAKE_C_FLAGS "${CMAKE_ENABLE_C99} -Wall -g") 
 
 
 include_directories(include)

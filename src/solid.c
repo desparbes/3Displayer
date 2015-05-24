@@ -2,20 +2,46 @@
 #include <stdlib.h>
 #include <SDL/SDL.h>
 #include <math.h>
-#include <time.h>
 #include <string.h>
 
-#include "data.h"
-#include "basic.h"
+#include "point.h"
+#include "color.h"
+#include "texture.h"
 #include "project.h"
 #include "solid.h"
+
+#define MAXLENGTH 256
+#define EPSILON 0.001
+
+typedef struct Vertex {
+    int point;
+    int normal;
+    int coord;
+} Vertex;
+
+typedef struct Face {
+    Vertex vertices[3];
+} Face;
+
+typedef struct Solid {
+    int numVertices;
+    int numNormals;
+    int numCoords;
+    int numFaces;
+    Point origin;
+    Point *vertices;
+    Point *normals;
+    Texture *coords;
+    SDL_Surface *texture;
+    Face *faces;
+} Solid;
 
 Point *getOriginSolid(Solid *solid)
 {
     return &solid->origin;
 }
 
-void calculateOriginSolid(Solid *solid)
+static void calculateOriginSolid(Solid *solid)
 {
     for (int i = 0; i < solid->numVertices; i++) {
 	solid->origin.x += solid->vertices[i].x;
@@ -26,8 +52,47 @@ void calculateOriginSolid(Solid *solid)
     solid->origin.y /= solid->numVertices;
     solid->origin.z /= solid->numVertices;
 }
-    
-    
+
+void translateSolid(Solid *solid, float x, float y, float z)
+{
+    int i;
+    for (i = 0; i < solid->numVertices; i++)
+	translatePoint(&solid->vertices[i], x, y, z);
+    translatePoint(&solid->origin, x, y, z);    
+}
+
+void scaleSolid(Solid *solid, const Point *O, float scale)
+{
+    int i;
+    for (i = 0; i < solid->numVertices; i++)
+	scalePoint(&solid->vertices[i], O, scale);
+    scalePoint(&solid->origin, O, scale);
+}
+
+void rotSolidXAxis(Solid *solid, const Point *O, float phi)
+{
+    int i;
+    for (i = 0; i < solid->numVertices; i++)
+	rotPointXAxis(&solid->vertices[i], O, phi);
+    rotPointXAxis(&solid->origin, O, phi);
+}
+
+void rotSolidYAxis(Solid *solid, const Point *O, float rho)
+{
+    int i;
+    for (i = 0; i < solid->numVertices; i++)
+	rotPointYAxis(&solid->vertices[i], O, rho);
+    rotPointXAxis(&solid->origin, O, rho);
+}
+
+void rotSolidZAxis(Solid *solid, const Point *O, float theta)
+{
+    int i;
+    for (i = 0; i < solid->numVertices; i++)
+	rotPointZAxis(&solid->vertices[i], O, theta);
+    rotPointXAxis(&solid->origin, O, theta);
+}
+  
 void wireframeSolid(const Solid *solid, const Color *color)
 {
     int i, k;
@@ -47,16 +112,6 @@ void vertexSolid(const Solid *solid, const Color *color)
     int i;
     for (i = 0; i < solid->numVertices; ++i)
 	projectVertex(&solid->vertices[i], color);
-}
-
-void segmentSolid(const Solid *solid, const Color *color)
-{
-    int i, j;
-    for (i = 0; i < solid->numVertices - 1; ++i) {
-	for (j = i + 1; j < solid->numVertices; ++j)
-	    projectSegment(&solid->vertices[i],
-			   &solid->vertices[j], color);
-    }
 }
 
 void normalSolid(const Solid *solid, const Color *color)
@@ -84,7 +139,7 @@ int loadSolid(Solid *solid, const char *fileName)
 	exit(EXIT_FAILURE);
     }
 
-    int i = 0, a = 0, b = 0, c = 0, d = 0, n, stock;
+    int a = 0, b = 0, c = 0, d = 0, n, stock;
 
     char str[MAXLENGTH] = { 0 };
     char f;
@@ -92,9 +147,8 @@ int loadSolid(Solid *solid, const char *fileName)
     solid->numVertices = 0;
     solid->numNormals = 0;
     solid->numCoords = 0;
-    solid->numTextures = 1;
     solid->numFaces = 0;
-
+  
     while (fscanf(file, "%s", str) != EOF) {
 	if (strcmp(str, "v") == 0)
 	    solid->numVertices++;
@@ -111,18 +165,12 @@ int loadSolid(Solid *solid, const char *fileName)
 	    solid->numFaces += n / 2 - 2;
 	}
     }
-
     solid->vertices = (Point*) malloc(solid->numVertices * sizeof(Point));
     solid->normals = (Point*) malloc(solid->numNormals * sizeof(Point));
     solid->coords = (Texture*) malloc(solid->numCoords * sizeof(Texture));
-    solid->textures =
-	(SDL_Surface**) malloc(solid->numTextures * sizeof(SDL_Surface*));
     solid->faces = (Face *) malloc(solid->numFaces * sizeof(Face));
-
-    for (i = 0; i < solid->numFaces; i++)
-	solid->faces[i].texture = 0;
     
-    if ((solid->textures[0] = SDL_LoadBMP("textures/white.bmp")) == NULL) {
+    if ((solid->texture = SDL_LoadBMP("textures/white.bmp")) == NULL) {
 	fprintf(stderr, "error loading texture: white.bmp\n");
 	exit(EXIT_FAILURE);
     }
@@ -251,13 +299,11 @@ void equationSolid(Solid *solid,
     solid->numVertices = precisionS * precisionT;
     solid->numNormals = solid->numVertices;
     solid->numCoords = 4;
-    solid->numTextures = 1;
     solid->numFaces = 2 * (precisionS - 1) * (precisionT - 1);
 
     solid->vertices = malloc(solid->numVertices * sizeof(Point));
     solid->normals = malloc(solid->numNormals * sizeof(Point));
     solid->coords = malloc(solid->numCoords * sizeof(Texture));
-    solid->textures = malloc(solid->numTextures * sizeof(SDL_Surface*));
     solid->faces = malloc(solid->numFaces * sizeof(Face));
 
     setTexture(&solid->coords[0], 0., 0.);
@@ -265,7 +311,7 @@ void equationSolid(Solid *solid,
     setTexture(&solid->coords[2], 1., 0.);
     setTexture(&solid->coords[3], 1., 1.);
 
-    if ((solid->textures[0] = SDL_LoadBMP("textures/white.bmp")) == NULL) {
+    if ((solid->texture = SDL_LoadBMP("textures/white.bmp")) == NULL) {
 	fprintf(stderr, "error loading texture: white.bmp\n");
 	exit(EXIT_FAILURE);
     }
@@ -279,7 +325,7 @@ void equationSolid(Solid *solid,
 	equation(s, t + dt, &tt);
 	equation(s, t - dt, &uu);
 	diffPoint(&tt, &uu, &tt);
-	vectorProduct(&vv, &tt, &normal);
+	pointProduct(&vv, &tt, &normal);
 	//solid->normals[p] = diffPoint(equation(s, t + dt), equation(s, t - dt));
 
 	if (normPoint(&normal) < EPSILON) {
@@ -288,13 +334,13 @@ void equationSolid(Solid *solid,
 	    equation(s + ds, t + dt, &uu);
 	    equation(s - ds, t - dt, &vv);
 	    diffPoint(&uu, &vv, &vv);
-	    vectorProduct(&vv ,&tt, &aa);
+	    pointProduct(&vv ,&tt, &aa);
 	    normalizePoint(&aa, &solid->normals[p]);
 	}
 	else
 	    normalizePoint(&normal, &solid->normals[p]);
 	
-	/*solid->normals[p] = vectorProduct(sumPoint(diffPoint(equation(s, t + dt),
+	/*solid->normals[p] = pointProduct(sumPoint(diffPoint(equation(s, t + dt),
 	  equation(s, t - dt)),
 	  diffPoint(equation(s + ds, t + dt), equation(s - ds, t - dt))),
 	  sumPoint(diffPoint(equation(s + ds, t), equation(s - ds, t)),
@@ -307,7 +353,7 @@ void equationSolid(Solid *solid,
 	    s = minS;
 	    t += dt;
 	}
-	//solid->normals[p] = vectorProduct(diffPoint(solid->vertices[p - 1],
+	//solid->normals[p] = pointProduct(diffPoint(solid->vertices[p - 1],
 	// solid->vertices[p + 1]),
 	// diffPoint(solid->vertices[p - precisionS],
 	// solid->vertices[p + precisionS]));
@@ -326,7 +372,6 @@ void equationSolid(Solid *solid,
 	    solid->faces[f].vertices[1].coord = 3;
 	    solid->faces[f].vertices[2].coord = 0;
 
-	    solid->faces[f].texture = 0;
 	    f++;
 
 	    solid->faces[f].vertices[0].point = p + precisionS;
@@ -339,7 +384,6 @@ void equationSolid(Solid *solid,
 	    solid->faces[f].vertices[1].coord = 3;
 	    solid->faces[f].vertices[2].coord = 2;
 
-	    solid->faces[f].texture = 0;
 	    f++;
 	}
 	p++;
@@ -347,16 +391,19 @@ void equationSolid(Solid *solid,
     calculateOriginSolid(solid);
 }
 
+Solid *initSolid()
+{
+    return malloc(sizeof(Solid));
+}
+
 void freeSolid(Solid *solid)
 {
-    for (int i = 0; i < solid->numTextures; i++)
-	SDL_FreeSurface(solid->textures[i]);
-
+    SDL_FreeSurface(solid->texture);
     free(solid->vertices);
     free(solid->normals);
     free(solid->coords);
-    free(solid->textures);
     free(solid->faces);
+    free(solid);
 }
 
 void drawSolid(const Solid * solid)
@@ -365,7 +412,7 @@ void drawSolid(const Solid * solid)
 	projectTriangle(&solid->vertices[solid->faces[i].vertices[0].point],
 			&solid->vertices[solid->faces[i].vertices[1].point],
 			&solid->vertices[solid->faces[i].vertices[2].point],
-			solid->textures[solid->faces[i].texture],
+			solid->texture,
 			&solid->coords[solid->faces[i].vertices[0].coord],
 			&solid->coords[solid->faces[i].vertices[1].coord],
 			&solid->coords[solid->faces[i].vertices[2].coord],

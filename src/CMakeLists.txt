@@ -3,9 +3,13 @@ set(
   main.c
   draw.c
   project.c
-  basic.c
+  coord.c
+  point.c
+  texture.c
+  color.c
   solid.c
-  data.c
+  scene.c
+  frame.c
 )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})

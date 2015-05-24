@@ -1,3 +1,13 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "scene.h"
+#include "point.h"
+#include "frame.h"
+#include "solid.h"
+#include "color.h"
+#include "SDL/SDL.h"
+
 static struct {
     Frame camera;
     Frame origin;
@@ -9,7 +19,7 @@ static struct {
     int wireframe; // boolean : 1 wireframe the scene, else don't
     int normal; // boolean : 1 display the normals of scene, else don't
     int vertex; // boolean : 1 display the vertex of the scene, else don't
-    int origin; // boolean : 1 display the origin of the scene, else dont't
+    int frame; // boolean : 1 display the frame of the scene, else dont't
 
     Point light;
 
@@ -24,23 +34,16 @@ static struct {
     int screenHeight;
     float nearplan;
     float farplan;
-    float *zBuffer
+    float *zBuffer;
 } scene;
 
 static void resetZBuffer(float *zBuffer)
 {
-    int size = WIDTH * HEIGHT;
+    int size = scene.screenWidth * scene.screenHeight;
     for (int i = 0; i < size; i++)
 	zBuffer[i] = -1.;
 }
 
-static void resetFrame(Frame *user)
-{
-    setPoint(&user->position, 0., 0., 0.);
-    setPoint(&user->i, 1., 0., 0.);
-    setPoint(&user->j, 0., 1., 0.);
-    setPoint(&user->k, 0., 0., 1.);
-}
 
 static void initLight(Point *light, float x, float y, float z)
 {
@@ -48,14 +51,15 @@ static void initLight(Point *light, float x, float y, float z)
     normalizePoint(light, light);
 }
 
-static void initSDL(SDL_Surface *screen, int sreenWidth, int screenHeight)
+static void initSDL()
 {
     if (SDL_Init(SDL_INIT_VIDEO) == -1) {
 	fprintf(stderr, "Error SDL_Init: %s", SDL_GetError());
 	exit(EXIT_FAILURE);
     }
-    if((screen = SDL_SetVideoMode(sreenWidth, sreenHeight, 64,
-				  SDL_HWSURFACE | SDL_DOUBLEBUF)) == NULL) {
+    if ((scene.screen = SDL_SetVideoMode(scene.screenWidth, scene.screenHeight, 
+					 32, SDL_HWSURFACE | SDL_DOUBLEBUF)) 
+	== NULL) {
 	fprintf(stderr, "Error SDL_SetVideoMode: %s", SDL_GetError());
 	exit(EXIT_FAILURE);
     }
@@ -98,44 +102,45 @@ static void handleMouseEvent(SDL_Event *event)
 	}
 	break;
     }
-    direction(theta, phi, rho);
+    printf("%d\n", rightClickDown);
+    setDirectionFrame(&scene.camera, theta, phi, rho);
 }
 
-static void handleKeyBordEvent(SDL_Event *event, int *stop)
+static void handleKeyboardEvent(SDL_Event *event, int *stop)
 {
     switch (event->key.keysym.sym) {
     case SDLK_LEFT:
-	translatePoint(&scene.camera.O, 
+	translateFrame(&scene.camera, 
 		       -scene.translationSpeed * scene.camera.i.x,
 		       -scene.translationSpeed * scene.camera.i.y,
 		       -scene.translationSpeed * scene.camera.i.z);
 	break;
     case SDLK_RIGHT:
-	translatePoint(&scene.camera.O, 
+	translateFrame(&scene.camera, 
 		       scene.translationSpeed * scene.camera.i.x,
 		       scene.translationSpeed * scene.camera.i.y, 
 		       scene.translationSpeed * scene.camera.i.z);
 	break;
     case SDLK_UP:
-	translatePoint(&scene.camera.O, 
+	translateFrame(&scene.camera, 
 		       scene.translationSpeed * scene.camera.j.x,
 		       scene.translationSpeed * scene.camera.j.y, 
 		       scene.translationSpeed * scene.camera.j.z);
 	break;
     case SDLK_DOWN:
-	translatePoint(&scene.camera.O, 
+	translateFrame(&scene.camera, 
 		       -scene.translationSpeed * scene.camera.j.x,
 		       -scene.translationSpeed * scene.camera.j.y, 
 		       -scene.translationSpeed * scene.camera.j.z);
 	break;
     case SDLK_KP_PLUS:
-	translatePoint(&scene.camera.O, 
+	translateFrame(&scene.camera, 
 		       scene.translationSpeed * scene.camera.k.x,
 		       scene.translationSpeed * scene.camera.k.y, 
 		       scene.translationSpeed * scene.camera.k.z);
 	break;
     case SDLK_KP_MINUS:
-	translatePoint(&scene.camera.O, 
+	translateFrame(&scene.camera, 
 		       -scene.translationSpeed * scene.camera.k.x,
 		       -scene.translationSpeed * scene.camera.k.y, 
 		       -scene.translationSpeed * scene.camera.k.z);
@@ -144,7 +149,7 @@ static void handleKeyBordEvent(SDL_Event *event, int *stop)
 	*stop = 1;
 	break;
     case SDLK_r:
-	initCamera();
+        resetFrame(&scene.camera);
 	break;
     default:
 	break;
@@ -158,7 +163,7 @@ static void handleEvent(SDL_Event *event, int *stop)
 	*stop = 1;
 	break;
     case SDL_KEYDOWN:
-	handleKeyBoardEvent(event, stop);
+	handleKeyboardEvent(event, stop);
 	break;
     case SDL_MOUSEMOTION:
     case SDL_MOUSEBUTTONUP:
@@ -179,7 +184,7 @@ void initScene()
     scene.wireframe = 0;
     scene.normal = 0;
     scene.vertex = 0;
-    scene.origin = 1;
+    scene.frame = 1;
 
     scene.nbSolid = 0;
     scene.bufferSize = 4;
@@ -197,7 +202,7 @@ void initScene()
     scene.solidBuffer = malloc(scene.bufferSize * sizeof(Solid*));
     scene.zBuffer = malloc(scene.screenWidth * scene.screenHeight * 
 			   sizeof(float));
-    initSDL(scene.screen, scene.screenWidth, scene.screenHeight);
+    initSDL();
 }
 
 void updateScene(int *stop)
@@ -215,43 +220,92 @@ void addSolidToScene(Solid *solid)
 				    scene.bufferSize * 
 				    sizeof(Solid *));
     }
-    scene.solidBuffer[scene.nbSolid] = solid;
-    scene.nbSolid++;    
+    scene.solidBuffer[scene.nbSolid++] = solid;   
 }
 
 void removeSolidFromScene(Solid *solid)
 {
-    for (int i = 0; i < scene.nbSolid && scene.solidBuffer[i] != solid; i++);
+    int i = 0;
+    while (i < scene.nbSolid && scene.solidBuffer[i++] != solid); //Warning
     scene.solidBuffer[i] = scene.solidBuffer[--scene.nbSolid];
 }
     
 void drawScene()
 {
-    SDL_FillRect(scene.screen, NULL, SDL_MapRGB(screen->format, 0, 0, 0));
+    SDL_FillRect(scene.screen, NULL, SDL_MapRGB(scene.screen->format, 0, 0, 0));
     resetZBuffer(scene.zBuffer);
-    drawOrigin();
-    
+    Color color;
     if (scene.draw)
 	for (int i = 0; i < scene.nbSolid; i++)
 	    drawSolid(scene.solidBuffer[i]);
     if (scene.wireframe)
 	for (int i = 0; i < scene.nbSolid; i++)
-	    wireframeSolid(scene.solidBuffer[i], &red);
+	    wireframeSolid(scene.solidBuffer[i], setColor(&color, 255, 0, 0));
     if (scene.normal)
 	for (int i = 0; i < scene.nbSolid; i++)
-	    normalSolid(scene.solidBuffer[i], &green);
+	    normalSolid(scene.solidBuffer[i], setColor(&color, 0, 255, 0));
     if (scene.vertex)
 	for (int i = 0; i < scene.nbSolid; i++)
-	    vertexSolid(scene.solidBuffer[i], &blue);
-    if (scene.origin)
-	drawOrigin();
-    SDL_Flip(screen);
+	    vertexSolid(scene.solidBuffer[i], setColor(&color, 0, 0, 255));
+    if (scene.frame)
+	drawFrame(&scene.origin);
+    SDL_Flip(scene.screen);
+}
+
+Frame *getCamera()
+{
+    return &scene.camera;
+}
+
+Point *getLight()
+{
+    return &scene.light;
+}
+
+SDL_Surface *getScreen()
+{
+    return scene.screen;
+}
+
+int getHfov()
+{
+    return scene.hfov;
+}
+
+int getWfov()
+{
+    return scene.wfov;
+}
+
+int getScreenWidth()
+{
+    return scene.screenWidth;
+}
+
+int getScreenHeight()
+{
+    return scene.screenHeight;
+}
+
+float getNearplan()
+{
+    return scene.nearplan;
+}
+
+float getFarplan()
+{
+    return scene.farplan;
+}
+
+float *getZBuffer()
+{
+    return scene.zBuffer;
 }
 
 void freeScene()
 {
     for(int i = 0; i < scene.nbSolid; i++)
-	freeSolid(&scene.solidBuffer[i]);
+	freeSolid(scene.solidBuffer[i]);
     free(scene.solidBuffer);
     free(scene.zBuffer);
     SDL_FreeSurface(scene.screen);
