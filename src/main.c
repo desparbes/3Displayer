@@ -7,14 +7,23 @@
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2) {
-	fprintf(stderr, "Usage: ./3Displayer .OBJ_PATH\n");
-	exit(EXIT_FAILURE);
-    }
     Solid *solid = initSolid();
+
+    switch (argc) {
+    case 1:
+	fprintf(stderr, "Usage: ./3Displayer .OBJ_PATH (.BMP_PATH)\n");
+	exit(EXIT_FAILURE);
+	break;
+    case 2:
+	loadSolid(solid, argv[1], NULL);
+	break;
+    default:
+	loadSolid(solid, argv[1], argv[2]);
+	break;
+    }
+
     int stop = 0;
     initScene();
-    loadSolid(solid, argv[1]);
     addSolidToScene(solid);
     while (!stop) {
 	updateScene(&stop);

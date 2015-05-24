@@ -6,7 +6,7 @@ typedef struct Texture {
     float y;
 } Texture;
 
-float loopTexture(float a);
+void loopTexture(Texture *t);
 void setTexture(Texture *t, float x, float y);
 
 #endif // TEXTURE_H

@@ -5,7 +5,15 @@
 #include "color.h"
 #include "project.h"
 
-void setDirectionFrame(Frame *frame, float theta, float phi, float rho)
+void resetFrame(Frame *frame)
+{
+    setPoint(&frame->O, 0., 0., 0.);
+    setPoint(&frame->i, 1., 0., 0.);
+    setPoint(&frame->j, 0., 1., 0.);
+    setPoint(&frame->k, 0., 0., 1.);
+}
+
+void rotateFrame(Frame *frame, float theta, float phi, float rho)
 {
     frame->j.x = sin(theta);
     frame->j.y = cos(theta);
@@ -21,14 +29,6 @@ void setDirectionFrame(Frame *frame, float theta, float phi, float rho)
     rotPoint(&frame->i, &frame->j, rho, &a);
     frame->i = a;
     pointProduct(&frame->i, &frame->j, &frame->k);
-}
-
-void resetFrame(Frame *frame)
-{
-    setPoint(&frame->O, 0., 0., 0.);
-    setPoint(&frame->i, 1., 0., 0.);
-    setPoint(&frame->j, 0., 1., 0.);
-    setPoint(&frame->k, 0., 0., 1.);
 }
 
 void translateFrame(Frame *frame, float x, float y, float z)

@@ -88,8 +88,9 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
     float depthA = scalarProduct(&getCamera()->j, &OA);
     float depthB = scalarProduct(&getCamera()->j, &OB);
     float depthC = scalarProduct(&getCamera()->j, &OC);
-    int test =
-	(depthA > getNearplan()) + (depthB > getNearplan()) + (depthC > getNearplan());
+    int test = (depthA > getNearplan()) + 
+	       (depthB > getNearplan()) + 
+	       (depthC > getNearplan());
 
     if (test == 3) {
 	Coord a, b, c;
@@ -109,8 +110,10 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 	    diffPoint(B, A, &b);
 	    diffPoint(C, A, &c);
 
-	    float kB = (getNearplan() - depthA) / scalarProduct(&getCamera()->j, B);
-	    float kC = (getNearplan() - depthA) / scalarProduct(&getCamera()->j, C);
+	    float kB = (getNearplan() - depthA) / 
+		scalarProduct(&getCamera()->j, B);
+	    float kC = (getNearplan() - depthA) / 
+		scalarProduct(&getCamera()->j, C);
 
 	    setPoint(&OB, 
 		     A->x + kB * b.x - getCamera()->O.x,
@@ -156,8 +159,10 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 	    diffPoint(C, B, &c);
 	    diffPoint(A, B, &a);
 
-	    float kC = (getNearplan() - depthB) / scalarProduct(&getCamera()->j, &c);
-	    float kA = (getNearplan() - depthB) / scalarProduct(&getCamera()->j, &a);
+	    float kC = (getNearplan() - depthB) / 
+		scalarProduct(&getCamera()->j, &c);
+	    float kA = (getNearplan() - depthB) / 
+		scalarProduct(&getCamera()->j, &a);
 
 	    setPoint(&OC,
 		     B->x + kC * c.x - getCamera()->O.x,
@@ -204,8 +209,10 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 	    diffPoint(A, C, &a);
 	    diffPoint(B, C, &b);
 
-	    float kA = (getNearplan() - depthC) / scalarProduct(&getCamera()->j, &a);
-	    float kB = (getNearplan() - depthC) / scalarProduct(&getCamera()->j, &b);
+	    float kA = (getNearplan() - depthC) / 
+		scalarProduct(&getCamera()->j, &a);
+	    float kB = (getNearplan() - depthC) / 
+		scalarProduct(&getCamera()->j, &b);
 
 	    setPoint(&OA,
 		     C->x + kA * a.x - getCamera()->O.x,
@@ -254,8 +261,10 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 	    diffPoint(B, A, &AB);
 	    diffPoint(C, A, &AC);
 
-	    float kB = (getNearplan() - depthA) / scalarProduct(&getCamera()->j, &AB);
-	    float kC = (getNearplan() - depthA) / scalarProduct(&getCamera()->j, &AC);
+	    float kB = (getNearplan() - depthA) / 
+		scalarProduct(&getCamera()->j, &AB);
+	    float kC = (getNearplan() - depthA) / 
+		scalarProduct(&getCamera()->j, &AC);
 
 	    Point OpB, OpC;
 	    setPoint(&OpB,
@@ -311,8 +320,10 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 	    diffPoint(C, B, &BC);
 	    diffPoint(A, B, &BA);
 
-	    float kC = (getNearplan() - depthB) / scalarProduct(&getCamera()->j, &BC);
-	    float kA = (getNearplan() - depthB) / scalarProduct(&getCamera()->j, &BA);
+	    float kC = (getNearplan() - depthB) / 
+		scalarProduct(&getCamera()->j, &BC);
+	    float kA = (getNearplan() - depthB) / 
+		scalarProduct(&getCamera()->j, &BA);
 
 	    Point OpC, OpA;
 	    setPoint(&OpC,
@@ -366,8 +377,10 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 	    diffPoint(A, C, &CA);
 	    diffPoint(B, C, &CB);
 
-	    float kA = (getNearplan() - depthC) / scalarProduct(&getCamera()->j, &CA);
-	    float kB = (getNearplan() - depthC) / scalarProduct(&getCamera()->j, &CB);
+	    float kA = (getNearplan() - depthC) / 
+		scalarProduct(&getCamera()->j, &CA);
+	    float kB = (getNearplan() - depthC) / 
+		scalarProduct(&getCamera()->j, &CB);
 
 	    Point OpA, OpB;
 	    setPoint(&OpA,

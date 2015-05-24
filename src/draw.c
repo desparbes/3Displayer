@@ -124,9 +124,6 @@ void drawTriangle(const Coord *A, const Coord *B, const Coord *C,
     if (maxH >= getScreenHeight())
 	maxH = getScreenHeight() - 1;
 
-    if (triangle == NULL)
-	triangle = SDL_LoadBMP("error.bmp");
-
     Coord AC;
     diffRect(C, A, &AC);
 
@@ -154,15 +151,17 @@ void drawTriangle(const Coord *A, const Coord *B, const Coord *C,
     float depthM;
 
     Texture N, u, v, w;
-    setTexture(&u,
-	       U->x / depthA,
-	       U->y / depthA);
-    setTexture(&v,
-	       V->x / depthB,
-	       V->y / depthB);
-    setTexture(&w,
-	       W->x / depthC,
-	       W->y / depthC);
+    if (triangle != NULL) {
+	setTexture(&u,
+		   U->x / depthA,
+		   U->y / depthA);
+	setTexture(&v,
+	           V->x / depthB,
+		   V->y / depthB);
+	setTexture(&w,
+		   W->x / depthC,
+		   W->y / depthC);
+    }
 
     int det = relativeProduct(&AB, &AC);
     Uint8 r, g, b;
@@ -198,29 +197,32 @@ void drawTriangle(const Coord *A, const Coord *B, const Coord *C,
 		|| getZBuffer()[M.w + M.h * getScreenWidth()] > depthM) {
 		scale = scaleABC / 
 		    (gamma * scaleBC + beta * scaleCA + alpha * scaleAB);
-		N.x = (gamma * u.x + beta * v.x +
-		       alpha * w.x) / (gamma / depthA +
-				       beta / depthB + alpha / depthC);
-		N.y = (gamma * u.y + beta * v.y +
-		       alpha * w.y) /
-		    (gamma / depthA + beta / depthB + alpha / depthC);
-		pixel =
-		    (Uint32 *) (triangle->pixels +
-				(int) (loopTexture(N.x) * triangle->w) *
-				triangle->format->BitsPerPixel / 8 +
-				(int) (loopTexture(N.y) * triangle->h) *
-				(triangle->format->BitsPerPixel *
-				 triangle->w / 8 + triangle->w % 4));
-		SDL_GetRGB(*pixel, triangle->format, &r, &g, &b);
-		Color scaled = {
-		    .r = scale * r,
-		    .g = scale * g,
-		    .b = scale * b
-		};
+		
+		if (triangle != NULL) {
+		    N.x = (gamma * u.x + beta * v.x + alpha * w.x) / 
+			(gamma / depthA + beta / depthB + alpha / depthC);
+		    N.y = (gamma * u.y + beta * v.y + alpha * w.y) /
+			(gamma / depthA + beta / depthB + alpha / depthC);
+
+		    loopTexture(&N);
+
+		    pixel = (Uint32 *) (triangle->pixels +
+					(int) (N.x * triangle->w) *
+					triangle->format->BitsPerPixel / 8 +
+					(int) (N.y * triangle->h) *
+					triangle->w *
+					triangle->format->BitsPerPixel / 8);
+	        
+		    SDL_GetRGB(*pixel, triangle->format, &r, &g, &b);
+		} else {
+		    r = 255;
+		    g = 0;
+		    b = 255;
+		}
+
+		Color scaled;
+		setColor(&scaled, scale * r, scale * g, scale * b);
 		setPixel(&M, &scaled);
-		//setPixel(M, {255 /depthM , 255 /depthM, 255 /depthM});
-		//setPixel(M, {255 * N.x, 255 * N.y, 0});
-		//setPixel(M, {255 * alpha, 255 * beta, 0});
 		getZBuffer()[M.w + M.h * getScreenWidth()] = depthM;
 	    }
 	    M.w++;

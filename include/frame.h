@@ -11,7 +11,7 @@ typedef struct Frame {
 } Frame;
 
 void resetFrame(Frame *frame);
-void setDirectionFrame(Frame *frame, float theta, float phi, float rho);
+void rotateFrame(Frame *frame, float theta, float phi, float rho);
 void translateFrame(Frame *frame, float x, float y, float z);
 void drawFrame(Frame *frame);
 

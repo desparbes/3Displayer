@@ -120,17 +120,20 @@ void normalSolid(const Solid *solid, const Color *color)
     for (i = 0; i < solid->numFaces; i++) {
 	Face *f = &solid->faces[i];
 	for (k = 0; k < 3; k++) {
-	    int point = f->vertices[k].point;
-	    int normal = f->vertices[k].normal;
 	    Point tmp;
-	    sumPoint(&solid->vertices[point], &solid->normals[normal], &tmp);
+	    int point = f->vertices[k].point;
+	    Point normal = solid->normals[f->vertices[k].normal];
+
+	    setPoint(&tmp, 0., 0., 0.);
+	    scalePoint(&normal, &tmp, 0.1);
+	    sumPoint(&solid->vertices[point], &normal, &tmp);
 	    projectSegment(&solid->vertices[point], &tmp, color);
 	}
     }
 }
 
 // load .obj files
-int loadSolid(Solid *solid, const char *fileName)
+int loadSolid(Solid *solid, const char *fileName, const char *bmpName)
 {
     FILE *file = fopen(fileName, "r");
 
@@ -169,11 +172,8 @@ int loadSolid(Solid *solid, const char *fileName)
     solid->normals = (Point*) malloc(solid->numNormals * sizeof(Point));
     solid->coords = (Texture*) malloc(solid->numCoords * sizeof(Texture));
     solid->faces = (Face *) malloc(solid->numFaces * sizeof(Face));
-    
-    if ((solid->texture = SDL_LoadBMP("textures/white.bmp")) == NULL) {
-	fprintf(stderr, "error loading texture: white.bmp\n");
-	exit(EXIT_FAILURE);
-    }
+    solid->texture = SDL_LoadBMP(bmpName);
+
     rewind(file);
     while (fscanf(file, "%s", str) != EOF) {
 	if (strcmp(str, "v") == 0) {

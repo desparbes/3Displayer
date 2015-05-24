@@ -9,6 +9,7 @@ static struct {
     int vertex; // boolean : 1 display the vertex of the scene, else don't
     int frame; // boolean : 1 display the frame of the scene, else dont't
     int rightClickDown;
+
     float theta;
     float phi;
     float rho;
@@ -48,7 +49,7 @@ void handleMouseMotionEvent(SDL_Event *event)
 	else if (state.mouseHeight < event->motion.y)
 	    state.phi -= state.rotationSpeed;
     }
-    setDirectionFrame(getCamera(), state.theta, state.phi, state.rho);
+    rotateFrame(getCamera(), state.theta, state.phi, state.rho);
     state.mouseWidth = event->motion.x;
     state.mouseHeight = event->motion.y;
 }
@@ -119,9 +120,6 @@ void handleKeyDownEvent(SDL_Event *event, int *stop)
 void handleKeyUpEvent(SDL_Event *event)
 {
     switch (event->key.keysym.sym) {
-    case SDLK_r:
-        resetFrame(getCamera());
-	break;
     case SDLK_d:
 	state.draw = (state.draw + 1) % 2;
 	break;

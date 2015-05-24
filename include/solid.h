@@ -8,7 +8,7 @@ typedef struct Solid Solid;
 
 Solid *initSolid();
 
-int loadSolid(Solid *solid, const char *fileName);
+int loadSolid(Solid *solid, const char *fileName, const char *bmpName);
 void equationSolid(Solid *solid,
 		   float minS, float maxS, int precisionS,
 		   float minT, float maxT, int precisionT);

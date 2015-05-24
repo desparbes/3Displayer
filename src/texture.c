@@ -1,13 +1,18 @@
 #include "texture.h"
 
-float loopTexture(float a)
+static float loopFloat(float x)
 {
-    if (a < 0)
-	return a - (int) a + 1;
-    else if (a >= 1)
-	return a - (int) a;
-    else
-	return a;
+    if (x < 0.)
+	return x - (int) x + 1.;
+    else if (x >= 1.)
+	return x - (int) x;
+    return x;
+}
+
+void loopTexture(Texture *t)
+{
+    t->x = loopFloat(t->x);
+    t->y = loopFloat(t->y);
 }
 
 void setTexture(Texture *t, float x, float y)
