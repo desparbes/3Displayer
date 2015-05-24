@@ -111,9 +111,9 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 	    diffPoint(C, A, &c);
 
 	    float kB = (getNearplan() - depthA) / 
-		scalarProduct(&getCamera()->j, B);
+		scalarProduct(&getCamera()->j, &b);
 	    float kC = (getNearplan() - depthA) / 
-		scalarProduct(&getCamera()->j, C);
+		scalarProduct(&getCamera()->j, &c);
 
 	    setPoint(&OB, 
 		     A->x + kB * b.x - getCamera()->O.x,
@@ -154,6 +154,7 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 			 triangle,
 			 U, &UV, &UW,
 			 normalA, &nAB, &nAC);
+		
 	} else if (depthB > getNearplan()) {
 	    Point c, a;
 	    diffPoint(C, B, &c);
@@ -276,9 +277,10 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 		     A->y + kC * AC.y - getCamera()->O.y,
 		     A->z + kC * AC.z - getCamera()->O.z);
 
-	    Coord opbn, c, opcn;
-	    projectCoord(&OpB, getNearplan(), &opbn);
+	    Coord b, c, opbn, opcn;
+	    projectCoord(&OB, depthB, &b);
 	    projectCoord(&OC, depthC, &c);
+	    projectCoord(&OpB, getNearplan(), &opbn);
 	    projectCoord(&OpC, getNearplan(), &opcn);
 
 	    Texture VU, WU;
@@ -307,8 +309,6 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 			 &VU, W, &WU,
 			 &nAB, normalC, &nAC);
 
-	    Coord b;
-	    projectCoord(&OB, depthB, &b);
 	    drawTriangle(&opbn, &b, &c,
 			 (depthB - depthA) * kB + depthA,
 			 depthB, depthC,
@@ -335,10 +335,12 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 		     B->y + kA * BA.y - getCamera()->O.y,
 		     B->z + kA * BA.z - getCamera()->O.z);
 
-	    Coord opcn, a, opan;
-	    projectCoord(&OpC, getNearplan(), &opcn);
+	    Coord c, a, opcn, opan;
+	    projectCoord(&OC, depthC, &c);
 	    projectCoord(&OA, depthA, &a);
+	    projectCoord(&OpC, getNearplan(), &opcn);
 	    projectCoord(&OpA, getNearplan(), &opan);
+
 	    Texture VW, VU;
 	    setTexture(&VW,
 		       (W->x - V->x) * kC + V->x,
@@ -356,6 +358,7 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 		     (normalA->x - normalB->x) * kA + normalB->x,
 		     (normalA->y - normalB->y) * kA + normalB->y,
 		     (normalA->z - normalB->z) * kA + normalB->z);
+
 	    drawTriangle(&opcn, &a, &opan,
 			 (depthC - depthB) * kC + depthB,
 			 depthA,
@@ -364,8 +367,6 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 			 &VW, U, &VU,
 			 &nBC, normalA, &nBA);
 
-	    Coord c;
-	    projectCoord(&OC, depthC, &c);
 	    drawTriangle(&opcn, &c, &a,
 			 (depthC - depthB) * kC + depthB,
 			 depthC, depthA,
@@ -392,9 +393,11 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 		     C->y + kB * CB.y - getCamera()->O.y,
 		     C->z + kB * CB.z - getCamera()->O.z);
 
-	    Coord opan, b, opbn;
-	    projectCoord(&OpA, getNearplan(), &opan);
+	    Coord a, b, opan, opbn;
+
+	    projectCoord(&OA, depthA, &a);
 	    projectCoord(&OB, depthB, &b);
+	    projectCoord(&OpA, getNearplan(), &opan);	   
 	    projectCoord(&OpB, getNearplan(), &opbn);
 
 	    Texture WU, WV;
@@ -414,7 +417,8 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 		     (normalB->x - normalC->x) * kB + normalC->x,
 		     (normalB->y - normalC->y) * kB + normalC->y,
 		     (normalB->z - normalC->z) * kB + normalC->z);
-	    drawTriangle(&opan, &b, &opan,
+
+	    drawTriangle(&opan, &b, &opbn,
 			 (depthA - depthC) * kA + depthC,
 			 depthB,
 			 (depthB - depthC) * kB + depthC,
@@ -422,8 +426,6 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 			 &WU, V, &WV,
 			 &nCA, normalB, &nCB);
 
-	    Coord a;
-	    projectCoord(&OA, depthA, &a);
 	    drawTriangle(&opan, &a, &b,
 			 (depthA - depthC) * kA + depthC,
 			 depthA, depthB,
