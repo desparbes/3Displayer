@@ -12,37 +12,41 @@
 void projectPoint(const Point *A, const Point *B, Point *S)
 {
     Point AB, d;
+    Frame *camera = getCamera();
     diffPoint(B, A, &AB);
-    diffPoint(A, &getCamera()->O, &d);
+    diffPoint(A, &camera->O, &d);
     float k =
-	(getNearplan() - scalarProduct(&getCamera()->j, &d))
-	/ scalarProduct(&getCamera()->j, &AB);
+	(getNearplan() - scalarProduct(&camera->j, &d))
+	/ scalarProduct(&camera->j, &AB);
 
     setPoint(S,
-	     A->x + k * AB.x - getCamera()->O.x,
-	     A->y + k * AB.y - getCamera()->O.y,
-	     A->z + k * AB.z - getCamera()->O.z);
+	     A->x + k * AB.x - camera->O.x,
+	     A->y + k * AB.y - camera->O.y,
+	     A->z + k * AB.z - camera->O.z);
 }
 
 // return the Coord projection of a vector between scene.camera.O
 // and A, knowing the depth of A
 void projectCoord(const Point *OA, float depth, Coord *S)
 {
-    S->w = getScreenWidth() / 
-	(2. * tan(getWfov() * M_PI / 360.)) * 
-	scalarProduct(&getCamera()->i, OA) / 
-	depth + getScreenWidth() / 2;
-    S->h = -getScreenHeight() / 
+    Frame *camera = getCamera();
+    int height = getScreenHeight(), width = getScreenWidth();
+    
+    S->w =  width / (2. * tan(getWfov() * M_PI / 360.)) * 
+	scalarProduct(&camera->i, OA) / 
+	depth + width / 2;
+    S->h = -height / 
 	(2. * tan(getHfov() * M_PI / 360.)) * 
-	scalarProduct(&getCamera()->k, OA) / 
-	depth + getScreenHeight() / 2;
+	scalarProduct(&camera->k, OA) / 
+	depth + height / 2;
 }
 
 void projectVertex(const Point *A, const Color *color)
 {
     Point OA;
-    diffPoint(A, &getCamera()->O, &OA);
-    float depthA = scalarProduct(&getCamera()->j, &OA);
+    Frame *camera = getCamera();
+    diffPoint(A, &camera->O, &OA);
+    float depthA = scalarProduct(&camera->j, &OA);
 
     Coord t;
     projectCoord(&OA, depthA, &t);
@@ -53,24 +57,27 @@ void projectVertex(const Point *A, const Color *color)
 void projectSegment(const Point *A, const Point *B, const Color *color)
 {
     Point OA, OB, AB;
-    diffPoint(A, &getCamera()->O, &OA);
-    diffPoint(B, &getCamera()->O, &OB);
-    float depthA = scalarProduct(&getCamera()->j, &OA);
-    float depthB = scalarProduct(&getCamera()->j, &OB);
+    Frame *camera = getCamera();
+    float nearplan = getNearplan();
+    
+    diffPoint(A, &camera->O, &OA);
+    diffPoint(B, &camera->O, &OB);
+    float depthA = scalarProduct(&camera->j, &OA);
+    float depthB = scalarProduct(&camera->j, &OB);
 
     Coord t, u;
-    if (depthA > getNearplan() && depthB > getNearplan()) {
+    if (depthA > nearplan && depthB > nearplan) {
 	projectCoord(&OA, depthA, &t);
 	projectCoord(&OB, depthB, &u);
 	drawSegment(&t, &u, depthA, depthB, color);
-    } else if (depthA < getNearplan() && depthB > getNearplan()) {
+    } else if (depthA < nearplan && depthB > nearplan) {
 	projectPoint(A, B, &AB);
-	projectCoord(&AB, getNearplan(), &t);
+	projectCoord(&AB, nearplan, &t);
 	projectCoord(&OB, depthB, &u);
-    } else if (depthA > getNearplan() && depthB < getNearplan()) {
+    } else if (depthA > nearplan && depthB < nearplan) {
 	projectPoint(A, B, &AB);
 	projectCoord(&OA, depthA, &t);
-	projectCoord(&AB, getNearplan(), &u);
+	projectCoord(&AB, nearplan, &u);
     }
     drawSegment(&t, &u, depthA, depthB, color);
 }
@@ -81,16 +88,18 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 		     const Point *normalA, const Point *normalB,
 		     const Point *normalC)
 {
+    Frame *camera = getCamera();
+    float nearplan = getNearplan();
     Point OA, OB, OC;
-    diffPoint(A, &getCamera()->O, &OA);
-    diffPoint(B, &getCamera()->O, &OB);
-    diffPoint(C, &getCamera()->O, &OC);
-    float depthA = scalarProduct(&getCamera()->j, &OA);
-    float depthB = scalarProduct(&getCamera()->j, &OB);
-    float depthC = scalarProduct(&getCamera()->j, &OC);
-    int test = (depthA > getNearplan()) + 
-	       (depthB > getNearplan()) + 
-	       (depthC > getNearplan());
+    diffPoint(A, &camera->O, &OA);
+    diffPoint(B, &camera->O, &OB);
+    diffPoint(C, &camera->O, &OC);
+    float depthA = scalarProduct(&camera->j, &OA);
+    float depthB = scalarProduct(&camera->j, &OB);
+    float depthC = scalarProduct(&camera->j, &OC);
+    int test = (depthA > nearplan) + 
+	       (depthB > nearplan) + 
+	       (depthC > nearplan);
 
     if (test == 3) {
 	Coord a, b, c;
@@ -105,29 +114,29 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
     } else if (test == 0) {
 	return;
     } else if (test == 1) {
-	if (depthA > getNearplan()) {
+	if (depthA > nearplan) {
 	    Point b, c;
 	    diffPoint(B, A, &b);
 	    diffPoint(C, A, &c);
 
-	    float kB = (getNearplan() - depthA) / 
-		scalarProduct(&getCamera()->j, &b);
-	    float kC = (getNearplan() - depthA) / 
-		scalarProduct(&getCamera()->j, &c);
+	    float kB = (nearplan - depthA) / 
+		scalarProduct(&camera->j, &b);
+	    float kC = (nearplan - depthA) / 
+		scalarProduct(&camera->j, &c);
 
 	    setPoint(&OB, 
-		     A->x + kB * b.x - getCamera()->O.x,
-		     A->y + kB * b.y - getCamera()->O.y,
-		     A->z + kB * b.z - getCamera()->O.z);
+		     A->x + kB * b.x - camera->O.x,
+		     A->y + kB * b.y - camera->O.y,
+		     A->z + kB * b.z - camera->O.z);
 	    setPoint(&OC,
-		     A->x + kC * c.x - getCamera()->O.x,
-		     A->y + kC * c.y - getCamera()->O.y,
-		     A->z + kC * c.z - getCamera()->O.z);
+		     A->x + kC * c.x - camera->O.x,
+		     A->y + kC * c.y - camera->O.y,
+		     A->z + kC * c.z - camera->O.z);
 
 	    Coord a, bn, cn;
 	    projectCoord(&OA, depthA, &a);
-	    projectCoord(&OB, getNearplan(), &bn);
-	    projectCoord(&OC, getNearplan(), &cn);
+	    projectCoord(&OB, nearplan, &bn);
+	    projectCoord(&OC, nearplan, &cn);
 
 	    Texture UV, UW;
 	    setTexture(&UV,
@@ -155,29 +164,29 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 			 U, &UV, &UW,
 			 normalA, &nAB, &nAC);
 		
-	} else if (depthB > getNearplan()) {
+	} else if (depthB > nearplan) {
 	    Point c, a;
 	    diffPoint(C, B, &c);
 	    diffPoint(A, B, &a);
 
-	    float kC = (getNearplan() - depthB) / 
-		scalarProduct(&getCamera()->j, &c);
-	    float kA = (getNearplan() - depthB) / 
-		scalarProduct(&getCamera()->j, &a);
+	    float kC = (nearplan - depthB) / 
+		scalarProduct(&camera->j, &c);
+	    float kA = (nearplan - depthB) / 
+		scalarProduct(&camera->j, &a);
 
 	    setPoint(&OC,
-		     B->x + kC * c.x - getCamera()->O.x,
-		     B->y + kC * c.y - getCamera()->O.y,
-		     B->z + kC * c.z - getCamera()->O.z);
+		     B->x + kC * c.x - camera->O.x,
+		     B->y + kC * c.y - camera->O.y,
+		     B->z + kC * c.z - camera->O.z);
 	    setPoint(&OA,
-		     B->x + kA * a.x - getCamera()->O.x,
-		     B->y + kA * a.y - getCamera()->O.y,
-		     B->z + kA * a.z - getCamera()->O.z);
+		     B->x + kA * a.x - camera->O.x,
+		     B->y + kA * a.y - camera->O.y,
+		     B->z + kA * a.z - camera->O.z);
 
 	    Coord b, cn, an;
 	    projectCoord(&OB, depthB, &b);
-	    projectCoord(&OC, getNearplan(), &cn);
-	    projectCoord(&OA, getNearplan(), &an);
+	    projectCoord(&OC, nearplan, &cn);
+	    projectCoord(&OA, nearplan, &an);
 
 	    Texture VW, VU;
 	    setTexture(&VW,
@@ -205,29 +214,29 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 			 V, &VW, &VU,
 			 normalB, &nBC, &nBA);
 
-	} else if (depthC > getNearplan()) {
+	} else if (depthC > nearplan) {
 	    Point a,b;
 	    diffPoint(A, C, &a);
 	    diffPoint(B, C, &b);
 
-	    float kA = (getNearplan() - depthC) / 
-		scalarProduct(&getCamera()->j, &a);
-	    float kB = (getNearplan() - depthC) / 
-		scalarProduct(&getCamera()->j, &b);
+	    float kA = (nearplan - depthC) / 
+		scalarProduct(&camera->j, &a);
+	    float kB = (nearplan - depthC) / 
+		scalarProduct(&camera->j, &b);
 
 	    setPoint(&OA,
-		     C->x + kA * a.x - getCamera()->O.x,
-		     C->y + kA * a.y - getCamera()->O.y,
-		     C->z + kA * a.z - getCamera()->O.z);
+		     C->x + kA * a.x - camera->O.x,
+		     C->y + kA * a.y - camera->O.y,
+		     C->z + kA * a.z - camera->O.z);
 	    setPoint(&OB,
-		     C->x + kB * b.x - getCamera()->O.x,
-		     C->y + kB * b.y - getCamera()->O.y,
-		     C->z + kB * b.z - getCamera()->O.z);
+		     C->x + kB * b.x - camera->O.x,
+		     C->y + kB * b.y - camera->O.y,
+		     C->z + kB * b.z - camera->O.z);
 
 	    Coord c, an, bn;
 	    projectCoord(&OC, depthC, &c);
-	    projectCoord(&OA, getNearplan(), &an);
-	    projectCoord(&OB, getNearplan(), &bn);
+	    projectCoord(&OA, nearplan, &an);
+	    projectCoord(&OB, nearplan, &bn);
 
 	    Texture WU, WV;
 	    setTexture(&WU,
@@ -257,31 +266,31 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 	}
     } else {
 	// Coord XY, XZ, Y, Z;
-	if (depthA < getNearplan()) {
+	if (depthA < nearplan) {
 	    Point AB, AC;
 	    diffPoint(B, A, &AB);
 	    diffPoint(C, A, &AC);
 
-	    float kB = (getNearplan() - depthA) / 
-		scalarProduct(&getCamera()->j, &AB);
-	    float kC = (getNearplan() - depthA) / 
-		scalarProduct(&getCamera()->j, &AC);
+	    float kB = (nearplan - depthA) / 
+		scalarProduct(&camera->j, &AB);
+	    float kC = (nearplan - depthA) / 
+		scalarProduct(&camera->j, &AC);
 
 	    Point OpB, OpC;
 	    setPoint(&OpB,
-		     A->x + kB * AB.x - getCamera()->O.x,
-		     A->y + kB * AB.y - getCamera()->O.y,
-		     A->z + kB * AB.z - getCamera()->O.z);
+		     A->x + kB * AB.x - camera->O.x,
+		     A->y + kB * AB.y - camera->O.y,
+		     A->z + kB * AB.z - camera->O.z);
 	    setPoint(&OpC,
-		     A->x + kC * AC.x - getCamera()->O.x,
-		     A->y + kC * AC.y - getCamera()->O.y,
-		     A->z + kC * AC.z - getCamera()->O.z);
+		     A->x + kC * AC.x - camera->O.x,
+		     A->y + kC * AC.y - camera->O.y,
+		     A->z + kC * AC.z - camera->O.z);
 
 	    Coord b, c, opbn, opcn;
 	    projectCoord(&OB, depthB, &b);
 	    projectCoord(&OC, depthC, &c);
-	    projectCoord(&OpB, getNearplan(), &opbn);
-	    projectCoord(&OpC, getNearplan(), &opcn);
+	    projectCoord(&OpB, nearplan, &opbn);
+	    projectCoord(&OpC, nearplan, &opcn);
 
 	    Texture VU, WU;
 	    setTexture(&VU,
@@ -315,31 +324,31 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 			 triangle,
 			 &VU, V, W,
 			 &nAB, normalB, normalC);
-	} else if (depthB < getNearplan()) {
+	} else if (depthB < nearplan) {
 	    Point BC, BA;
 	    diffPoint(C, B, &BC);
 	    diffPoint(A, B, &BA);
 
-	    float kC = (getNearplan() - depthB) / 
-		scalarProduct(&getCamera()->j, &BC);
-	    float kA = (getNearplan() - depthB) / 
-		scalarProduct(&getCamera()->j, &BA);
+	    float kC = (nearplan - depthB) / 
+		scalarProduct(&camera->j, &BC);
+	    float kA = (nearplan - depthB) / 
+		scalarProduct(&camera->j, &BA);
 
 	    Point OpC, OpA;
 	    setPoint(&OpC,
-		     B->x + kC * BC.x - getCamera()->O.x,
-		     B->y + kC * BC.y - getCamera()->O.y,
-		     B->z + kC * BC.z - getCamera()->O.z);
+		     B->x + kC * BC.x - camera->O.x,
+		     B->y + kC * BC.y - camera->O.y,
+		     B->z + kC * BC.z - camera->O.z);
 	    setPoint(&OpA,
-		     B->x + kA * BA.x - getCamera()->O.x,
-		     B->y + kA * BA.y - getCamera()->O.y,
-		     B->z + kA * BA.z - getCamera()->O.z);
+		     B->x + kA * BA.x - camera->O.x,
+		     B->y + kA * BA.y - camera->O.y,
+		     B->z + kA * BA.z - camera->O.z);
 
 	    Coord c, a, opcn, opan;
 	    projectCoord(&OC, depthC, &c);
 	    projectCoord(&OA, depthA, &a);
-	    projectCoord(&OpC, getNearplan(), &opcn);
-	    projectCoord(&OpA, getNearplan(), &opan);
+	    projectCoord(&OpC, nearplan, &opcn);
+	    projectCoord(&OpA, nearplan, &opan);
 
 	    Texture VW, VU;
 	    setTexture(&VW,
@@ -373,32 +382,32 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 			 triangle,
 			 &VW, W, U,
 			 &nBC, normalC, normalA);
-	} else if (depthC < getNearplan()) {
+	} else if (depthC < nearplan) {
 	    Point CA, CB;
 	    diffPoint(A, C, &CA);
 	    diffPoint(B, C, &CB);
 
-	    float kA = (getNearplan() - depthC) / 
-		scalarProduct(&getCamera()->j, &CA);
-	    float kB = (getNearplan() - depthC) / 
-		scalarProduct(&getCamera()->j, &CB);
+	    float kA = (nearplan - depthC) / 
+		scalarProduct(&camera->j, &CA);
+	    float kB = (nearplan - depthC) / 
+		scalarProduct(&camera->j, &CB);
 
 	    Point OpA, OpB;
 	    setPoint(&OpA,
-		     C->x + kA * CA.x - getCamera()->O.x,
-		     C->y + kA * CA.y - getCamera()->O.y,
-		     C->z + kA * CA.z - getCamera()->O.z);
+		     C->x + kA * CA.x - camera->O.x,
+		     C->y + kA * CA.y - camera->O.y,
+		     C->z + kA * CA.z - camera->O.z);
 	    setPoint(&OpB,
-		     C->x + kB * CB.x - getCamera()->O.x,
-		     C->y + kB * CB.y - getCamera()->O.y,
-		     C->z + kB * CB.z - getCamera()->O.z);
+		     C->x + kB * CB.x - camera->O.x,
+		     C->y + kB * CB.y - camera->O.y,
+		     C->z + kB * CB.z - camera->O.z);
 
 	    Coord a, b, opan, opbn;
 
 	    projectCoord(&OA, depthA, &a);
 	    projectCoord(&OB, depthB, &b);
-	    projectCoord(&OpA, getNearplan(), &opan);	   
-	    projectCoord(&OpB, getNearplan(), &opbn);
+	    projectCoord(&OpA, nearplan, &opan);	   
+	    projectCoord(&OpB, nearplan, &opbn);
 
 	    Texture WU, WV;
 	    setTexture(&WU,

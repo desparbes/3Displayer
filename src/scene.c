@@ -42,7 +42,7 @@ static void initLight(Point *light, float x, float y, float z)
     normalizePoint(light, light);
 }
 
-static void initSDL()
+static void initSDL(void)
 {
     if (SDL_Init(SDL_INIT_VIDEO) == -1) {
 	fprintf(stderr, "Error SDL_Init: %s", SDL_GetError());
@@ -58,7 +58,7 @@ static void initSDL()
     SDL_EnableKeyRepeat(1, 10);
 }
 
-void initScene()
+void initScene(void)
 {
     scene.nbSolid = 0;
     scene.bufferSize = 4;
@@ -125,7 +125,7 @@ void removeSolidFromScene(Solid *solid)
     scene.solidBuffer[i] = scene.solidBuffer[--scene.nbSolid];
 }
     
-void drawScene()
+void drawScene(void)
 {
     SDL_FillRect(scene.screen, NULL, SDL_MapRGB(scene.screen->format, 0, 0, 0));
     resetZBuffer(scene.zBuffer);
@@ -147,57 +147,57 @@ void drawScene()
     SDL_Flip(scene.screen);
 }
 
-Frame *getCamera()
+Frame *getCamera(void)
 {
     return &scene.camera;
 }
 
-Point *getLight()
+Point *getLight(void)
 {
     return &scene.light;
 }
 
-SDL_Surface *getScreen()
+SDL_Surface *getScreen(void)
 {
     return scene.screen;
 }
 
-int getHfov()
+int getHfov(void)
 {
     return scene.hfov;
 }
 
-int getWfov()
+int getWfov(void)
 {
     return scene.wfov;
 }
 
-int getScreenWidth()
+int getScreenWidth(void)
 {
     return scene.screenWidth;
 }
 
-int getScreenHeight()
+int getScreenHeight(void)
 {
     return scene.screenHeight;
 }
 
-float getNearplan()
+float getNearplan(void)
 {
     return scene.nearplan;
 }
 
-float getFarplan()
+float getFarplan(void)
 {
     return scene.farplan;
 }
 
-float *getZBuffer()
+float *getZBuffer(void)
 {
     return scene.zBuffer;
 }
 
-void freeScene()
+void freeScene(void)
 {
     for(int i = 0; i < scene.nbSolid; i++)
 	freeSolid(scene.solidBuffer[i]);
