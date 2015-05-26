@@ -144,6 +144,12 @@ void handleKeyUpEvent(SDL_Event *event)
     case SDLK_r:
 	resetFrame(getCamera(), 0., -5., 0.);
 	break;
+    case SDLK_l:
+	askSolidForScene();
+	break;
+    case SDLK_u:
+	removeSolidFromScene();
+	break;
     default:
 	break;
     }

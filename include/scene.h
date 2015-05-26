@@ -9,7 +9,8 @@
 void initScene();
 void updateScene(int *stop);
 void addSolidToScene(Solid *solid);
-void removeSolidFromScene(Solid *solid);
+void askSolidForScene();
+void removeSolidFromScene();
 void drawScene();
 void freeScene(); 
 

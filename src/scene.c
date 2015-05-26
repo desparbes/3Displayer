@@ -9,6 +9,8 @@
 #include "color.h"
 #include "SDL/SDL.h"
 
+#define MAXLENGTH 128
+
 static struct {
     Frame camera;
     Frame origin;
@@ -56,6 +58,13 @@ static void initSDL(void)
     }
     SDL_WM_SetCaption("3Displayer", NULL);
     SDL_EnableKeyRepeat(1, 10);
+}
+
+static void cutNewLine(char *input)
+{
+    int i;
+    for (i = 0; input[i] && input[i] != '\n'; i++);
+    input[i] = '\0';
 }
 
 void initScene(void)
@@ -107,6 +116,21 @@ void updateScene(int *stop)
     }  
 }
 
+void askSolidForScene(void)
+{
+    Solid *solid;
+    char objName[MAXLENGTH];
+    char bmpName[MAXLENGTH];
+    printf(".obj path:\n");
+    fgets(objName, MAXLENGTH, stdin);
+    cutNewLine(objName);
+    printf(".bmp path:\n");
+    fgets(bmpName, MAXLENGTH, stdin);
+    cutNewLine(bmpName);
+    if(solid = loadSolid(objName, bmpName))
+	addSolidToScene(solid);
+}
+
 void addSolidToScene(Solid *solid)
 {
     if(scene.nbSolid >= scene.bufferSize){
@@ -118,11 +142,10 @@ void addSolidToScene(Solid *solid)
     scene.solidBuffer[scene.nbSolid++] = solid;   
 }
 
-void removeSolidFromScene(Solid *solid)
+void removeSolidFromScene()
 {
-    int i = 0;
-    while (i < scene.nbSolid && scene.solidBuffer[i++] != solid); //Warning
-    scene.solidBuffer[i] = scene.solidBuffer[--scene.nbSolid];
+    if(scene.nbSolid > 0)
+	freeSolid(scene.solidBuffer[--scene.nbSolid]);
 }
     
 void drawScene(void)

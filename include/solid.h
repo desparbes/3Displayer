@@ -6,12 +6,10 @@
 
 typedef struct Solid Solid;
 
-Solid *initSolid();
-
-int loadSolid(Solid *solid, const char *fileName, const char *bmpName);
-void equationSolid(Solid *solid,
-		   float minS, float maxS, int precisionS,
-		   float minT, float maxT, int precisionT);
+Solid *loadSolid(const char *fileName, const char *bmpName);
+Solid *equationSolid(const char *bmpName,
+		     float minS, float maxS, int precisionS,
+		     float minT, float maxT, int precisionT);
 
 void wireframeSolid(const Solid *solid, const Color *color);
 void vertexSolid(const Solid *solid, const Color *color);

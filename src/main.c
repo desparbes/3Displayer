@@ -5,26 +5,28 @@
 #include "scene.h"
 #include "solid.h"
 
-int main(int argc, char *argv[])
+void handleArgument(int argc, char *argv[])
 {
-    Solid *solid = initSolid();
-
+    Solid *solid;
     switch (argc) {
     case 1:
-	fprintf(stderr, "Usage: ./3Displayer .OBJ_PATH (.BMP_PATH)\n");
-	exit(EXIT_FAILURE);
 	break;
     case 2:
-	loadSolid(solid, argv[1], NULL);
+	if (solid = loadSolid(argv[1], NULL))
+	    addSolidToScene(solid);
 	break;
     default:
-	loadSolid(solid, argv[1], argv[2]);
+	if (solid = loadSolid(argv[1], argv[2]))
+	    addSolidToScene(solid);
 	break;
     }
+}
 
+int main(int argc, char *argv[])
+{
     int stop = 0;
     initScene();
-    addSolidToScene(solid);
+    handleArgument(argc, argv);
     while (!stop) {
 	updateScene(&stop);
 	drawScene();

@@ -133,20 +133,20 @@ void normalSolid(const Solid *solid, const Color *color)
 }
 
 // load .obj files
-int loadSolid(Solid *solid, const char *fileName, const char *bmpName)
+Solid *loadSolid(const char *fileName, const char *bmpName)
 {
     FILE *file = fopen(fileName, "r");
 
     if (file == NULL) {
 	perror(fileName);
-	exit(EXIT_FAILURE);
+        return NULL;
     }
 
     int a = 0, b = 0, c = 0, d = 0, n, stock;
-
+    Solid *solid = malloc(sizeof(Solid));
     char str[MAXLENGTH] = { 0 };
     char f;
-
+    
     solid->numVertices = 0;
     solid->numNormals = 0;
     solid->numCoords = 0;
@@ -172,7 +172,10 @@ int loadSolid(Solid *solid, const char *fileName, const char *bmpName)
     solid->normals = (Point*) malloc(solid->numNormals * sizeof(Point));
     solid->coords = (Texture*) malloc(solid->numCoords * sizeof(Texture));
     solid->faces = (Face *) malloc(solid->numFaces * sizeof(Face));
-    solid->texture = SDL_LoadBMP(bmpName);
+ 
+   if ((solid->texture = SDL_LoadBMP(bmpName)) == NULL) {
+	fprintf(stderr, "%s\n", SDL_GetError());
+    }
 
     rewind(file);
     while (fscanf(file, "%s", str) != EOF) {
@@ -182,8 +185,9 @@ int loadSolid(Solid *solid, const char *fileName, const char *bmpName)
 		 &solid->vertices[a].y,
 		 &solid->vertices[a].z, 
 		 &solid->vertices[a].x) != 3) {
-		fprintf(stderr, "Vertices: ");
-		return -1;
+		fprintf(stderr, "Error loading vertices\n");
+		free(solid);
+		return NULL;
 	    }
 	    a++;
 	} else if (strcmp(str, "vn") == 0) {
@@ -192,8 +196,9 @@ int loadSolid(Solid *solid, const char *fileName, const char *bmpName)
 		 &solid->normals[b].y,
 		 &solid->normals[b].z, 
 		 &solid->normals[b].x) != 3) {
-		fprintf(stderr, "Normals: ");
-		return -1;
+		fprintf(stderr, "Error loading normals\n");
+		free(solid);
+		return NULL;
 	    }
 	    b++;
 	} else if (strcmp(str, "vt") == 0) {
@@ -201,8 +206,9 @@ int loadSolid(Solid *solid, const char *fileName, const char *bmpName)
 		(file, "%f %f\n", 
 		 &solid->coords[c].x,
 		 &solid->coords[c].y) != 2) {
-		fprintf(stderr, "Texture coordinates: ");
-		return -1;
+		fprintf(stderr, "Error loading texture coordinates\n");
+		free(solid);
+		return NULL;
 	    }
 	    solid->coords[c].y = 1 - solid->coords[c].y;
 	    c++;
@@ -222,8 +228,9 @@ int loadSolid(Solid *solid, const char *fileName, const char *bmpName)
 			  &solid->faces[d].vertices[2].point,
 			  &solid->faces[d].vertices[2].coord,
 			  &solid->faces[d].vertices[2].normal) != 3) {
-		fprintf(stderr, "Faces enumeration: ");
-		return -1;
+		fprintf(stderr, "Error during faces enumeration\n");
+		free(solid);
+		return NULL;
 	    }
 
 	    solid->faces[d].vertices[0].point--;
@@ -266,7 +273,7 @@ int loadSolid(Solid *solid, const char *fileName, const char *bmpName)
     }
     calculateOriginSolid(solid);
     fclose(file);
-    return 0;
+    return solid;
 }
 
 static void equation(float s, float t, Point *p)
@@ -292,10 +299,11 @@ static void equation(float s, float t, Point *p)
     //setPoint(p, s, t, t*t - s*s);
 }
 
-void equationSolid(Solid *solid,
-		   float minS, float maxS, int precisionS,
-		   float minT, float maxT, int precisionT)
+Solid *equationSolid(const char *bmpName,
+		  float minS, float maxS, int precisionS,
+		  float minT, float maxT, int precisionT)
 {
+    Solid *solid = malloc(sizeof(Solid));
     int p, f = 0;
     float s = minS, t = minT;
     float ds = (maxS - minS) / (precisionS - 1);
@@ -317,9 +325,8 @@ void equationSolid(Solid *solid,
     setTexture(&solid->coords[2], 1., 0.);
     setTexture(&solid->coords[3], 1., 1.);
 
-    if ((solid->texture = SDL_LoadBMP("textures/white.bmp")) == NULL) {
-	fprintf(stderr, "error loading texture: white.bmp\n");
-	exit(EXIT_FAILURE);
+    if ((solid->texture = SDL_LoadBMP(bmpName)) == NULL) {
+	fprintf(stderr, "%s", SDL_GetError());
     }
 
     for (p = 0; p < solid->numVertices; p++) {
@@ -395,16 +402,13 @@ void equationSolid(Solid *solid,
 	p++;
     }
     calculateOriginSolid(solid);
-}
-
-Solid *initSolid()
-{
-    return malloc(sizeof(Solid));
+    return solid;
 }
 
 void freeSolid(Solid *solid)
 {
-    SDL_FreeSurface(solid->texture);
+    if (solid->texture != NULL)
+	SDL_FreeSurface(solid->texture);
     free(solid->vertices);
     free(solid->normals);
     free(solid->coords);
