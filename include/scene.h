@@ -12,6 +12,7 @@ void addSolidToScene(Solid *solid);
 void askSolidForScene();
 void removeSolidFromScene();
 void drawScene();
+void handleArgumentScene(int argc, char *argv[]);
 void freeScene(); 
 
 Frame *getCamera();

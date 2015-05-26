@@ -170,6 +170,24 @@ void drawScene(void)
     SDL_Flip(scene.screen);
 }
 
+void handleArgumentScene(int argc, char *argv[])
+{
+    Solid *solid;
+    switch (argc) {
+    case 1:
+	break;
+    case 2:
+	if (solid = loadSolid(argv[1], NULL))
+	    addSolidToScene(solid);
+	break;
+    default:
+	if (solid = loadSolid(argv[1], argv[2]))
+	    addSolidToScene(solid);
+	break;
+    }
+}
+
+
 Frame *getCamera(void)
 {
     return &scene.camera;
