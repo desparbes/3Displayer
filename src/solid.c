@@ -9,6 +9,7 @@
 #include "texture.h"
 #include "project.h"
 #include "solid.h"
+#include "equation.h"
 
 #define MAXLENGTH 256
 #define EPSILON 0.001
@@ -100,7 +101,7 @@ void wireframeSolid(const Solid *solid, const Color *color)
 	Face *f = &solid->faces[i];
 	for (k = 0; k < 3; k++) {
 	    int point1 = f->vertices[k].point;
-	    int point2 = f->vertices[(k+1)%2].point;
+	    int point2 = f->vertices[(k+1)%3].point;
 	    projectSegment(&solid->vertices[point1],
 			   &solid->vertices[point2], color);
 	}
@@ -276,33 +277,21 @@ Solid *loadSolid(const char *fileName, const char *bmpName)
     return solid;
 }
 
-static void equation(float s, float t, Point *p)
+Solid *equationSolid(const char *eqName, const char *bmpName)
 {
-    //sphere
-    //setPoint(p, sin(s) * cos(t), cos(s) * cos(t), sin(t));
+    float minS, maxS, minT, maxT;
+    int precisionS, precisionT;
+    char x[MAXLENGTH];
+    char y[MAXLENGTH];
+    char z[MAXLENGTH];
     
-    //setPoint(p, s, t, 1 / (1 + s*s + t*t));
+    if (!extractEquation(&minS, &maxS, &precisionS,
+			 &minT, &maxT, &precisionT,
+			 x, y, z, MAXLENGTH, eqName)) {
+	fprintf(stderr, "Error loading equation intervals\n");
+	return NULL;
+    }
 
-    //Möbius
-    //setPoint(p,
-    //         (2 + t * cos(s)) * cos(2*s),
-    //	       (2 + t * cos(s)) * sin(2*s),
-    //	        t * sin(s));
-
-    // torus
-    setPoint(p,
-	     sin(s) * (2 + cos(t)),
-	     cos(s) * (2 + cos(t)),
-	     -sin(t));
-
-    //paraboloid
-    //setPoint(p, s, t, t*t - s*s);
-}
-
-Solid *equationSolid(const char *bmpName,
-		  float minS, float maxS, int precisionS,
-		  float minT, float maxT, int precisionT)
-{
     Solid *solid = malloc(sizeof(Solid));
     int p, f = 0;
     float s = minS, t = minT;
@@ -326,17 +315,17 @@ Solid *equationSolid(const char *bmpName,
     setTexture(&solid->coords[3], 1., 1.);
 
     if ((solid->texture = SDL_LoadBMP(bmpName)) == NULL) {
-	fprintf(stderr, "%s", SDL_GetError());
+	fprintf(stderr, "%s\n", SDL_GetError());
     }
 
     for (p = 0; p < solid->numVertices; p++) {
-	equation(s, t, &solid->vertices[p]);
+	getValueFromEquation(x, y, z, s, t, &solid->vertices[p]);
 	Point tt, uu, vv, aa;
-	equation(s - ds, t, &tt);
-	equation(s + ds, t, &uu);
+        getValueFromEquation(x, y, z, s - ds, t, &tt);
+	getValueFromEquation(x, y, z, s + ds, t, &uu);
 	diffPoint(&tt, &uu, &vv);
-	equation(s, t + dt, &tt);
-	equation(s, t - dt, &uu);
+	getValueFromEquation(x, y, z, s, t + dt, &tt);
+	getValueFromEquation(x, y, z, s, t - dt, &uu);
 	diffPoint(&tt, &uu, &tt);
 	pointProduct(&vv, &tt, &normal);
 	//solid->normals[p] = diffPoint(equation(s, t + dt), equation(s, t - dt));
@@ -344,8 +333,8 @@ Solid *equationSolid(const char *bmpName,
 	if (normPoint(&normal) < EPSILON) {
 	    //solid->normals[p] = diffPoint(equation(s, t), equation(s, t + dt));
 	    diffPoint(&uu, &tt, &tt);
-	    equation(s + ds, t + dt, &uu);
-	    equation(s - ds, t - dt, &vv);
+	    getValueFromEquation(x, y, z, s + ds, t + dt, &uu);
+	    getValueFromEquation(x, y, z, s - ds, t - dt, &vv);
 	    diffPoint(&uu, &vv, &vv);
 	    pointProduct(&vv ,&tt, &aa);
 	    normalizePoint(&aa, &solid->normals[p]);

@@ -121,13 +121,34 @@ void askSolidForScene(void)
     Solid *solid;
     char objName[MAXLENGTH];
     char bmpName[MAXLENGTH];
-    printf(".obj path:\n");
+
+    printf(".obj path: ");
     fgets(objName, MAXLENGTH, stdin);
     cutNewLine(objName);
-    printf(".bmp path:\n");
+
+    printf(".bmp path: ");
     fgets(bmpName, MAXLENGTH, stdin);
     cutNewLine(bmpName);
-    if(solid = loadSolid(objName, bmpName))
+
+    if (solid = loadSolid(objName, bmpName))
+	addSolidToScene(solid);
+}
+
+void askEquationForScene(void)
+{
+    Solid *solid;
+    char eqName[MAXLENGTH];
+    char bmpName[MAXLENGTH];
+
+    printf(".eq path: ");
+    fgets(eqName, MAXLENGTH, stdin);
+    cutNewLine(eqName);
+    
+    printf(".bmp path: ");
+    fgets(bmpName, MAXLENGTH, stdin);
+    cutNewLine(bmpName);
+
+    if (solid = equationSolid(eqName, bmpName))
 	addSolidToScene(solid);
 }
 

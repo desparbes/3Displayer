@@ -7,10 +7,7 @@
 typedef struct Solid Solid;
 
 Solid *loadSolid(const char *fileName, const char *bmpName);
-Solid *equationSolid(const char *bmpName,
-		     float minS, float maxS, int precisionS,
-		     float minT, float maxT, int precisionT);
-
+Solid *equationSolid(const char *eqName, const char *bmpName);
 void wireframeSolid(const Solid *solid, const Color *color);
 void vertexSolid(const Solid *solid, const Color *color);
 void normalSolid(const Solid *solid, const Color *color);

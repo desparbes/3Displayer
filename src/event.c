@@ -150,6 +150,9 @@ void handleKeyUpEvent(SDL_Event *event)
     case SDLK_u:
 	removeSolidFromScene();
 	break;
+    case SDLK_e:
+	askEquationForScene();
+	break;
     default:
 	break;
     }

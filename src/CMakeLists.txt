@@ -11,6 +11,7 @@ set(
   solid.c
   scene.c
   frame.c
+  equation.c
 )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})
