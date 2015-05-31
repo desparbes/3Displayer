@@ -37,6 +37,10 @@ enum {
     PLUS, MINUS, TIMES, OVER
 };
 
+enum {
+    POTENTIAL, ACCEPT, REFUSE
+};
+
 static inline int isNumber(char c)
 {
     return (c >= '0' && c <= '9');
@@ -102,6 +106,18 @@ static float analyseVariable(char c, float s, float t)
     return 0.;
 }
 
+static void handleFunction(int id, char xyz, char f, int fFinalCharId, int j)
+{
+    if ((getState(Equation.state, id) == POTENTIAL && 
+	 j < fFinalCharId && xyz != f) ||
+	(getState(Equation.state, id) == ACCEPT && j > fFinalCharId))
+	setState(Equation.state, REFUSE, id);
+    if (getState(Equation.state, id) == POTENTIAL && 
+	j == fFinalCharId && xyz == f)
+	setState(Equation.state, ACCEPT, id);
+}
+
+
 static int analyseFunction(char *xyz, int *i)
 {
     int j = 0;
@@ -109,21 +125,17 @@ static int analyseFunction(char *xyz, int *i)
     char *sin = "sin";
     char *sqrt = "sqrt";
     char *sqr = "sqr";
-    resetState(Equation.state);
-
+    resetState(Equation.state, POTENTIAL);
+   
     while(isLetter(xyz[*i])) {
-	if (j < 3 && xyz[*i] != cos[j])
-	    setRefuseState(Equation.state, COS);
-	if (j < 3 && xyz[*i] != sin[j])
-	    setRefuseState(Equation.state, SIN);
-	if (j < 4 && xyz[*i] != sqrt[j])
-	    setRefuseState(Equation.state, SQRT);
-	if (j < 3 && xyz[*i] != sqr[j])
-	    setRefuseState(Equation.state, SQR);
+	handleFunction(COS, xyz[*i], cos[j], 2, j);
+	handleFunction(SIN, xyz[*i], sin[j], 2, j);
+	handleFunction(SQRT, xyz[*i], sqrt[j], 3, j);
+	handleFunction(SQR, xyz[*i], sqr[j], 2, j);
 	j++;
 	(*i)++;
     }
-    return analyseState(Equation.state);
+    return analyseState(Equation.state, ACCEPT);
 }
 
 static int isBinaryOperator(char c)
@@ -285,49 +297,49 @@ int initEquation(float *minS, float *maxS, int *precisionS,
     char str[MAXLENGTH];
     
     while (fscanf(file, "%s", str) != EOF) {
-	if (strcmp(str, "minS") == 0 && fscanf(file, "%f\n", minS) != 1) {
+	if (strcmp(str, "minS") == 0 && fscanf(file, "%f", minS) != 1) {
 		fprintf(stderr, "Error loading minS\n");
 		fclose(file);
 		return 0;
 	}
-	if (strcmp(str, "maxS") == 0 && fscanf(file, "%f\n", maxS) != 1) {
+	if (strcmp(str, "maxS") == 0 && fscanf(file, "%f", maxS) != 1) {
 		fprintf(stderr, "Error loading maxS\n");
 		fclose(file);
 		return 0;
 	}
 	if (strcmp(str, "precisionS") == 0 && 
-	    fscanf(file, "%d\n", precisionS) != 1) {
+	    fscanf(file, "%d", precisionS) != 1) {
 		fprintf(stderr, "Error loading precisionS\n");
 		fclose(file);
 		return 0;
 	}
-	if (strcmp(str, "minT") == 0 && fscanf(file, "%f\n", minT) != 1) {
+	if (strcmp(str, "minT") == 0 && fscanf(file, "%f", minT) != 1) {
 		fprintf(stderr, "Error loading minT\n");
 		fclose(file);
 		return 0;
 	}
-	if (strcmp(str, "maxT") == 0 && fscanf(file, "%f\n", maxT) != 1) {
+	if (strcmp(str, "maxT") == 0 && fscanf(file, "%f", maxT) != 1) {
 		fprintf(stderr, "Error loading maxT\n");
 		fclose(file);
 		return 0;
 	}
 	if (strcmp(str, "precisionT") == 0 && 
-	    fscanf(file, "%d\n", precisionT) != 1) {
+	    fscanf(file, "%d", precisionT) != 1) {
 		fprintf(stderr, "Error loading precisionT\n");
 		fclose(file);
 		return 0;
 	}
-	if (strcmp(str, "x") == 0 && fscanf(file, "%s\n", x) != 1) {
+	if (strcmp(str, "x") == 0 && fscanf(file, "%s", x) != 1) {
 		fprintf(stderr, "Error loading x\n");
 		fclose(file);
 		return 0;
 	}
-	if (strcmp(str, "y") == 0 && fscanf(file, "%s\n", y) != 1) {
+	if (strcmp(str, "y") == 0 && fscanf(file, "%s", y) != 1) {
 		fprintf(stderr, "Error loading y\n");
 		fclose(file);
 		return 0;
 	}
-	if (strcmp(str, "z") == 0 && fscanf(file, "%s\n", z) != 1) {
+	if (strcmp(str, "z") == 0 && fscanf(file, "%s", z) != 1) {
 		fprintf(stderr, "Error loading z\n");
 		fclose(file);
 		return 0;

@@ -1,9 +1,9 @@
-minS 0
+minS -1
 maxS 1
-precisionS 3
-minT 0
+precisionS 20
+minT -1
 maxT 1
-precisionT 3
+precisionT 20
 x s
 y t
 z 0

@@ -6,4 +6,4 @@ maxT 6.28
 precisionT 20
 x (sin(s)*(2+cos(t)))
 y (cos(s)*(2+cos(t)))
-z (sin(t))
+z (0-sin(t))

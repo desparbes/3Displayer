@@ -297,7 +297,7 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
 	fprintf(stderr, "Error loading equation\n");
 	return NULL;
     } else 
-	printf("Equation successfully loaded\n");
+	printf("Equation successfully initialized\n");
 
     Solid *solid = malloc(sizeof(Solid));
     int p, f = 0;
@@ -333,7 +333,8 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
 	Point *normal = &solid->normals[p];
 	Point u;
 	Point v;
-
+	
+	printf("%d => s: %f, t: %f\n", p, s, t);
 	printf("%d => x: %f, y: %f, z: %f\n", p, O->x, O->y, O->z);
 
         if (p == solid->numVertices - 1) { // north-east
@@ -343,7 +344,7 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
 	    A = &solid->vertices[p + precisionS];
 	    B = &solid->vertices[p - 1];
 
-	    getValueFromEquation(x, y, z, s, t, A);
+	    getValueFromEquation(x, y, z, s, t + dt, A);
 	    s = minS;
 	    t += dt;
 	} else if (p >= (solid->numVertices - precisionS)) { // north
@@ -355,14 +356,14 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
 	    A = &solid->vertices[p + 1];
 	    B = &solid->vertices[p + precisionS];
 	    
-	    getValueFromEquation(x, y, z, s, t, A);
-	    getValueFromEquation(x, y, z, s, t, B);
+	    getValueFromEquation(x, y, z, s + ds, t, A);
+	    getValueFromEquation(x, y, z, s, t + dt, B);
 	    s += ds;
 	} else { // elsewhere
 	    A = &solid->vertices[p + 1];
 	    B = &solid->vertices[p + precisionS];
 	    
-	    getValueFromEquation(x, y, z, s, t, B);
+	    getValueFromEquation(x, y, z, s, t + dt, B);
 	    s += ds;
 	}
 	diffPoint(A, O, &u);
@@ -402,6 +403,7 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
     }
     calculateOriginSolid(solid);
     freeEquation();
+    printf("Equation successfully loaded\n");
     return solid;
 }
 

@@ -6,4 +6,4 @@ maxT 1
 precisionT 20
 x s
 y t
-z t*t-s*s
+z (sqr(t)-sqr(s))
