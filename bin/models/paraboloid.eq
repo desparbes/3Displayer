@@ -1,0 +1,9 @@
+minS -1
+maxS 1
+precisionS 20
+minT -1
+maxT 1
+precisionT 20
+x s
+y t
+z t*t-s*s

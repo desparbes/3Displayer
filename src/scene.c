@@ -130,7 +130,7 @@ void askSolidForScene(void)
     fgets(bmpName, MAXLENGTH, stdin);
     cutNewLine(bmpName);
 
-    if (solid = loadSolid(objName, bmpName))
+    if ((solid = loadSolid(objName, bmpName)))
 	addSolidToScene(solid);
 }
 
@@ -148,7 +148,7 @@ void askEquationForScene(void)
     fgets(bmpName, MAXLENGTH, stdin);
     cutNewLine(bmpName);
 
-    if (solid = equationSolid(eqName, bmpName))
+    if ((solid = equationSolid(eqName, bmpName)))
 	addSolidToScene(solid);
 }
 
@@ -171,7 +171,8 @@ void removeSolidFromScene()
     
 void drawScene(void)
 {
-    SDL_FillRect(scene.screen, NULL, SDL_MapRGB(scene.screen->format, 0, 0, 0));
+    SDL_FillRect(scene.screen, NULL, SDL_MapRGB(scene.screen->format, 
+						128, 128, 128));
     resetZBuffer(scene.zBuffer);
     Color color;
     if (getDrawEvent())
@@ -198,11 +199,11 @@ void handleArgumentScene(int argc, char *argv[])
     case 1:
 	break;
     case 2:
-	if (solid = loadSolid(argv[1], NULL))
+	if ((solid = loadSolid(argv[1], NULL)))
 	    addSolidToScene(solid);
 	break;
     default:
-	if (solid = loadSolid(argv[1], argv[2]))
+	if ((solid = loadSolid(argv[1], argv[2])))
 	    addSolidToScene(solid);
 	break;
     }

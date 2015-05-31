@@ -15,5 +15,5 @@ set(
 )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})
-target_link_libraries(3Displayer m SDL)
+target_link_libraries(3Displayer m SDL swap state stack)
 install(TARGETS 3Displayer DESTINATION .)

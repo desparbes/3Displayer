@@ -174,9 +174,10 @@ Solid *loadSolid(const char *fileName, const char *bmpName)
     solid->coords = (Texture*) malloc(solid->numCoords * sizeof(Texture));
     solid->faces = (Face *) malloc(solid->numFaces * sizeof(Face));
  
-   if ((solid->texture = SDL_LoadBMP(bmpName)) == NULL) {
-	fprintf(stderr, "%s\n", SDL_GetError());
-    }
+   if ((solid->texture = SDL_LoadBMP(bmpName)) == NULL)
+       fprintf(stderr, "%s\n", SDL_GetError());
+   else
+       printf("Texture successfully loaded\n");
 
     rewind(file);
     while (fscanf(file, "%s", str) != EOF) {
@@ -188,6 +189,7 @@ Solid *loadSolid(const char *fileName, const char *bmpName)
 		 &solid->vertices[a].x) != 3) {
 		fprintf(stderr, "Error loading vertices\n");
 		free(solid);
+		fclose(file);
 		return NULL;
 	    }
 	    a++;
@@ -199,6 +201,7 @@ Solid *loadSolid(const char *fileName, const char *bmpName)
 		 &solid->normals[b].x) != 3) {
 		fprintf(stderr, "Error loading normals\n");
 		free(solid);
+		fclose(file);
 		return NULL;
 	    }
 	    b++;
@@ -209,6 +212,7 @@ Solid *loadSolid(const char *fileName, const char *bmpName)
 		 &solid->coords[c].y) != 2) {
 		fprintf(stderr, "Error loading texture coordinates\n");
 		free(solid);
+		fclose(file);
 		return NULL;
 	    }
 	    solid->coords[c].y = 1 - solid->coords[c].y;
@@ -231,6 +235,7 @@ Solid *loadSolid(const char *fileName, const char *bmpName)
 			  &solid->faces[d].vertices[2].normal) != 3) {
 		fprintf(stderr, "Error during faces enumeration\n");
 		free(solid);
+		fclose(file);
 		return NULL;
 	    }
 
@@ -273,6 +278,7 @@ Solid *loadSolid(const char *fileName, const char *bmpName)
 	}
     }
     calculateOriginSolid(solid);
+    printf("Solid successfully loaded\n");
     fclose(file);
     return solid;
 }
@@ -285,19 +291,19 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
     char y[MAXLENGTH];
     char z[MAXLENGTH];
     
-    if (!extractEquation(&minS, &maxS, &precisionS,
-			 &minT, &maxT, &precisionT,
-			 x, y, z, MAXLENGTH, eqName)) {
-	fprintf(stderr, "Error loading equation intervals\n");
+    if (!initEquation(&minS, &maxS, &precisionS,
+		      &minT, &maxT, &precisionT,
+		      x, y, z, MAXLENGTH, eqName)) {
+	fprintf(stderr, "Error loading equation\n");
 	return NULL;
-    }
+    } else 
+	printf("Equation successfully loaded\n");
 
     Solid *solid = malloc(sizeof(Solid));
     int p, f = 0;
     float s = minS, t = minT;
     float ds = (maxS - minS) / (precisionS - 1);
     float dt = (maxT - minT) / (precisionT - 1);
-    Point normal;
 
     solid->numVertices = precisionS * precisionT;
     solid->numNormals = solid->numVertices;
@@ -314,51 +320,55 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
     setTexture(&solid->coords[2], 1., 0.);
     setTexture(&solid->coords[3], 1., 1.);
 
-    if ((solid->texture = SDL_LoadBMP(bmpName)) == NULL) {
+    if ((solid->texture = SDL_LoadBMP(bmpName)) == NULL)
 	fprintf(stderr, "%s\n", SDL_GetError());
-    }
+    
+    if (solid->numVertices > 0)
+	getValueFromEquation(x, y, z, s, t, &solid->vertices[0]);	
 
     for (p = 0; p < solid->numVertices; p++) {
-	getValueFromEquation(x, y, z, s, t, &solid->vertices[p]);
-	Point tt, uu, vv, aa;
-        getValueFromEquation(x, y, z, s - ds, t, &tt);
-	getValueFromEquation(x, y, z, s + ds, t, &uu);
-	diffPoint(&tt, &uu, &vv);
-	getValueFromEquation(x, y, z, s, t + dt, &tt);
-	getValueFromEquation(x, y, z, s, t - dt, &uu);
-	diffPoint(&tt, &uu, &tt);
-	pointProduct(&vv, &tt, &normal);
-	//solid->normals[p] = diffPoint(equation(s, t + dt), equation(s, t - dt));
+	Point *A;
+	Point *B;
+	Point *O = &solid->vertices[p];
+	Point *normal = &solid->normals[p];
+	Point u;
+	Point v;
 
-	if (normPoint(&normal) < EPSILON) {
-	    //solid->normals[p] = diffPoint(equation(s, t), equation(s, t + dt));
-	    diffPoint(&uu, &tt, &tt);
-	    getValueFromEquation(x, y, z, s + ds, t + dt, &uu);
-	    getValueFromEquation(x, y, z, s - ds, t - dt, &vv);
-	    diffPoint(&uu, &vv, &vv);
-	    pointProduct(&vv ,&tt, &aa);
-	    normalizePoint(&aa, &solid->normals[p]);
-	}
-	else
-	    normalizePoint(&normal, &solid->normals[p]);
-	
-	/*solid->normals[p] = pointProduct(sumPoint(diffPoint(equation(s, t + dt),
-	  equation(s, t - dt)),
-	  diffPoint(equation(s + ds, t + dt), equation(s - ds, t - dt))),
-	  sumPoint(diffPoint(equation(s + ds, t), equation(s - ds, t)),
-	  diffPoint(equation(s - ds, t + dt), equation(s + ds, t - dt)))); */
-	//solid->normals[p] = diffPoint(equation(s - ds, t), equation(s + ds, t));
+	printf("%d => x: %f, y: %f, z: %f\n", p, O->x, O->y, O->z);
 
-	if (p % precisionS != precisionS - 1)
-	    s += ds;
-	else {
+        if (p == solid->numVertices - 1) { // north-east
+	    A = &solid->vertices[p - 1];
+	    B = &solid->vertices[p - precisionS];
+	} else if (p % precisionS == precisionS - 1) { // east
+	    A = &solid->vertices[p + precisionS];
+	    B = &solid->vertices[p - 1];
+
+	    getValueFromEquation(x, y, z, s, t, A);
 	    s = minS;
 	    t += dt;
+	} else if (p >= (solid->numVertices - precisionS)) { // north
+	    A = &solid->vertices[p - precisionS];
+	    B = &solid->vertices[p + 1];
+
+	    s += ds;
+	} else if (p < precisionS) { // south
+	    A = &solid->vertices[p + 1];
+	    B = &solid->vertices[p + precisionS];
+	    
+	    getValueFromEquation(x, y, z, s, t, A);
+	    getValueFromEquation(x, y, z, s, t, B);
+	    s += ds;
+	} else { // elsewhere
+	    A = &solid->vertices[p + 1];
+	    B = &solid->vertices[p + precisionS];
+	    
+	    getValueFromEquation(x, y, z, s, t, B);
+	    s += ds;
 	}
-	//solid->normals[p] = pointProduct(diffPoint(solid->vertices[p - 1],
-	// solid->vertices[p + 1]),
-	// diffPoint(solid->vertices[p - precisionS],
-	// solid->vertices[p + precisionS]));
+	diffPoint(A, O, &u);
+	diffPoint(B, O, &v);
+	pointProduct(&u, &v, normal);
+	normalizePoint(normal, normal);
     }
 
     p = 0;
@@ -391,6 +401,7 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
 	p++;
     }
     calculateOriginSolid(solid);
+    freeEquation();
     return solid;
 }
 

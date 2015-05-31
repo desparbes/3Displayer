@@ -1,0 +1,9 @@
+minS 0
+maxS 6.28
+precisionS 20
+minT -1.57
+maxT 1.57
+precisionT 20
+x (sin(s)*cos(t))
+y (cos(s)*cos(t))
+z (0-sin(s))

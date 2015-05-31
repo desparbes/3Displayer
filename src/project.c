@@ -78,7 +78,9 @@ void projectSegment(const Point *A, const Point *B, const Color *color)
 	projectPoint(A, B, &AB);
 	projectCoord(&OA, depthA, &t);
 	projectCoord(&AB, nearplan, &u);
-    }
+    } else
+	return;
+
     drawSegment(&t, &u, depthA, depthB, color);
 }
 

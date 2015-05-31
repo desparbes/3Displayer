@@ -3,10 +3,13 @@
 
 #include "point.h"
 
-int extractEquation(float *minS, float *maxS, int *precisionS,
-		    float *minT, float *maxT, int *precisionT,
-		    char *x, char *y, char *z, int stringSize, char *eqName);
+int initEquation(float *minS, float *maxS, int *precisionS,
+		 float *minT, float *maxT, int *precisionT,
+		 char *x, char *y, char *z, int stringSize, 
+		 const char *eqName);
 void getValueFromEquation(char *x, char *y, char *z, 
 			  float s, float t, Point *p);
+void freeEquation();
+
 
 #endif // EQUATION_H
