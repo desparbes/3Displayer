@@ -48,8 +48,8 @@ void handleMouseMotionEvent(SDL_Event *event)
 	    state.phi += state.rotationSpeed;
 	else if (state.mouseHeight < event->motion.y)
 	    state.phi -= state.rotationSpeed;
+	rotateFrame(getCamera(), state.theta, state.phi, state.rho);
     }
-    rotateFrame(getCamera(), state.theta, state.phi, state.rho);
     state.mouseWidth = event->motion.x;
     state.mouseHeight = event->motion.y;
 }
@@ -70,6 +70,18 @@ void handleMouseButtonDownEvent(SDL_Event *event)
     switch (event->button.button) {
     case SDL_BUTTON_RIGHT:
 	state.rightClickDown = 1;
+	break;
+    case SDL_BUTTON_WHEELUP:
+	translateFrame(getCamera(), 
+		       state.translationSpeed * getCamera()->j.x,
+		       state.translationSpeed * getCamera()->j.y,
+		       state.translationSpeed * getCamera()->j.z);
+	break;
+    case SDL_BUTTON_WHEELDOWN:
+	translateFrame(getCamera(), 
+		       -state.translationSpeed * getCamera()->j.x,
+		       -state.translationSpeed * getCamera()->j.y,
+		       -state.translationSpeed * getCamera()->j.z);
 	break;
     default:
 	break;
@@ -93,23 +105,11 @@ void handleKeyDownEvent(SDL_Event *event, int *stop)
 	break;
     case SDLK_UP:
 	translateFrame(getCamera(), 
-		       state.translationSpeed * getCamera()->j.x,
-		       state.translationSpeed * getCamera()->j.y, 
-		       state.translationSpeed * getCamera()->j.z);
-	break;
-    case SDLK_DOWN:
-	translateFrame(getCamera(), 
-		       -state.translationSpeed * getCamera()->j.x,
-		       -state.translationSpeed * getCamera()->j.y, 
-		       -state.translationSpeed * getCamera()->j.z);
-	break;
-    case SDLK_KP_PLUS:
-	translateFrame(getCamera(), 
 		       state.translationSpeed * getCamera()->k.x,
 		       state.translationSpeed * getCamera()->k.y, 
 		       state.translationSpeed * getCamera()->k.z);
 	break;
-    case SDLK_KP_MINUS:
+    case SDLK_DOWN:
 	translateFrame(getCamera(), 
 		       -state.translationSpeed * getCamera()->k.x,
 		       -state.translationSpeed * getCamera()->k.y, 
@@ -143,6 +143,7 @@ void handleKeyUpEvent(SDL_Event *event)
 	break;
     case SDLK_r:
 	resetFrame(getCamera(), 0., -5., 0.);
+	resetEvent();
 	break;
     case SDLK_l:
 	askSolidForScene();

@@ -333,9 +333,6 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
 	Point *normal = &solid->normals[p];
 	Point u;
 	Point v;
-	
-	printf("%d => s: %f, t: %f\n", p, s, t);
-	printf("%d => x: %f, y: %f, z: %f\n", p, O->x, O->y, O->z);
 
         if (p == solid->numVertices - 1) { // north-east
 	    A = &solid->vertices[p - 1];

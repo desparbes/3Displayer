@@ -29,6 +29,7 @@ static struct {
     float nearplan;
     float farplan;
     float *zBuffer;
+    int *backBuffer;
 } scene;
 
 static void resetZBuffer(float *zBuffer)
@@ -36,6 +37,13 @@ static void resetZBuffer(float *zBuffer)
     int size = scene.screenWidth * scene.screenHeight;
     for (int i = 0; i < size; i++)
 	zBuffer[i] = -1.;
+}
+
+static void resetBackBuffer(int *backBuffer)
+{
+    int size = scene.screenWidth * scene.screenHeight;
+    for (int i = 0; i < size; i++)
+	backBuffer[i] = -1.;
 }
 
 static void initLight(Point *light, float x, float y, float z)
@@ -86,6 +94,8 @@ void initScene(void)
     scene.solidBuffer = malloc(scene.bufferSize * sizeof(Solid*));
     scene.zBuffer = malloc(scene.screenWidth * scene.screenHeight * 
 			   sizeof(float));
+    scene.backBuffer = malloc(scene.screenWidth * scene.screenHeight * 
+			   sizeof(int));
     initSDL();
 }
 
@@ -174,6 +184,7 @@ void drawScene(void)
     SDL_FillRect(scene.screen, NULL, SDL_MapRGB(scene.screen->format, 
 						128, 128, 128));
     resetZBuffer(scene.zBuffer);
+    resetBackBuffer(scene.backBuffer);
     Color color;
     if (getDrawEvent())
 	for (int i = 0; i < scene.nbSolid; i++)
@@ -195,20 +206,26 @@ void drawScene(void)
 void handleArgumentScene(int argc, char *argv[])
 {
     Solid *solid;
+
     switch (argc) {
-    case 1:
+    case 3:
+	if ((strcmp(argv[1], "-l") == 0 && 
+	     (solid = loadSolid(argv[2], NULL))) ||
+	    (strcmp(argv[1], "-e") == 0 && 
+	     (solid = equationSolid(argv[2], NULL))))
+	    addSolidToScene(solid);
 	break;
-    case 2:
-	if ((solid = loadSolid(argv[1], NULL)))
+    case 4:
+	if ((strcmp(argv[1], "-l") == 0 && 
+	     (solid = loadSolid(argv[2], argv[3]))) ||
+	    (strcmp(argv[1], "-e") == 0 && 
+	     (solid = equationSolid(argv[2], argv[3]))))
 	    addSolidToScene(solid);
 	break;
     default:
-	if ((solid = loadSolid(argv[1], argv[2])))
-	    addSolidToScene(solid);
 	break;
     }
 }
-
 
 Frame *getCamera(void)
 {
@@ -260,12 +277,18 @@ float *getZBuffer(void)
     return scene.zBuffer;
 }
 
+int *getBackBuffer(void)
+{
+    return scene.backBuffer;
+}
+
 void freeScene(void)
 {
     for(int i = 0; i < scene.nbSolid; i++)
 	freeSolid(scene.solidBuffer[i]);
     free(scene.solidBuffer);
     free(scene.zBuffer);
+    free(scene.backBuffer);
     SDL_FreeSurface(scene.screen);
     SDL_Quit();
 }
