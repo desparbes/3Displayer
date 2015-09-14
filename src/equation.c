@@ -345,6 +345,7 @@ int initEquation(float *minS, float *maxS, int *precisionS,
 		return 0;
 	}
     }
+
     fclose(file);
     return 1;
 }

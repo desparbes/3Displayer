@@ -1,9 +1,9 @@
 minS 0
 maxS 6.28
-precisionS 20
-minT 0
-maxT 6.28
-precisionT 20
+precisionS 80
+minT -1
+maxT 1
+precisionT 2
 x ((2+(t*cos(s)))*cos((2*s)))
 y ((2+(t*cos(s)))*sin((2*s)))
 z (t*sin(s))
