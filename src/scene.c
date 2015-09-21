@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "scene.h"
 #include "event.h"
@@ -8,6 +9,9 @@
 #include "solid.h"
 #include "color.h"
 #include "SDL/SDL.h"
+
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #define MAXLENGTH 128
 
@@ -68,12 +72,12 @@ static void initSDL(void)
     SDL_EnableKeyRepeat(1, 10);
 }
 
-static void cutNewLine(char *input)
-{
-    int i;
-    for (i = 0; input[i] && input[i] != '\n'; i++);
-    input[i] = '\0';
-}
+/* static void cutNewLine(char *input) */
+/* { */
+/*     int i; */
+/*     for (i = 0; input[i] && input[i] != '\n'; i++); */
+/*     input[i] = '\0'; */
+/* } */
 
 void initScene(void)
 {
@@ -95,7 +99,7 @@ void initScene(void)
     scene.zBuffer = malloc(scene.screenWidth * scene.screenHeight * 
 			   sizeof(float));
     scene.backBuffer = malloc(scene.screenWidth * scene.screenHeight * 
-			   sizeof(int));
+			      sizeof(int));
     initSDL();
 }
 
@@ -103,63 +107,74 @@ void updateScene(int *stop)
 {
     SDL_Event event;
     SDL_WaitEvent(&event);
-
-    switch (event.type) {
-    case SDL_QUIT:
-	*stop = 1;
-	break;
-    case SDL_KEYDOWN:
-	handleKeyDownEvent(&event, stop);
-	break;
-    case SDL_KEYUP:
-	handleKeyUpEvent(&event);
-	break;
-    case SDL_MOUSEMOTION:
-	handleMouseMotionEvent(&event);
-	break;
-    case SDL_MOUSEBUTTONUP:
-	handleMouseButtonUpEvent(&event);
-	break;
-    case SDL_MOUSEBUTTONDOWN:
-	handleMouseButtonDownEvent(&event);
-	break;
-    }  
+    do {
+	switch (event.type) {
+	case SDL_QUIT:
+	    *stop = 1;
+	    break;
+	case SDL_KEYDOWN:
+	    handleKeyDownEvent(&event, stop);
+	    break;
+	case SDL_KEYUP:
+	    handleKeyUpEvent(&event);
+	    break;
+	case SDL_MOUSEMOTION:
+	    handleMouseMotionEvent(&event);
+	    break;
+	case SDL_MOUSEBUTTONUP:
+	    handleMouseButtonUpEvent(&event);
+	    break;
+	case SDL_MOUSEBUTTONDOWN:
+	    handleMouseButtonDownEvent(&event);
+	    break;
+	}
+    } while (SDL_PollEvent(&event));
 }
 
+static void remove_space(char *buf)
+{
+    while (*buf) {
+	if (*buf == ' ') {
+	    *buf = 0;
+	    return;
+	}
+	++buf;
+    }
+}
 void askSolidForScene(void)
 {
     Solid *solid;
-    char objName[MAXLENGTH];
-    char bmpName[MAXLENGTH];
+    char *buf, *objstr;
+    
+    buf = readline("obj path: ");
+    remove_space(buf);
+    objstr = strdup(buf);
+    add_history(buf);
+    buf = readline("bmp path: ");
+    remove_space(buf);    
 
-    printf(".obj path: ");
-    fgets(objName, MAXLENGTH, stdin);
-    cutNewLine(objName);
-
-    printf(".bmp path: ");
-    fgets(bmpName, MAXLENGTH, stdin);
-    cutNewLine(bmpName);
-
-    if ((solid = loadSolid(objName, bmpName)))
+    if ((solid = loadSolid(objstr, buf)))
 	addSolidToScene(solid);
+    free(objstr);
+    add_history(buf);
 }
 
 void askEquationForScene(void)
 {
     Solid *solid;
-    char eqName[MAXLENGTH];
-    char bmpName[MAXLENGTH];
-
-    printf(".eq path: ");
-    fgets(eqName, MAXLENGTH, stdin);
-    cutNewLine(eqName);
+    char *buf, *eqstr;
     
-    printf(".bmp path: ");
-    fgets(bmpName, MAXLENGTH, stdin);
-    cutNewLine(bmpName);
-
-    if ((solid = equationSolid(eqName, bmpName)))
+    buf = readline("eq path: ");
+    remove_space(buf);
+    eqstr = strdup(buf);
+    add_history(buf);
+    buf = readline("bmp path: ");
+    remove_space(buf);
+    
+    if ((solid = equationSolid(eqstr, buf)))
 	addSolidToScene(solid);
+    free(eqstr);
+    add_history(buf);
 }
 
 void addSolidToScene(Solid *solid)
