@@ -7,7 +7,7 @@ void resetEvent();
 void handleMouseMotionEvent(SDL_Event *event);
 void handleMouseButtonUpEvent(SDL_Event *event);
 void handleMouseButtonDownEvent(SDL_Event *event);
-void handleKeyDownEvent(SDL_Event *event, int *stop);
+void handleKeyDownEvent(SDL_Event *event);
 void handleKeyUpEvent(SDL_Event *event);
 
 int getDrawEvent();

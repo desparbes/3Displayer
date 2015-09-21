@@ -106,7 +106,7 @@ void updateScene(int *stop)
 	    *stop = 1;
 	    break;
 	case SDL_KEYDOWN:
-	    handleKeyDownEvent(&event, stop);
+	    handleKeyDownEvent(&event);
 	    break;
 	case SDL_KEYUP:
 	    handleKeyUpEvent(&event);
@@ -121,8 +121,8 @@ void updateScene(int *stop)
 	    handleMouseButtonDownEvent(&event);
 	    break;
 	}
-    } while (SDL_PollEvent(&event));
-}
+    } while (SDL_PollEvent(&event));   
+  }
 
 static void remove_space(char *buf)
 {

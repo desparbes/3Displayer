@@ -7,14 +7,16 @@
 
 int main(int argc, char *argv[])
 {
-    int stop = 0;
-    rl_bind_key('\t',rl_complete);
+    rl_bind_key('\t', rl_complete);
     initScene();
     handleArgumentScene(argc, argv);
+    
+    int stop = 0;
     while (!stop) {
 	updateScene(&stop);
 	drawScene();
     }
+    
     freeScene();
     return EXIT_SUCCESS;
 }

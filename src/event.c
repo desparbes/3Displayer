@@ -88,8 +88,10 @@ void handleMouseButtonDownEvent(SDL_Event *event)
     }
 }
 
-void handleKeyDownEvent(SDL_Event *event, int *stop)
+void handleKeyDownEvent(SDL_Event *event)
 {
+    SDL_Event q;
+    
     switch (event->key.keysym.sym) {
     case SDLK_LEFT:
 	translateFrame(getCamera(), 
@@ -116,7 +118,8 @@ void handleKeyDownEvent(SDL_Event *event, int *stop)
 		       -state.translationSpeed * getCamera()->k.z);
 	break;
     case SDLK_ESCAPE:
-	*stop = 1;
+	q.type = SDL_QUIT;
+	SDL_PushEvent(&q);
 	break;
     default:
 	break;
