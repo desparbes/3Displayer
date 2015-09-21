@@ -72,13 +72,6 @@ static void initSDL(void)
     SDL_EnableKeyRepeat(1, 10);
 }
 
-/* static void cutNewLine(char *input) */
-/* { */
-/*     int i; */
-/*     for (i = 0; input[i] && input[i] != '\n'; i++); */
-/*     input[i] = '\0'; */
-/* } */
-
 void initScene(void)
 {
     scene.nbSolid = 0;
@@ -141,6 +134,7 @@ static void remove_space(char *buf)
 	++buf;
     }
 }
+
 void askSolidForScene(void)
 {
     Solid *solid;
