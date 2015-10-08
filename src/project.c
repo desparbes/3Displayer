@@ -14,58 +14,61 @@ typedef struct {
     SDL_Surface *texture;
 } Triangle;
 
-// return the vector between camera.O and the intersection of
-// (AB) and the NEARPLAN
-void projectPoint(const Point *A, const Point *B, Point *S)
+// return the vector between camera.O and the intersection of (AB) 
+// and the NEARPLAN
+static void projectPoint(Lens *l, const Point *A, const Point *B, Point *S)
 {
+    Frame *p = getPosition(l);
     Point AB, d;
-    Frame *camera = getCamera();
     diffPoint(B, A, &AB);
-    diffPoint(A, &camera->O, &d);
-    float k =
-	(getNearplan() - scalarProduct(&camera->j, &d))
-	/ scalarProduct(&camera->j, &AB);
+    diffPoint(A, &p->O, &d);
+    float k = (getNearplan(l) - scalarProduct(&p->j, &d)) / 
+	scalarProduct(&p->j, &AB);
 
     setPoint(S,
-	     A->x + k * AB.x - camera->O.x,
-	     A->y + k * AB.y - camera->O.y,
-	     A->z + k * AB.z - camera->O.z);
+	     A->x + k * AB.x - p->O.x,
+	     A->y + k * AB.y - p->O.y,
+	     A->z + k * AB.z - p->O.z);
 }
 
 // return the Coord projection of a vector between scene.camera.O
 // and A, knowing the depth of A
-void projectCoord(const Point *OA, float depth, Coord *S)
-{
-    Frame *camera = getCamera();
-    int height = getScreenHeight(), width = getScreenWidth();
-    
-    S->w =  width / (2. * tan(getWfov() * M_PI / 360.)) * 
-	scalarProduct(&camera->i, OA) / 
-	depth + width / 2;
-    S->h = -height / 
-	(2. * tan(getHfov() * M_PI / 360.)) * 
-	scalarProduct(&camera->k, OA) / 
-	depth + height / 2;
+static void projectCoord(Lens *l, const Point *OA, float depth, Coord *S)
+{    
+    int sW = getScreenWidth(l);
+    int sH = getScreenHeight(l);
+    Coord *sP = getScreenPosition(l);
+    Frame *p = getPosition(l);
+
+    S->w = sP->w + sW / 
+	(2. * tan(getHfov(l) * M_PI / 360.)) * 
+	scalarProduct(&p->i, OA) / 
+	depth + sW / 2;
+    S->h = sP->h - sH / 
+	(2. * tan(getWfov(l) * M_PI / 360.)) * 
+	scalarProduct(&p->k, OA) / 
+	depth + sH / 2;
 }
 
-void projectVertex(const Point *A, const Color *color)
+void projectVertex(Lens *l, const Point *A, const Color *color)
 {
     Point OA;
-    Frame *camera = getCamera();
-    diffPoint(A, &camera->O, &OA);
-    float depthA = scalarProduct(&camera->j, &OA);
+    Frame *p = getPosition(l);
+
+    diffPoint(A, &p->O, &OA);
+    float depthA = scalarProduct(&p->j, &OA);
 
     Coord t;
-    projectCoord(&OA, depthA, &t);
-    if (depthA > getNearplan())
-	drawPixel(&t, depthA, color);
+    projectCoord(l, &OA, depthA, &t);
+    if (depthA > getNearplan(l))
+	drawPixel(l, &t, depthA, color);
 }
 
-void projectSegment(const Point *A, const Point *B, const Color *color)
+void projectSegment(Lens *l, const Point *A, const Point *B, const Color *color)
 {
     Point OA, OB, AB;
-    Frame *camera = getCamera();
-    float nearplan = getNearplan();
+    Frame *camera = getPosition(l);
+    float nearplan = getNearplan(l);
     
     diffPoint(A, &camera->O, &OA);
     diffPoint(B, &camera->O, &OB);
@@ -74,24 +77,25 @@ void projectSegment(const Point *A, const Point *B, const Color *color)
 
     Coord t, u;
     if (depthA > nearplan && depthB > nearplan) {
-	projectCoord(&OA, depthA, &t);
-	projectCoord(&OB, depthB, &u);
-	drawSegment(&t, &u, depthA, depthB, color);
+	projectCoord(l, &OA, depthA, &t);
+	projectCoord(l, &OB, depthB, &u);
+	drawSegment(l, &t, &u, depthA, depthB, color);
     } else if (depthA < nearplan && depthB > nearplan) {
-	projectPoint(A, B, &AB);
-	projectCoord(&AB, nearplan, &t);
-	projectCoord(&OB, depthB, &u);
+	projectPoint(l, A, B, &AB);
+	projectCoord(l, &AB, nearplan, &t);
+	projectCoord(l, &OB, depthB, &u);
     } else if (depthA > nearplan && depthB < nearplan) {
-	projectPoint(A, B, &AB);
-	projectCoord(&OA, depthA, &t);
-	projectCoord(&AB, nearplan, &u);
+	projectPoint(l, A, B, &AB);
+	projectCoord(l, &OA, depthA, &t);
+	projectCoord(l, &AB, nearplan, &u);
     } else
 	return;
 
-    drawSegment(&t, &u, depthA, depthB, color);
+    drawSegment(l, &t, &u, depthA, depthB, color);
 }
 
-static void cutInOneTriangle(const Point *A, const Point *B, const Point *C,
+static void cutInOneTriangle(Lens *l,
+			     const Point *A, const Point *B, const Point *C,
 			     float depthA, float depthB, float depthC,
 			     const Point *OA,
 			     SDL_Surface *triangle,
@@ -102,8 +106,8 @@ static void cutInOneTriangle(const Point *A, const Point *B, const Point *C,
 			     const Point *normalB,
 			     const Point *normalC)
 {
-    float nearplan = getNearplan();
-    Frame *camera = getCamera();
+    float nearplan = getNearplan(l);
+    Frame *camera = getPosition(l);
     Point AB, AC;
     Point OpB, OpC;
 
@@ -123,9 +127,9 @@ static void cutInOneTriangle(const Point *A, const Point *B, const Point *C,
 	     A->z + kC * AC.z - camera->O.z);
     
     Coord a, bn, cn;
-    projectCoord(OA, depthA, &a);
-    projectCoord(&OpB, nearplan, &bn);
-    projectCoord(&OpC, nearplan, &cn);
+    projectCoord(l, OA, depthA, &a);
+    projectCoord(l, &OpB, nearplan, &bn);
+    projectCoord(l, &OpC, nearplan, &cn);
     
     Texture UV, UW;
     setTexture(&UV,
@@ -145,7 +149,7 @@ static void cutInOneTriangle(const Point *A, const Point *B, const Point *C,
 	     (normalC->y - normalA->y) * kC + normalA->y,
 	     (normalC->z - normalA->z) * kC + normalA->z);
     
-    drawTriangle(&a, &bn, &cn,
+    drawTriangle(l, &a, &bn, &cn,
 		 depthA,
 		 (depthB - depthA) * kB + depthA,
 		 (depthC - depthA) * kC + depthA,
@@ -154,7 +158,8 @@ static void cutInOneTriangle(const Point *A, const Point *B, const Point *C,
 		 normalA, &nAB, &nAC);
 }
 
-static void cutInTwoTriangles(const Point *A, const Point *B, const Point *C,
+static void cutInTwoTriangles(Lens *l,
+			      const Point *A, const Point *B, const Point *C,
 			      float depthA, float depthB, float depthC,
 			      const Point *OB, const Point *OC,
 			      SDL_Surface *triangle,
@@ -165,8 +170,8 @@ static void cutInTwoTriangles(const Point *A, const Point *B, const Point *C,
 			      const Point *normalB,
 			      const Point *normalC)
 {
-    float nearplan = getNearplan();
-    Frame *camera = getCamera();
+    float nearplan = getNearplan(l);
+    Frame *camera = getPosition(l);
     Point AB, AC;
 
     diffPoint(B, A, &AB);
@@ -186,10 +191,10 @@ static void cutInTwoTriangles(const Point *A, const Point *B, const Point *C,
 	     A->z + kC * AC.z - camera->O.z);
     
     Coord b, c, opbn, opcn;
-    projectCoord(OB, depthB, &b);
-    projectCoord(OC, depthC, &c);
-    projectCoord(&OpB, nearplan, &opbn);
-    projectCoord(&OpC, nearplan, &opcn);
+    projectCoord(l, OB, depthB, &b);
+    projectCoord(l, OC, depthC, &c);
+    projectCoord(l, &OpB, nearplan, &opbn);
+    projectCoord(l, &OpC, nearplan, &opcn);
     
     Texture VU, WU;
     setTexture(&VU, (V->x - U->x) * kB + U->x, (V->y - U->y) * kB + U->y);
@@ -205,7 +210,7 @@ static void cutInTwoTriangles(const Point *A, const Point *B, const Point *C,
 	     (normalC->y - normalA->y) * kC + normalA->y,
 	     (normalC->z - normalA->z) * kC + normalA->z);
     
-    drawTriangle(&opbn, &c, &opcn,
+    drawTriangle(l, &opbn, &c, &opcn,
 		 (depthB - depthA) * kB + depthA,
 		 depthC,
 		 (depthC - depthA) * kC + depthA,
@@ -213,7 +218,7 @@ static void cutInTwoTriangles(const Point *A, const Point *B, const Point *C,
 		 &VU, W, &WU,
 		 &nAB, normalC, &nAC);
     
-    drawTriangle(&opbn, &b, &c,
+    drawTriangle(l, &opbn, &b, &c,
 		 (depthB - depthA) * kB + depthA,
 		 depthB, depthC,
 		 triangle,
@@ -221,15 +226,15 @@ static void cutInTwoTriangles(const Point *A, const Point *B, const Point *C,
 		 &nAB, normalB, normalC);
 }
 
-void projectTriangle(const Point *A, const Point *B, const Point *C,
+void projectTriangle(Lens *l, const Point *A, const Point *B, const Point *C,
 		     SDL_Surface *triangle,
 		     const Texture *U, const Texture *V, const Texture *W,
 		     const Point *normalA, 
 		     const Point *normalB,
 		     const Point *normalC)
 {
-    Frame *camera = getCamera();
-    float nearplan = getNearplan();
+    Frame *camera = getPosition(l);
+    float nearplan = getNearplan(l);
     Point OA, OB, OC;
     diffPoint(A, &camera->O, &OA);
     diffPoint(B, &camera->O, &OB);
@@ -240,55 +245,55 @@ void projectTriangle(const Point *A, const Point *B, const Point *C,
 
     if (depthA > nearplan && depthB > nearplan && depthC > nearplan){
 	Coord a, b, c;
-	projectCoord(&OA, depthA, &a);
-	projectCoord(&OB, depthB, &b);
-	projectCoord(&OC, depthC, &c);
-	drawTriangle(&a, &b, &c,
+	projectCoord(l, &OA, depthA, &a);
+	projectCoord(l, &OB, depthB, &b);
+	projectCoord(l, &OC, depthC, &c);
+	drawTriangle(l, &a, &b, &c,
 		     depthA, depthB, depthC,
 		     triangle,
 		     U, V, W,
 		     normalA, normalB, normalC);
     } else if (depthB > nearplan && depthC > nearplan){
-	cutInTwoTriangles(A, B, C,
+	cutInTwoTriangles(l, A, B, C,
 			  depthA, depthB, depthC,
 			  &OB, &OC,
 			  triangle,
 			  U, V, W,
 			  normalA, normalB, normalC);
     } else if (depthC > nearplan && depthA > nearplan){
-	cutInTwoTriangles(B, C, A,
+	cutInTwoTriangles(l, B, C, A,
 			  depthB, depthC, depthA,
 			  &OC, &OA,
 			  triangle,
 			  V, W, U,
 			  normalB, normalC, normalA);
     } else if (depthA > nearplan && depthB > nearplan){
-	cutInTwoTriangles(C, A, B,
+	cutInTwoTriangles(l, C, A, B,
 			  depthC, depthA, depthB,
 			  &OA, &OB,
 			  triangle,
 			  W, U, V,
 			  normalC, normalA, normalB);
     } else if (depthA > nearplan){
-	cutInOneTriangle(A, B, C,
+	cutInOneTriangle(l, A, B, C,
 			  depthA, depthB, depthC,
 			  &OA,
 			  triangle,
 			  U, V, W,
 			  normalA, normalB, normalC);
     } else if (depthB > nearplan){
-	cutInOneTriangle(B, C, A,
-			  depthB, depthC, depthA,
-			  &OB,
-			  triangle,
-			  V, W, U,
-			  normalB, normalC, normalA);
+	cutInOneTriangle(l, B, C, A,
+			 depthB, depthC, depthA,
+			 &OB,
+			 triangle,
+			 V, W, U,
+			 normalB, normalC, normalA);
     } else if (depthC > nearplan){
-	cutInOneTriangle(C, A, B,
-			  depthC, depthA, depthB,
-			  &OC,
-			  triangle,
-			  W, U, V,
-			  normalC, normalA, normalB);
+	cutInOneTriangle(l, C, A, B,
+			 depthC, depthA, depthB,
+			 &OC,
+			 triangle,
+			 W, U, V,
+			 normalC, normalA, normalB);
     }
 }

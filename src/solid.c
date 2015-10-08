@@ -10,6 +10,7 @@
 #include "project.h"
 #include "solid.h"
 #include "equation.h"
+#include "lens.h"
 
 #define MAXLENGTH 256
 #define EPSILON 0.001
@@ -56,71 +57,63 @@ static void calculateOriginSolid(Solid *solid)
 
 void translateSolid(Solid *solid, float x, float y, float z)
 {
-    int i;
-    for (i = 0; i < solid->numVertices; i++)
+    for (int i = 0; i < solid->numVertices; i++)
 	translatePoint(&solid->vertices[i], x, y, z);
     translatePoint(&solid->origin, x, y, z);    
 }
 
 void scaleSolid(Solid *solid, const Point *O, float scale)
 {
-    int i;
-    for (i = 0; i < solid->numVertices; i++)
+    for (int i = 0; i < solid->numVertices; i++)
 	scalePoint(&solid->vertices[i], O, scale);
     scalePoint(&solid->origin, O, scale);
 }
 
 void rotSolidXAxis(Solid *solid, const Point *O, float phi)
 {
-    int i;
-    for (i = 0; i < solid->numVertices; i++)
+    for (int i = 0; i < solid->numVertices; i++)
 	rotPointXAxis(&solid->vertices[i], O, phi);
     rotPointXAxis(&solid->origin, O, phi);
 }
 
 void rotSolidYAxis(Solid *solid, const Point *O, float rho)
 {
-    int i;
-    for (i = 0; i < solid->numVertices; i++)
+    for (int i = 0; i < solid->numVertices; i++)
 	rotPointYAxis(&solid->vertices[i], O, rho);
     rotPointXAxis(&solid->origin, O, rho);
 }
 
 void rotSolidZAxis(Solid *solid, const Point *O, float theta)
 {
-    int i;
-    for (i = 0; i < solid->numVertices; i++)
+    for (int i = 0; i < solid->numVertices; i++)
 	rotPointZAxis(&solid->vertices[i], O, theta);
     rotPointXAxis(&solid->origin, O, theta);
 }
   
-void wireframeSolid(const Solid *solid, const Color *color)
+void wireframeSolid(Lens *l, const Solid *solid, const Color *color)
 {
-    int i, k;
-    for (i = 0; i < solid->numFaces; i++) {
+    for (int i = 0; i < solid->numFaces; i++) {
 	Face *f = &solid->faces[i];
-	for (k = 0; k < 3; k++) {
+	for (int k = 0; k < 3; k++) {
 	    int point1 = f->vertices[k].point;
 	    int point2 = f->vertices[(k+1)%3].point;
-	    projectSegment(&solid->vertices[point1],
+	    projectSegment(l, &solid->vertices[point1],
 			   &solid->vertices[point2], color);
 	}
     }
 }
 
-void vertexSolid(const Solid *solid, const Color *color)
+void vertexSolid(Lens *l, const Solid *solid, const Color *color)
 {
-    int i;
-    for (i = 0; i < solid->numVertices; ++i)
-	projectVertex(&solid->vertices[i], color);
+    for (int i = 0; i < solid->numVertices; ++i)
+	projectVertex(l, &solid->vertices[i], color);
 }
 
-void normalSolid(const Solid *solid, const Color *color)
+void normalSolid(Lens *l, const Solid *solid, const Color *color)
 {
-    int i, k;
-    for (i = 0; i < solid->numFaces; i++) {
+    for (int i = 0; i < solid->numFaces; i++) {
 	Face *f = &solid->faces[i];
-	for (k = 0; k < 3; k++) {
+	for (int k = 0; k < 3; k++) {
 	    Point tmp;
 	    int point = f->vertices[k].point;
 	    Point normal = solid->normals[f->vertices[k].normal];
@@ -128,7 +121,7 @@ void normalSolid(const Solid *solid, const Color *color)
 	    setPoint(&tmp, 0., 0., 0.);
 	    scalePoint(&normal, &tmp, 0.1);
 	    sumPoint(&solid->vertices[point], &normal, &tmp);
-	    projectSegment(&solid->vertices[point], &tmp, color);
+	    projectSegment(l, &solid->vertices[point], &tmp, color);
 	}
     }
 }
@@ -415,10 +408,11 @@ void freeSolid(Solid *solid)
     free(solid);
 }
 
-void drawSolid(const Solid * solid)
+void drawSolid(Lens *l, const Solid * solid)
 {
     for (int i = 0; i < solid->numFaces; i++)
-	projectTriangle(&solid->vertices[solid->faces[i].vertices[0].point],
+	projectTriangle(l,
+			&solid->vertices[solid->faces[i].vertices[0].point],
 			&solid->vertices[solid->faces[i].vertices[1].point],
 			&solid->vertices[solid->faces[i].vertices[2].point],
 			solid->texture,

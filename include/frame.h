@@ -2,6 +2,7 @@
 #define FRAME_H
 
 #include "point.h"
+#include "lens.h"
 
 typedef struct Frame {
     Point O;
@@ -13,6 +14,6 @@ typedef struct Frame {
 void resetFrame(Frame *frame, float x, float y, float z);
 void rotateFrame(Frame *frame, float theta, float phi, float rho);
 void translateFrame(Frame *frame, float x, float y, float z);
-void drawFrame(Frame *frame);
+void drawFrame(Lens *l, Frame *frame);
 
 #endif // FRAME_H 

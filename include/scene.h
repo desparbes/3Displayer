@@ -5,6 +5,7 @@
 #include "frame.h"
 #include "solid.h"
 #include "SDL/SDL.h"
+#include "camera.h"
 
 void initScene();
 void updateScene(int *stop);
@@ -16,15 +17,8 @@ void drawScene();
 void handleArgumentScene(int argc, char *argv[]);
 void freeScene(); 
 
-Frame *getCamera();
+Camera *getCamera();
 Point *getLight();
 SDL_Surface *getScreen();
-int getHfov();
-int getWfov();
-int getScreenWidth();
-int getScreenHeight();
-float getNearplan();
-float getFarplan();
-float *getZBuffer();
 
 #endif // SCENE_H

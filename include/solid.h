@@ -3,15 +3,16 @@
 
 #include "color.h"
 #include "point.h"
+#include "lens.h"
 
 typedef struct Solid Solid;
 
 Solid *loadSolid(const char *fileName, const char *bmpName);
 Solid *equationSolid(const char *eqName, const char *bmpName);
-void wireframeSolid(const Solid *solid, const Color *color);
-void vertexSolid(const Solid *solid, const Color *color);
-void normalSolid(const Solid *solid, const Color *color);
-void drawSolid(const Solid *solid);
+void wireframeSolid(Lens *l, const Solid *solid, const Color *color);
+void vertexSolid(Lens *l, const Solid *solid, const Color *color);
+void normalSolid(Lens *l, const Solid *solid, const Color *color);
+void drawSolid(Lens *l, const Solid *solid);
 
 void scaleSolid(Solid *solid, const Point *O, float scale);
 void rotSolidXAxis(Solid *solid, const Point *O, float phi);

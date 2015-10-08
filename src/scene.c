@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include "scene.h"
 #include "event.h"
@@ -8,15 +10,12 @@
 #include "frame.h"
 #include "solid.h"
 #include "color.h"
+#include "camera.h"
 #include "SDL/SDL.h"
-
-#include <readline/readline.h>
-#include <readline/history.h>
 
 #define MAXLENGTH 128
 
 static struct {
-    Frame camera;
     Frame origin;
 
     Point light;
@@ -26,29 +25,8 @@ static struct {
     int bufferSize;
 
     SDL_Surface *screen;
-    int wfov;
-    int hfov;
-    int screenWidth;
-    int screenHeight;
-    float nearplan;
-    float farplan;
-    float *zBuffer;
-    int *backBuffer;
+    Camera *c;
 } scene;
-
-static void resetZBuffer(float *zBuffer)
-{
-    int size = scene.screenWidth * scene.screenHeight;
-    for (int i = 0; i < size; i++)
-	zBuffer[i] = -1.;
-}
-
-static void resetBackBuffer(int *backBuffer)
-{
-    int size = scene.screenWidth * scene.screenHeight;
-    for (int i = 0; i < size; i++)
-	backBuffer[i] = -1.;
-}
 
 static void initLight(Point *light, float x, float y, float z)
 {
@@ -56,13 +34,13 @@ static void initLight(Point *light, float x, float y, float z)
     normalizePoint(light, light);
 }
 
-static void initSDL(void)
+static void initSDL(int screenWidth, int screenHeight)
 {
     if (SDL_Init(SDL_INIT_VIDEO) == -1) {
 	fprintf(stderr, "Error SDL_Init: %s", SDL_GetError());
 	exit(EXIT_FAILURE);
     }
-    if ((scene.screen = SDL_SetVideoMode(scene.screenWidth, scene.screenHeight, 
+    if ((scene.screen = SDL_SetVideoMode(screenWidth, screenHeight, 
 					 32, SDL_HWSURFACE | SDL_DOUBLEBUF)) 
 	== NULL) {
 	fprintf(stderr, "Error SDL_SetVideoMode: %s", SDL_GetError());
@@ -74,26 +52,35 @@ static void initSDL(void)
 
 void initScene(void)
 {
-    scene.nbSolid = 0;
-    scene.bufferSize = 4;
-    scene.wfov = 80;
-    scene.hfov = 60;
-    scene.screenWidth = 1200;
-    scene.screenHeight = 900;
-    scene.nearplan = 1.;
-    scene.farplan = 20.;
+    int screenWidth = 1200;
+    int screenHeight = 900;
+
     
+    scene.c = initCamera();
+    Frame frame1;
+    Frame frame2;
+    Coord coord1;
+    Coord coord2;
+    resetFrame(&frame1, -1., -5., 0);
+    resetFrame(&frame2, 1., -5., 0);
+    setCoord(&coord1, 0, 0);
+    setCoord(&coord1, screenWidth / 2, 0);
+    addLensToCamera(scene.c, &frame1, &coord1, screenWidth / 2, screenHeight, 
+		    1., 20., 60, 90);
+    addLensToCamera(scene.c, &frame2, &coord2, screenWidth / 2, screenHeight, 
+		    1., 20., 60, 90);
+    resetCamera(scene.c);
+
     initLight(&scene.light, 1., -0.5, -2.);
-    resetFrame(&scene.camera, 0., -5., 0.);
+
     resetFrame(&scene.origin, 0., 0., 0.);
     resetEvent();
-
+    
+    scene.nbSolid = 0;
+    scene.bufferSize = 4;
     scene.solidBuffer = malloc(scene.bufferSize * sizeof(Solid*));
-    scene.zBuffer = malloc(scene.screenWidth * scene.screenHeight * 
-			   sizeof(float));
-    scene.backBuffer = malloc(scene.screenWidth * scene.screenHeight * 
-			      sizeof(int));
-    initSDL();
+
+    initSDL(screenWidth, screenHeight);
 }
 
 void updateScene(int *stop)
@@ -122,7 +109,7 @@ void updateScene(int *stop)
 	    break;
 	}
     } while (SDL_PollEvent(&event));   
-  }
+}
 
 static void remove_space(char *buf)
 {
@@ -190,25 +177,32 @@ void removeSolidFromScene()
     
 void drawScene(void)
 {
+    Camera *C = scene.c;
+    Color color;
     SDL_FillRect(scene.screen, NULL, SDL_MapRGB(scene.screen->format, 
 						128, 128, 128));
-    resetZBuffer(scene.zBuffer);
-    resetBackBuffer(scene.backBuffer);
-    Color color;
-    if (getDrawEvent())
-	for (int i = 0; i < scene.nbSolid; i++)
-	    drawSolid(scene.solidBuffer[i]);
-    if (getWireframeEvent())
-	for (int i = 0; i < scene.nbSolid; i++)
-	    wireframeSolid(scene.solidBuffer[i], setColor(&color, 255, 0, 0));
-    if (getNormalEvent())
-	for (int i = 0; i < scene.nbSolid; i++)
-	    normalSolid(scene.solidBuffer[i], setColor(&color, 0, 255, 0));
-    if (getVertexEvent())
-	for (int i = 0; i < scene.nbSolid; i++)
-	    vertexSolid(scene.solidBuffer[i], setColor(&color, 0, 0, 255));
-    if (getFrameEvent())
-	drawFrame(&scene.origin);
+
+    resetCamera(scene.c);
+
+    for (initIteratorCamera(C); condIteratorCamera(C); nextIteratorCamera(C)) {
+	if (getDrawEvent())
+	    for (int i = 0; i < scene.nbSolid; i++)
+		drawSolid(lensIteratorCamera(C), scene.solidBuffer[i]);
+	if (getWireframeEvent())
+	    for (int i = 0; i < scene.nbSolid; i++)
+		wireframeSolid(lensIteratorCamera(C), scene.solidBuffer[i], 
+			       setColor(&color, 255, 0, 0));
+	if (getNormalEvent())
+	    for (int i = 0; i < scene.nbSolid; i++)
+		normalSolid(lensIteratorCamera(C), scene.solidBuffer[i], 
+			    setColor(&color, 0, 255, 0));
+	if (getVertexEvent())
+	    for (int i = 0; i < scene.nbSolid; i++)
+		vertexSolid(lensIteratorCamera(C), scene.solidBuffer[i], 
+			    setColor(&color, 0, 0, 255));
+	if (getFrameEvent())
+	    drawFrame(lensIteratorCamera(C), &scene.origin);
+    }
     SDL_Flip(scene.screen);
 }
 
@@ -236,11 +230,6 @@ void handleArgumentScene(int argc, char *argv[])
     }
 }
 
-Frame *getCamera(void)
-{
-    return &scene.camera;
-}
-
 Point *getLight(void)
 {
     return &scene.light;
@@ -251,44 +240,9 @@ SDL_Surface *getScreen(void)
     return scene.screen;
 }
 
-int getHfov(void)
+Camera *getCamera(void)
 {
-    return scene.hfov;
-}
-
-int getWfov(void)
-{
-    return scene.wfov;
-}
-
-int getScreenWidth(void)
-{
-    return scene.screenWidth;
-}
-
-int getScreenHeight(void)
-{
-    return scene.screenHeight;
-}
-
-float getNearplan(void)
-{
-    return scene.nearplan;
-}
-
-float getFarplan(void)
-{
-    return scene.farplan;
-}
-
-float *getZBuffer(void)
-{
-    return scene.zBuffer;
-}
-
-int *getBackBuffer(void)
-{
-    return scene.backBuffer;
+    return scene.c;
 }
 
 void freeScene(void)
@@ -296,8 +250,7 @@ void freeScene(void)
     for(int i = 0; i < scene.nbSolid; i++)
 	freeSolid(scene.solidBuffer[i]);
     free(scene.solidBuffer);
-    free(scene.zBuffer);
-    free(scene.backBuffer);
+    freeCamera(scene.c);
     SDL_FreeSurface(scene.screen);
     SDL_Quit();
 }

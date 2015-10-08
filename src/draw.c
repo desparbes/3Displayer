@@ -4,6 +4,7 @@
 #include "coord.h"
 #include "color.h"
 #include "scene.h"
+#include "lens.h"
 #include "SDL/SDL.h"
 
 static inline int min(int a, int b)
@@ -18,22 +19,22 @@ static inline int max(int a, int b)
 
 void setPixel(const Coord *A, const Color *color)
 {
-    Uint32 pixel = SDL_MapRGB(getScreen()->format,
-			      color->r, color->g, color->b);
-    *((Uint32 *) (getScreen()->pixels) + A->w + A->h * getScreen()->w) = pixel;
+    SDL_Surface *s = getScreen();
+    Uint32 pixel = SDL_MapRGB(s->format, color->r, color->g, color->b);
+    *((Uint32 *) (s->pixels) + A->w + A->h * s->w) = pixel;
 }
 
-void drawPixel(const Coord *A, float depthA, const Color *color)
+void drawPixel(Lens *l, const Coord *A, float depthA, const Color *color)
 {
-    int i = A->w + A->h * getScreenWidth();
-    if (A->h >= 0 && A->h < getScreenHeight() && 
-	A->w >= 0 && A->w < getScreenWidth() && 
-	(getZBuffer()[i] < 0 || 
-	 getZBuffer()[i] > depthA))
+    int i = A->w + A->h * getScreenWidth(l);
+    if (A->h >= 0 && A->h < getScreenHeight(l) && 
+	A->w >= 0 && A->w < getScreenWidth(l) && 
+	(getZBuffer(l)[i] < 0 || 
+	 getZBuffer(l)[i] > depthA))
 	setPixel(A, color);
 }
 
-void drawSegment(const Coord *A, const Coord *B,
+void drawSegment(Lens *l, const Coord *A, const Coord *B,
 		 float depthA, float depthB,
 		 const Color *color)
 {
@@ -44,6 +45,9 @@ void drawSegment(const Coord *A, const Coord *B,
     int yIncr = dy > 0 ? 1 : -1;
     float alpha, depthM;
     int error;
+    float *zB = getZBuffer(l);
+    int sW = getScreenWidth(l);
+    int sH = getScreenHeight(l);
 
     if ((abs(dx) > abs(dy))) {
 	error = dx;
@@ -52,20 +56,17 @@ void drawSegment(const Coord *A, const Coord *B,
 	while (M.w != B->w) {
 	    M.w += xIncr;
 	    alpha = (float) (M.w - A->w) / (B->w - A->w);
-	    depthM =
-		depthA * depthB / ((1 - alpha) * depthB + alpha * depthA);
+	    depthM = depthA * depthB / ((1 - alpha) * depthB + alpha * depthA);
 	    if ((error -= yIncr * dy) <= 0) {
 		M.h += yIncr;
 		error += xIncr * dx;
 	    }
-	    if (M.h >= 0 && M.h < getScreenHeight() && 
-		M.w >= 0 && M.w < getScreenWidth() && 
-		(getZBuffer()[M.w + M.h * getScreenWidth()] < 0 || 
-		 getZBuffer()[M.w + M.h * getScreenWidth()] > depthM)) {
+	    if (M.h >= 0 && M.h < sH && M.w >= 0 && M.w < sW && 
+		(zB[M.w + M.h * sW] < 0 || zB[M.w + M.h * sW] > depthM)) {
 		setPixel(&M, color);
 		//setPixel(M, {255 /depthM , 255 /depthM, 255 /depthM});
 		//setPixel(M, {255 * alpha, 0, 0});
-		getZBuffer()[M.w + M.h * getScreenWidth()] = depthM;
+		zB[M.w + M.h * sW] = depthM;
 	    }
 	}
     } else {
@@ -75,26 +76,23 @@ void drawSegment(const Coord *A, const Coord *B,
 	while (M.h != B->h) {
 	    M.h += yIncr;
 	    alpha = (float) (M.h - A->h) / (B->h - A->h);
-	    depthM =
-		depthA * depthB / ((1 - alpha) * depthB + alpha * depthA);
+	    depthM = depthA * depthB / ((1 - alpha) * depthB + alpha * depthA);
 	    if ((error -= xIncr * dx) <= 0) {
 		M.w += xIncr;
 		error += yIncr * dy;
 	    }
-	    if (M.h >= 0 && M.h < getScreenHeight() && 
-		M.w >= 0 && M.w < getScreenWidth()
-		&& (getZBuffer()[M.w + M.h * getScreenWidth()] < 0
-		    || getZBuffer()[M.w + M.h * getScreenWidth()] > depthM)) {
+	    if (M.h >= 0 && M.h < sH && M.w >= 0 && M.w < sW && 
+		(zB[M.w + M.h * sW] < 0 || zB[M.w + M.h * sW] > depthM)) {
 		setPixel(&M, color);
 		//setPixel(M, {255 /depthM , 255 /depthM, 255 /depthM});
 		//setPixel(M, {255 * alpha, 0, 0});
-		getZBuffer()[M.w + M.h * getScreenWidth()] = depthM;
+		zB[M.w + M.h * sW] = depthM;
 	    }
 	}
     }
 }
 
-void drawTriangle(const Coord *A, const Coord *B, const Coord *C,
+void drawTriangle(Lens *l, const Coord *A, const Coord *B, const Coord *C,
 		  float depthA, float depthB, float depthC,
 		  SDL_Surface *triangle,
 		  const Texture *U, const Texture *V, const Texture *W,
@@ -102,6 +100,9 @@ void drawTriangle(const Coord *A, const Coord *B, const Coord *C,
 		  const Point *normalB,
 		  const Point *normalC)
 {
+    float *zB = getZBuffer(l);
+    int sW = getScreenWidth(l);
+    int sH = getScreenHeight(l);
     Coord AB, BC;
     diffRect(B, A, &AB);
     diffRect(C, B, &BC);
@@ -117,12 +118,12 @@ void drawTriangle(const Coord *A, const Coord *B, const Coord *C,
 
     if (minW < 0)
 	minW = 0;
-    if (maxW >= getScreenWidth())
-	maxW = getScreenWidth() - 1;
+    if (maxW >= sW)
+	maxW = sW - 1;
     if (minH < 0)
 	minH = 0;
-    if (maxH >= getScreenHeight())
-	maxH = getScreenHeight() - 1;
+    if (maxH >= sH)
+	maxH = sH - 1;
 
     Coord AC;
     diffRect(C, A, &AC);
@@ -193,8 +194,8 @@ void drawTriangle(const Coord *A, const Coord *B, const Coord *C,
 	    depthM = depthABC / 
 		(gamma * depthBC + beta * depthCA + alpha * depthAB);
 
-	    if (getZBuffer()[M.w + M.h * getScreenWidth()] < 0
-		|| getZBuffer()[M.w + M.h * getScreenWidth()] > depthM) {
+	    if (zB[M.w + M.h * sW] < 0
+		|| zB[M.w + M.h * sW] > depthM) {
 		scale = scaleABC / 
 		    (gamma * scaleBC + beta * scaleCA + alpha * scaleAB);
 		
@@ -223,7 +224,7 @@ void drawTriangle(const Coord *A, const Coord *B, const Coord *C,
 		Color scaled;
 		setColor(&scaled, scale * r, scale * g, scale * b);
 		setPixel(&M, &scaled);
-		getZBuffer()[M.w + M.h * getScreenWidth()] = depthM;
+		zB[M.w + M.h * sW] = depthM;
 	    }
 	    M.w++;
 	    diffRect(&M, A, &AM);

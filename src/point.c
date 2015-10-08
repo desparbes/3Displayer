@@ -109,6 +109,7 @@ void rotPoint(const Point *u, const Point *v, float angle, Point *w)
 	     cosinus * u->y + sinus * (v->z * u->x - v->x * u->z),
 	     cosinus * u->z + sinus * (v->x * u->y - v->y * u->x));
 }
+
 void translatePoint(Point *A, float x, float y, float z)
 {
     A->x += x;

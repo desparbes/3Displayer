@@ -1,6 +1,7 @@
 #include "SDL/SDL.h"
 #include "scene.h"
 #include "frame.h"
+#include "camera.h"
 
 static struct {
     int draw; // boolean : 1 draw the scene, else don't
@@ -48,7 +49,7 @@ void handleMouseMotionEvent(SDL_Event *event)
 	    state.phi += state.rotationSpeed;
 	else if (state.mouseHeight < event->motion.y)
 	    state.phi -= state.rotationSpeed;
-	rotateFrame(getCamera(), state.theta, state.phi, state.rho);
+	rotateCamera(getCamera(), state.theta, state.phi, state.rho);
     }
     state.mouseWidth = event->motion.x;
     state.mouseHeight = event->motion.y;
@@ -67,21 +68,24 @@ void handleMouseButtonUpEvent(SDL_Event *event)
 
 void handleMouseButtonDownEvent(SDL_Event *event)
 {
+    Camera *c = getCamera();
+    Frame *cPosition = getPositionCamera(c);
+
     switch (event->button.button) {
     case SDL_BUTTON_RIGHT:
 	state.rightClickDown = 1;
 	break;
     case SDL_BUTTON_WHEELUP:
-	translateFrame(getCamera(), 
-		       state.translationSpeed * getCamera()->j.x,
-		       state.translationSpeed * getCamera()->j.y,
-		       state.translationSpeed * getCamera()->j.z);
+	translateCamera(c, 
+		       state.translationSpeed * cPosition->j.x,
+		       state.translationSpeed * cPosition->j.y,
+		       state.translationSpeed * cPosition->j.z);
 	break;
     case SDL_BUTTON_WHEELDOWN:
-	translateFrame(getCamera(), 
-		       -state.translationSpeed * getCamera()->j.x,
-		       -state.translationSpeed * getCamera()->j.y,
-		       -state.translationSpeed * getCamera()->j.z);
+	translateCamera(getCamera(), 
+		       -state.translationSpeed * cPosition->j.x,
+		       -state.translationSpeed * cPosition->j.y,
+		       -state.translationSpeed * cPosition->j.z);
 	break;
     default:
 	break;
@@ -91,31 +95,33 @@ void handleMouseButtonDownEvent(SDL_Event *event)
 void handleKeyDownEvent(SDL_Event *event)
 {
     SDL_Event q;
+    Camera *c = getCamera();
+    Frame *cPosition = getPositionCamera(c);
     
     switch (event->key.keysym.sym) {
     case SDLK_LEFT:
-	translateFrame(getCamera(), 
-		       -state.translationSpeed * getCamera()->i.x,
-		       -state.translationSpeed * getCamera()->i.y,
-		       -state.translationSpeed * getCamera()->i.z);
+	translateCamera(c, 
+		       -state.translationSpeed * cPosition->i.x,
+		       -state.translationSpeed * cPosition->i.y,
+		       -state.translationSpeed * cPosition->i.z);
 	break;
     case SDLK_RIGHT:
-	translateFrame(getCamera(), 
-		       state.translationSpeed * getCamera()->i.x,
-		       state.translationSpeed * getCamera()->i.y, 
-		       state.translationSpeed * getCamera()->i.z);
+	translateCamera(c, 
+		       state.translationSpeed * cPosition->i.x,
+		       state.translationSpeed * cPosition->i.y, 
+		       state.translationSpeed * cPosition->i.z);
 	break;
     case SDLK_UP:
-	translateFrame(getCamera(), 
-		       state.translationSpeed * getCamera()->k.x,
-		       state.translationSpeed * getCamera()->k.y, 
-		       state.translationSpeed * getCamera()->k.z);
+	translateCamera(c, 
+		       state.translationSpeed * cPosition->k.x,
+		       state.translationSpeed * cPosition->k.y, 
+		       state.translationSpeed * cPosition->k.z);
 	break;
     case SDLK_DOWN:
-	translateFrame(getCamera(), 
-		       -state.translationSpeed * getCamera()->k.x,
-		       -state.translationSpeed * getCamera()->k.y, 
-		       -state.translationSpeed * getCamera()->k.z);
+	translateCamera(c, 
+		       -state.translationSpeed * cPosition->k.x,
+		       -state.translationSpeed * cPosition->k.y, 
+		       -state.translationSpeed * cPosition->k.z);
 	break;
     case SDLK_ESCAPE:
 	q.type = SDL_QUIT;
@@ -143,10 +149,6 @@ void handleKeyUpEvent(SDL_Event *event)
 	break;
    case SDLK_f:
 	state.frame = (state.frame + 1) % 2;
-	break;
-    case SDLK_r:
-	resetFrame(getCamera(), 0., -5., 0.);
-	resetEvent();
 	break;
     case SDLK_l:
 	askSolidForScene();

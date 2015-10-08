@@ -4,6 +4,7 @@
 #include "frame.h"
 #include "color.h"
 #include "project.h"
+#include "lens.h"
 
 void resetFrame(Frame *frame, float x, float y, float z)
 {
@@ -23,11 +24,8 @@ void rotateFrame(Frame *frame, float theta, float phi, float rho)
     frame->i.y = -frame->j.x;
     frame->i.z = 0.;
 
-    Point a;
-    rotPoint(&frame->j, &frame->i, phi, &a);
-    frame->j = a;
-    rotPoint(&frame->i, &frame->j, rho, &a);
-    frame->i = a;
+    rotPoint(&frame->j, &frame->i, phi, &frame->j);
+    rotPoint(&frame->i, &frame->j, rho, &frame->i);
     pointProduct(&frame->i, &frame->j, &frame->k);
 }
 
@@ -35,12 +33,12 @@ void translateFrame(Frame *frame, float x, float y, float z)
 {
     translatePoint(&frame->O, x, y, z);
 }
-void drawFrame(Frame *frame)
+void drawFrame(Lens *l, Frame *frame)
 {
     Color color;
-    projectSegment(&frame->O, &frame->i, setColor(&color, 255, 0, 0));
-    projectSegment(&frame->O, &frame->j, setColor(&color, 0, 255, 0));
-    projectSegment(&frame->O, &frame->k, setColor(&color, 0, 0, 255));
+    projectSegment(l, &frame->O, &frame->i, setColor(&color, 255, 0, 0));
+    projectSegment(l, &frame->O, &frame->j, setColor(&color, 0, 255, 0));
+    projectSegment(l, &frame->O, &frame->k, setColor(&color, 0, 0, 255));
 }
 
 

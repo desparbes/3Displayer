@@ -12,6 +12,8 @@ set(
   scene.c
   frame.c
   equation.c
+  camera.c
+  lens.c
 )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})
