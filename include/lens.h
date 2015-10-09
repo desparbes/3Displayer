@@ -7,9 +7,9 @@
 
 typedef struct Lens Lens;
 
-void initLens(Lens *l, Frame *position, Frame *parent, Coord *screenPosition, 
-	      int screenWidth, int screenHeight, float nearplan, 
-	      float farplan, int wfov, int hfov);
+Lens *initLens(Frame *position, Frame *parent, Coord *screenPosition, 
+	       int screenWidth, int screenHeight, float nearplan, 
+	       float farplan, int wfov, int hfov);
 void resetLens(Lens *l);
 void translateLens(Lens *l, float x, float y, float z);
 void rotateLens(Lens *l, float theta, float phi, float rho);

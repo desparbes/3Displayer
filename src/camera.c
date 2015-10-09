@@ -5,12 +5,11 @@
 #include "frame.h"
 #include "coord.h"
 #include "point.h"
-#include "camera.h"
 
 typedef struct {
     int iterator;
     Frame position;
-    Lens *lensBuffer;
+    Lens **lensBuffer;
     int nbLens;
     int bufferSize;
 } Camera;
@@ -22,7 +21,7 @@ Camera *initCamera(void)
     c->nbLens = 0;
     c->bufferSize = 4;
     c->iterator = 0;
-    c->lensBuffer = malloc(c->bufferSize * sizeof(Lens));
+    c->lensBuffer = malloc(c->bufferSize * sizeof(Lens *));
     return c;
 }
 
@@ -32,24 +31,23 @@ void addLensToCamera(Camera *c, Frame *position, Coord *screenPosition,
 {
     if (c->nbLens >= c->bufferSize){
 	c->bufferSize *= 2;
-	c->lensBuffer = realloc(c->lensBuffer, c->bufferSize * sizeof(Point));
+	c->lensBuffer = realloc(c->lensBuffer, c->bufferSize * sizeof(Lens *));
     }
-    Lens l;
-    initLens(&l, position, &c->position, screenPosition, 
-	     screenWidth, screenHeight, nearplan, farplan, wfov, hfov);
-    c->lensBuffer[c->nbLens++] = l;
+    c->lensBuffer[c->nbLens++] = initLens(position, &c->position, screenPosition,
+					  screenWidth, screenHeight, nearplan, 
+					  farplan, wfov, hfov);
 }
 
-void resetCamera(Camera *c, float x, float y, float z)
+void resetCamera(Camera *c)
 {
     for (int i = 0; i < c->nbLens; i++)
-	resetLens(c->lensBuffer[i], x, y, z);
+	resetLens(c->lensBuffer[i]);
 }
 
 void translateCamera(Camera *c, float x, float y, float z)
 {
     for (int i = 0; i < c->nbLens; i++)
-	translateLens(c->lensBuffer[i]);
+	translateLens(c->lensBuffer[i], x, y, z);
     translateFrame(&c->position, x, y, z);
 }
 
@@ -63,7 +61,7 @@ void rotateCamera(Camera *c, float theta, float phi, float rho)
 void removeLensFromCamera(Camera *c)
 {
     if (c->nbLens > 0)
-	freeLens(c->lensBuffer[--nbLens]);
+	freeLens(c->lensBuffer[--c->nbLens]);
 }
 
 void initIteratorCamera(Camera *c)
@@ -88,12 +86,12 @@ Lens *lensIteratorCamera(Camera *c)
 
 Frame *getPositionCamera(Camera *c)
 {
-    return c->position;
+    return &c->position;
 }
 
 void freeCamera(Camera *c)
 {
-    for (int i = 0; i < nbLens; i++) {	
+    for (int i = 0; i < c->nbLens; i++)	
 	freeLens(c->lensBuffer[i]);
     free(c->lensBuffer);
     free(c);

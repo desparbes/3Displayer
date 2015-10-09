@@ -8,9 +8,9 @@
 #include "color.h"
 #include "texture.h"
 #include "project.h"
-#include "solid.h"
 #include "equation.h"
 #include "lens.h"
+#include "frame.h"
 
 #define MAXLENGTH 256
 #define EPSILON 0.001
@@ -89,6 +89,12 @@ void rotSolidZAxis(Solid *solid, const Point *O, float theta)
 	rotPointZAxis(&solid->vertices[i], O, theta);
     rotPointXAxis(&solid->origin, O, theta);
 }
+
+void vertexSolid(Lens *l, const Solid *solid, const Color *color)
+{
+    for (int i = 0; i < solid->numVertices; ++i)
+	projectVertex(l, &solid->vertices[i], color);
+}
   
 void wireframeSolid(Lens *l, const Solid *solid, const Color *color)
 {
@@ -101,12 +107,6 @@ void wireframeSolid(Lens *l, const Solid *solid, const Color *color)
 			   &solid->vertices[point2], color);
 	}
     }
-}
-
-void vertexSolid(Lens *l, const Solid *solid, const Color *color)
-{
-    for (int i = 0; i < solid->numVertices; ++i)
-	projectVertex(l, &solid->vertices[i], color);
 }
 
 void normalSolid(Lens *l, const Solid *solid, const Color *color)
@@ -124,6 +124,30 @@ void normalSolid(Lens *l, const Solid *solid, const Color *color)
 	    projectSegment(l, &solid->vertices[point], &tmp, color);
 	}
     }
+}
+
+void drawSolid(Lens *l, const Solid * solid)
+{
+    for (int i = 0; i < solid->numFaces; i++)
+	projectTriangle(l,
+			&solid->vertices[solid->faces[i].vertices[0].point],
+			&solid->vertices[solid->faces[i].vertices[1].point],
+			&solid->vertices[solid->faces[i].vertices[2].point],
+			solid->texture,
+			&solid->coords[solid->faces[i].vertices[0].coord],
+			&solid->coords[solid->faces[i].vertices[1].coord],
+			&solid->coords[solid->faces[i].vertices[2].coord],
+			&solid->normals[solid->faces[i].vertices[0].normal],
+			&solid->normals[solid->faces[i].vertices[1].normal],
+			&solid->normals[solid->faces[i].vertices[2].normal]);
+}
+
+void drawFrame(Lens *l, Frame *frame)
+{
+    Color color;
+    projectSegment(l, &frame->O, &frame->i, setColor(&color, 255, 0, 0));
+    projectSegment(l, &frame->O, &frame->j, setColor(&color, 0, 255, 0));
+    projectSegment(l, &frame->O, &frame->k, setColor(&color, 0, 0, 255));
 }
 
 // load .obj files
@@ -406,20 +430,4 @@ void freeSolid(Solid *solid)
     free(solid->coords);
     free(solid->faces);
     free(solid);
-}
-
-void drawSolid(Lens *l, const Solid * solid)
-{
-    for (int i = 0; i < solid->numFaces; i++)
-	projectTriangle(l,
-			&solid->vertices[solid->faces[i].vertices[0].point],
-			&solid->vertices[solid->faces[i].vertices[1].point],
-			&solid->vertices[solid->faces[i].vertices[2].point],
-			solid->texture,
-			&solid->coords[solid->faces[i].vertices[0].coord],
-			&solid->coords[solid->faces[i].vertices[1].coord],
-			&solid->coords[solid->faces[i].vertices[2].coord],
-			&solid->normals[solid->faces[i].vertices[0].normal],
-			&solid->normals[solid->faces[i].vertices[1].normal],
-			&solid->normals[solid->faces[i].vertices[2].normal]);
 }

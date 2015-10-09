@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "lens.h"
 #include "frame.h"
 #include "coord.h"
 #include "point.h"
@@ -19,10 +18,11 @@ typedef struct {
     int hfov;
 } Lens;
 
-void initLens(Lens *l, Frame *position, Frame *parent, Coord *screenPosition, 
+Lens *initLens(Frame *position, Frame *parent, Coord *screenPosition, 
 	      int screenWidth, int screenHeight, float nearplan, 
 	      float farplan, int wfov, int hfov)
 {
+    Lens *l = malloc(sizeof(Lens));
     l->position = *position;
     l->parent = parent;
     l->screenPosition = *screenPosition;
@@ -33,6 +33,7 @@ void initLens(Lens *l, Frame *position, Frame *parent, Coord *screenPosition,
     l->farplan = farplan;
     l->wfov = wfov;
     l->hfov = hfov;
+    return l;
 }
 
 void resetLens(Lens *l)
@@ -104,6 +105,7 @@ Coord *getScreenPosition(Lens *l)
 void freeLens(Lens *l)
 {
     free(l->zBuffer);
+    free(l);
 }
     
     

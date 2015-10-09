@@ -53,7 +53,7 @@ static void initSDL(int screenWidth, int screenHeight)
 void initScene(void)
 {
     int screenWidth = 1200;
-    int screenHeight = 900;
+    int screenHeight = 600;
 
     
     scene.c = initCamera();
@@ -66,9 +66,9 @@ void initScene(void)
     setCoord(&coord1, 0, 0);
     setCoord(&coord1, screenWidth / 2, 0);
     addLensToCamera(scene.c, &frame1, &coord1, screenWidth / 2, screenHeight, 
-		    1., 20., 60, 90);
+		    1., 20., 80, 80);
     addLensToCamera(scene.c, &frame2, &coord2, screenWidth / 2, screenHeight, 
-		    1., 20., 60, 90);
+		    1., 20., 80, 80);
     resetCamera(scene.c);
 
     initLight(&scene.light, 1., -0.5, -2.);
@@ -179,10 +179,10 @@ void drawScene(void)
 {
     Camera *C = scene.c;
     Color color;
+
+    resetCamera(C);
     SDL_FillRect(scene.screen, NULL, SDL_MapRGB(scene.screen->format, 
 						128, 128, 128));
-
-    resetCamera(scene.c);
 
     for (initIteratorCamera(C); condIteratorCamera(C); nextIteratorCamera(C)) {
 	if (getDrawEvent())

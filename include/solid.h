@@ -4,6 +4,7 @@
 #include "color.h"
 #include "point.h"
 #include "lens.h"
+#include "frame.h"
 
 typedef struct Solid Solid;
 
@@ -13,6 +14,7 @@ void wireframeSolid(Lens *l, const Solid *solid, const Color *color);
 void vertexSolid(Lens *l, const Solid *solid, const Color *color);
 void normalSolid(Lens *l, const Solid *solid, const Color *color);
 void drawSolid(Lens *l, const Solid *solid);
+void drawFrame(Lens *l, Frame *frame);
 
 void scaleSolid(Solid *solid, const Point *O, float scale);
 void rotSolidXAxis(Solid *solid, const Point *O, float phi);
