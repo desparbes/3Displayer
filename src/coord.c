@@ -8,14 +8,21 @@ void setCoord(Coord *c, int w, int h)
     c->h = h;
 }
 
-void diffRect(const Coord *A, const Coord *B, Coord *S)
+void diffCoord(const Coord *A, const Coord *B, Coord *S)
 {
     setCoord(S,
 	     A->w - B->w,
 	     A->h - B->h);
 }
 
-int relativeProduct(const Coord *u, const Coord *v)
+void sumCoord(const Coord *A, const Coord *B, Coord *S)
+{
+    setCoord(S,
+	     A->w + B->w,
+	     A->h + B->h);
+}
+
+int productCoord(const Coord *u, const Coord *v)
 {
     return u->h * v->w - u->w * v->h;
 }

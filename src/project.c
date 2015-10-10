@@ -37,14 +37,13 @@ static void projectCoord(Lens *l, const Point *OA, float depth, Coord *S)
 {    
     int sW = getScreenWidth(l);
     int sH = getScreenHeight(l);
-    Coord *sP = getScreenPosition(l);
     Frame *p = getPosition(l);
 
-    S->w = sP->w + sW / 
+    S->w = sW / 
 	(2. * tan(getHfov(l) * M_PI / 360.)) * 
 	scalarProduct(&p->i, OA) / 
 	depth + sW / 2;
-    S->h = sP->h - sH / 
+    S->h = -sH / 
 	(2. * tan(getWfov(l) * M_PI / 360.)) * 
 	scalarProduct(&p->k, OA) / 
 	depth + sH / 2;

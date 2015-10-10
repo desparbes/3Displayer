@@ -14,6 +14,7 @@ set(
   equation.c
   camera.c
   lens.c
+  pixel.c
 )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})

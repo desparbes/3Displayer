@@ -53,7 +53,7 @@ static void initSDL(int screenWidth, int screenHeight)
 void initScene(void)
 {
     int screenWidth = 1200;
-    int screenHeight = 600;
+    int screenHeight = 800;
 
     
     scene.c = initCamera();
@@ -61,14 +61,16 @@ void initScene(void)
     Frame frame2;
     Coord coord1;
     Coord coord2;
-    resetFrame(&frame1, -1., -5., 0);
-    resetFrame(&frame2, 1., -5., 0);
-    setCoord(&coord1, 0, 0);
-    setCoord(&coord2, screenWidth / 2, 0);
-    addLensToCamera(scene.c, &frame1, &coord1, screenWidth / 2, screenHeight, 
-		    1., 20., 80, 80);
-    addLensToCamera(scene.c, &frame2, &coord2, screenWidth / 2, screenHeight, 
-		    1., 20., 80, 80);
+    resetFrame(&frame1, -0.5, -5., 0);
+    resetFrame(&frame2, 0.5, -5., 0);
+    setCoord(&coord1, 10, 10);
+    setCoord(&coord2, screenWidth / 2 + 10, 10);
+    addLensToCamera(scene.c, &frame2, &coord2, screenWidth / 2 - 20, screenHeight - 20, 
+		    1., 20., 80, 60);
+    
+    addLensToCamera(scene.c, &frame1, &coord1, screenWidth / 2 - 20, screenHeight - 20, 
+		    1., 20., 80, 60);
+    
     resetCamera(scene.c);
 
     initLight(&scene.light, 1., -0.5, -2.);
