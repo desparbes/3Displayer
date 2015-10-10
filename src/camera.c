@@ -53,9 +53,13 @@ void translateCamera(Camera *c, float x, float y, float z)
 
 void rotateCamera(Camera *c, float theta, float phi, float rho)
 {
-    for (int i = 0; i < c->nbLens; i++)
-	rotateLens(c->lensBuffer[i], theta, phi, rho);
+    /*
     rotateFrame(&c->position, theta, phi, rho);
+    for (int i = 0; i < c->nbLens; i++)
+    	rotateLens(c->lensBuffer[i], &c->position, theta, phi, rho);
+    for (int i = 0; i < c->nbLens; i++)
+	setDirectionLens(c->lensBuffer[i], &c->position);	
+    */
 }
 
 void removeLensFromCamera(Camera *c)

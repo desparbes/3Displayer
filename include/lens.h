@@ -12,7 +12,8 @@ Lens *initLens(Frame *position, Frame *parent, Coord *screenPosition,
 	       float farplan, int wfov, int hfov);
 void resetLens(Lens *l);
 void translateLens(Lens *l, float x, float y, float z);
-void rotateLens(Lens *l, float theta, float phi, float rho);
+void rotateLens(Lens *l, Frame *cameraPosition, float theta, float phi, float rho);
+void setDirectionLens(Lens *l, Frame *direction);
 float *getZBuffer(Lens *l);
 int getScreenHeight(Lens *l);
 int getScreenWidth(Lens *l);

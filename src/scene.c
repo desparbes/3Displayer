@@ -64,7 +64,7 @@ void initScene(void)
     resetFrame(&frame1, -1., -5., 0);
     resetFrame(&frame2, 1., -5., 0);
     setCoord(&coord1, 0, 0);
-    setCoord(&coord1, screenWidth / 2, 0);
+    setCoord(&coord2, screenWidth / 2, 0);
     addLensToCamera(scene.c, &frame1, &coord1, screenWidth / 2, screenHeight, 
 		    1., 20., 80, 80);
     addLensToCamera(scene.c, &frame2, &coord2, screenWidth / 2, screenHeight, 

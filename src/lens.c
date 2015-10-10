@@ -7,7 +7,6 @@
 
 typedef struct {
     Frame position; // Absolute
-    Frame *parent;
     Coord screenPosition;
     int screenWidth;
     int screenHeight;
@@ -18,13 +17,12 @@ typedef struct {
     int hfov;
 } Lens;
 
-Lens *initLens(Frame *position, Frame *parent, Coord *screenPosition, 
+Lens *initLens(Frame *position, Coord *screenPosition, 
 	      int screenWidth, int screenHeight, float nearplan, 
 	      float farplan, int wfov, int hfov)
 {
     Lens *l = malloc(sizeof(Lens));
     l->position = *position;
-    l->parent = parent;
     l->screenPosition = *screenPosition;
     l->screenWidth = screenWidth;
     l->screenHeight = screenHeight;
@@ -48,14 +46,17 @@ void translateLens(Lens *l, float x, float y, float z)
     translateFrame(&l->position, x, y, z);
 }
 
-void rotateLens(Lens *l, float theta, float phi, float rho)
+void rotateLens(Lens *l, Frame *cameraPosition, float theta, float phi, float rho)
 {
-    rotPoint(&l->position.O, &l->parent->k, theta, &l->position.O);
-    rotPoint(&l->position.O, &l->parent->i, phi, &l->position.O);
-    rotPoint(&l->position.O, &l->parent->j, rho, &l->position.O);
-    
-    rotateFrame(&l->position, theta, phi, rho);
+    rotatePointFromFrame(&l->position.O, cameraPosition, theta, phi, rho);
 }
+
+void setDirectionLens(Lens *l, Frame *direction)
+{
+    l->position.i = direction->i;
+    l->position.j = direction->j;
+    l->position.k = direction->k;
+}    
 
 float *getZBuffer(Lens *l)
 {

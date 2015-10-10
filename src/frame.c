@@ -28,6 +28,17 @@ void rotateFrame(Frame *frame, float theta, float phi, float rho)
     pointProduct(&frame->i, &frame->j, &frame->k);
 }
 
+void rotatePointFromFrame(Point *A, Frame *frame, 
+			  float theta, float phi, float rho)
+{
+    Point OA;
+    diffPoint(A, &frame->O, &OA);
+    rotPoint(&OA, &frame->k, theta, &OA);
+    rotPoint(&OA, &frame->i, phi, &OA);
+    rotPoint(&OA, &frame->j, rho, &OA);
+    sumPoint(A, &OA, A);
+}
+
 void translateFrame(Frame *frame, float x, float y, float z)
 {
     translatePoint(&frame->O, x, y, z);
