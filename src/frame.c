@@ -15,33 +15,25 @@ void resetFrame(Frame *frame, float x, float y, float z)
 
 void rotateFrame(Frame *frame, float theta, float phi, float rho)
 {
-    frame->j.x = sin(theta);
-    frame->j.y = cos(theta);
-    frame->j.z = 0.;
-
-    frame->i.x = frame->j.y;
-    frame->i.y = -frame->j.x;
-    frame->i.z = 0.;
-
+    setPoint(&frame->j, sin(theta), cos(theta), 0.);
+    setPoint(&frame->i, frame->j.y, -frame->j.x, 0.);
     rotPoint(&frame->j, &frame->i, phi, &frame->j);
     rotPoint(&frame->i, &frame->j, rho, &frame->i);
     pointProduct(&frame->i, &frame->j, &frame->k);
-}
-
-void rotatePointFromFrame(Point *A, Frame *frame, 
-			  float theta, float phi, float rho)
-{
-    Point OA;
-    diffPoint(A, &frame->O, &OA);
-    rotPoint(&OA, &frame->k, theta, &OA);
-    rotPoint(&OA, &frame->i, phi, &OA);
-    rotPoint(&OA, &frame->j, rho, &OA);
-    sumPoint(A, &OA, A);
 }
 
 void translateFrame(Frame *frame, float x, float y, float z)
 {
     translatePoint(&frame->O, x, y, z);
 }
+
+void absolutePointInFrame(const Frame *f, const Point *A, Point *B)
+{
+    setPoint(B, 
+	     f->O.x + A->x * f->i.x + A->y * f->j.x + A->z * f->k.x,
+	     f->O.y + A->x * f->i.y + A->y * f->j.y + A->z * f->k.y,
+	     f->O.z + A->x * f->i.z + A->y * f->j.z + A->z * f->k.z);
+}    
+
 
 

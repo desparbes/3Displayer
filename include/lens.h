@@ -7,13 +7,11 @@
 
 typedef struct Lens Lens;
 
-Lens *initLens(Frame *position, Frame *parent, Coord *screenPosition, 
+Lens *initLens(Point *offset, Coord *screenPosition, 
 	       int screenWidth, int screenHeight, float nearplan, 
 	       float farplan, int wfov, int hfov);
 void resetLens(Lens *l);
-void translateLens(Lens *l, float x, float y, float z);
-void rotateLens(Lens *l, Frame *cameraPosition, float theta, float phi, float rho);
-void setDirectionLens(Lens *l, Frame *direction);
+void updateLens(Lens *l, Frame *camera);
 float *getZBuffer(Lens *l);
 int getScreenHeight(Lens *l);
 int getScreenWidth(Lens *l);

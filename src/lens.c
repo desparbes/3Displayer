@@ -6,7 +6,8 @@
 #include "point.h"
 
 typedef struct {
-    Frame position; // Absolute
+    Frame position; //Absolute
+    Point offset; //Relative to camera
     Coord screenPosition;
     int screenWidth;
     int screenHeight;
@@ -17,12 +18,12 @@ typedef struct {
     int hfov;
 } Lens;
 
-Lens *initLens(Frame *position, Coord *screenPosition, 
+Lens *initLens(Point *offset, Coord *screenPosition, 
 	      int screenWidth, int screenHeight, float nearplan, 
 	      float farplan, int wfov, int hfov)
 {
     Lens *l = malloc(sizeof(Lens));
-    l->position = *position;
+    l->offset = *offset;
     l->screenPosition = *screenPosition;
     l->screenWidth = screenWidth;
     l->screenHeight = screenHeight;
@@ -41,21 +42,12 @@ void resetLens(Lens *l)
 	l->zBuffer[i] = -1.;
 }
 
-void translateLens(Lens *l, float x, float y, float z)
+void updateLens(Lens *l, Frame *camera)
 {
-    translateFrame(&l->position, x, y, z);
-}
-
-void rotateLens(Lens *l, Frame *cameraPosition, float theta, float phi, float rho)
-{
-    rotatePointFromFrame(&l->position.O, cameraPosition, theta, phi, rho);
-}
-
-void setDirectionLens(Lens *l, Frame *direction)
-{
-    l->position.i = direction->i;
-    l->position.j = direction->j;
-    l->position.k = direction->k;
+    l->position.i = camera->i;
+    l->position.j = camera->j;
+    l->position.k = camera->k;
+    absolutePointInFrame(camera, &l->offset, &l->position.O);
 }    
 
 float *getZBuffer(Lens *l)

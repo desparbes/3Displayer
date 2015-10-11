@@ -14,10 +14,16 @@ typedef struct {
     int bufferSize;
 } Camera;
 
-Camera *initCamera(void)
+static void updateCamera(Camera *c)
+{
+    for (int i = 0; i < c->nbLens; i++)
+	updateLens(c->lensBuffer[i], &c->position);
+}
+
+Camera *initCamera(Frame *position)
 {
     Camera *c = malloc(sizeof(Camera));
-    resetFrame(&c->position, 0., -5., 0.);
+    c->position = *position;
     c->nbLens = 0;
     c->bufferSize = 4;
     c->iterator = 0;
@@ -25,7 +31,7 @@ Camera *initCamera(void)
     return c;
 }
 
-void addLensToCamera(Camera *c, Frame *position, Coord *screenPosition, 
+void addLensToCamera(Camera *c, Point *offset, Coord *screenPosition, 
 		     int screenWidth, int screenHeight, float nearplan, 
 		     float farplan, int wfov, int hfov)
 {
@@ -33,9 +39,10 @@ void addLensToCamera(Camera *c, Frame *position, Coord *screenPosition,
 	c->bufferSize *= 2;
 	c->lensBuffer = realloc(c->lensBuffer, c->bufferSize * sizeof(Lens *));
     }
-    c->lensBuffer[c->nbLens++] = initLens(position, &c->position, screenPosition,
-					  screenWidth, screenHeight, nearplan, 
-					  farplan, wfov, hfov);
+    c->lensBuffer[c->nbLens] = initLens(offset, screenPosition,
+					screenWidth, screenHeight, nearplan, 
+					farplan, wfov, hfov);
+    updateLens(c->lensBuffer[c->nbLens++], &c->position);
 }
 
 void resetCamera(Camera *c)
@@ -46,20 +53,14 @@ void resetCamera(Camera *c)
 
 void translateCamera(Camera *c, float x, float y, float z)
 {
-    for (int i = 0; i < c->nbLens; i++)
-	translateLens(c->lensBuffer[i], x, y, z);
     translateFrame(&c->position, x, y, z);
+    updateCamera(c);
 }
 
 void rotateCamera(Camera *c, float theta, float phi, float rho)
 {
-    /*
     rotateFrame(&c->position, theta, phi, rho);
-    for (int i = 0; i < c->nbLens; i++)
-    	rotateLens(c->lensBuffer[i], &c->position, theta, phi, rho);
-    for (int i = 0; i < c->nbLens; i++)
-	setDirectionLens(c->lensBuffer[i], &c->position);	
-    */
+    updateCamera(c);
 }
 
 void removeLensFromCamera(Camera *c)

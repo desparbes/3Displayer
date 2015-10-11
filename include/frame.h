@@ -13,6 +13,6 @@ typedef struct Frame {
 void resetFrame(Frame *frame, float x, float y, float z);
 void rotateFrame(Frame *frame, float theta, float phi, float rho);
 void translateFrame(Frame *frame, float x, float y, float z);
-void rotatePointFromFrame(Point *A, Frame *frame, float theta, float phi, float rho);
+void absolutePointInFrame(const Frame *f, const Point *A, Point *B);
 
 #endif // FRAME_H 

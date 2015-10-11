@@ -8,8 +8,8 @@
 
 typedef struct Camera Camera;
 
-Camera *initCamera();
-void addLensToCamera(Camera *c, Frame *position, Coord *screenPosition, 
+Camera *initCamera(Frame *position);
+void addLensToCamera(Camera *c, Point *offset, Coord *screenPosition, 
 		     int screenWidth, int screenHeight, float nearplan,
 		     float farplan, int wfov, int hfov);
 void resetCamera(Camera *c);
