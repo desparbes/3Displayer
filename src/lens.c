@@ -4,10 +4,12 @@
 #include "frame.h"
 #include "coord.h"
 #include "point.h"
+#include "color.h"
 
 typedef struct {
     Frame position; //Absolute
     Point offset; //Relative to camera
+    Color filter;
     Coord screenPosition;
     int screenWidth;
     int screenHeight;
@@ -18,12 +20,13 @@ typedef struct {
     int hfov;
 } Lens;
 
-Lens *initLens(Point *offset, Coord *screenPosition, 
+Lens *initLens(Point *offset, Coord *screenPosition, Color *filter,
 	      int screenWidth, int screenHeight, float nearplan, 
 	      float farplan, int wfov, int hfov)
 {
     Lens *l = malloc(sizeof(Lens));
     l->offset = *offset;
+    l->filter = *filter;
     l->screenPosition = *screenPosition;
     l->screenWidth = screenWidth;
     l->screenHeight = screenHeight;
@@ -53,6 +56,11 @@ void updateLens(Lens *l, Frame *camera)
 float *getZBuffer(Lens *l)
 {
     return l->zBuffer;
+}
+
+Color *getFilter(Lens *l)
+{
+    return &l->filter;
 }
 
 int getScreenHeight(Lens *l)

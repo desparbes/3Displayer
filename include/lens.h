@@ -4,10 +4,11 @@
 #include "frame.h"
 #include "coord.h"
 #include "point.h"
+#include "color.h"
 
 typedef struct Lens Lens;
 
-Lens *initLens(Point *offset, Coord *screenPosition, 
+Lens *initLens(Point *offset, Coord *screenPosition, Color *filter, 
 	       int screenWidth, int screenHeight, float nearplan, 
 	       float farplan, int wfov, int hfov);
 void resetLens(Lens *l);
@@ -17,6 +18,7 @@ int getScreenHeight(Lens *l);
 int getScreenWidth(Lens *l);
 int getWfov(Lens *l);
 int getHfov(Lens *l);
+Color *getFilter(Lens *l);
 int getNearplan(Lens *l);
 int getFarplan(Lens *l);
 Frame *getPosition(Lens *l);

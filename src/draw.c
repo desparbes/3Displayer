@@ -22,6 +22,7 @@ static void translatePixel(Lens *l, const Coord *A, const Color *color)
 {
     Coord B;
     sumCoord(A, getScreenPosition(l), &B);
+    filterColor(color, getFilter(l));
     setPixel(&B, color);
 }
 

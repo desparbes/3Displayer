@@ -59,19 +59,24 @@ void initScene(void)
     Coord coord2;
     Point point1;
     Point point2;
+    Color filter1;
+    Color filter2;
 
-    setCoord(&coord1, 10, 10);
-    setCoord(&coord2, screenWidth / 2 + 10, 10);
+    setCoord(&coord1, 0, 0);
+    setCoord(&coord2, 0, 0);
 
     setPoint(&point1, -0.5, 0., 0.);
     setPoint(&point2, 0.5, 0., 0.);
 
+    setColor(&filter1, 255, 0, 0);
+    setColor(&filter2, 0, 0, 255);
+
     resetFrame(&camera, 0., -5., 0.);
     scene.c = initCamera(&camera);
-    addLensToCamera(scene.c, &point1 , &coord1, screenWidth / 2 - 20, 
-		    screenHeight - 20, 1., 20., 80, 60);
-    addLensToCamera(scene.c, &point2, &coord2, screenWidth / 2 - 20, 
-		    screenHeight - 20, 1., 20., 80, 60); 
+    addLensToCamera(scene.c, &point1 , &coord1, &filter1, screenWidth, 
+		    screenHeight, 1., 20., 60, 80);
+    addLensToCamera(scene.c, &point2, &coord2,  &filter2, screenWidth, 
+		    screenHeight, 1., 20., 60, 80); 
     resetCamera(scene.c);
 
     initLight(&scene.light, 1., -0.5, -2.);
@@ -187,26 +192,26 @@ void drawScene(void)
     resetCamera(C);
     SDL_FillRect(scene.screen, NULL, SDL_MapRGB(scene.screen->format, 
 						128, 128, 128));
+    static int j = 0;
 
-    for (initIteratorCamera(C); condIteratorCamera(C); nextIteratorCamera(C)) {
-	if (getDrawEvent())
-	    for (int i = 0; i < scene.nbSolid; i++)
-		drawSolid(lensIteratorCamera(C), scene.solidBuffer[i]);
-	if (getWireframeEvent())
-	    for (int i = 0; i < scene.nbSolid; i++)
-		wireframeSolid(lensIteratorCamera(C), scene.solidBuffer[i], 
-			       setColor(&color, 255, 0, 0));
-	if (getNormalEvent())
-	    for (int i = 0; i < scene.nbSolid; i++)
-		normalSolid(lensIteratorCamera(C), scene.solidBuffer[i], 
-			    setColor(&color, 0, 255, 0));
-	if (getVertexEvent())
-	    for (int i = 0; i < scene.nbSolid; i++)
-		vertexSolid(lensIteratorCamera(C), scene.solidBuffer[i], 
-			    setColor(&color, 0, 0, 255));
-	if (getFrameEvent())
-	    drawFrame(lensIteratorCamera(C), &scene.origin);
-    }
+    if (getDrawEvent())
+	for (int i = 0; i < scene.nbSolid; i++)
+	    drawSolid(getLensOfCamera(C, j), scene.solidBuffer[i]);
+    if (getWireframeEvent())
+	for (int i = 0; i < scene.nbSolid; i++)
+	    wireframeSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
+			   setColor(&color, 255, 0, 0));
+    if (getNormalEvent())
+	for (int i = 0; i < scene.nbSolid; i++)
+	    normalSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
+			setColor(&color, 0, 255, 0));
+    if (getVertexEvent())
+	for (int i = 0; i < scene.nbSolid; i++)
+	    vertexSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
+			setColor(&color, 0, 0, 255));
+    if (getFrameEvent())
+	drawFrame(getLensOfCamera(C, j), &scene.origin);
+    j < (getNbLens(C) - 1) ? j++ : (j = 0); 
     SDL_Flip(scene.screen);
 }
 

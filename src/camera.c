@@ -7,7 +7,6 @@
 #include "point.h"
 
 typedef struct {
-    int iterator;
     Frame position;
     Lens **lensBuffer;
     int nbLens;
@@ -26,23 +25,23 @@ Camera *initCamera(Frame *position)
     c->position = *position;
     c->nbLens = 0;
     c->bufferSize = 4;
-    c->iterator = 0;
     c->lensBuffer = malloc(c->bufferSize * sizeof(Lens *));
     return c;
 }
 
-void addLensToCamera(Camera *c, Point *offset, Coord *screenPosition, 
-		     int screenWidth, int screenHeight, float nearplan, 
-		     float farplan, int wfov, int hfov)
+int addLensToCamera(Camera *c, Point *offset, Coord *screenPosition, 
+		    Color *filter, int screenWidth, int screenHeight, 
+		    float nearplan, float farplan, int wfov, int hfov)
 {
     if (c->nbLens >= c->bufferSize){
 	c->bufferSize *= 2;
 	c->lensBuffer = realloc(c->lensBuffer, c->bufferSize * sizeof(Lens *));
     }
-    c->lensBuffer[c->nbLens] = initLens(offset, screenPosition,
+    c->lensBuffer[c->nbLens] = initLens(offset, screenPosition, filter,
 					screenWidth, screenHeight, nearplan, 
 					farplan, wfov, hfov);
     updateLens(c->lensBuffer[c->nbLens++], &c->position);
+    return c->nbLens - 1;
 }
 
 void resetCamera(Camera *c)
@@ -69,24 +68,17 @@ void removeLensFromCamera(Camera *c)
 	freeLens(c->lensBuffer[--c->nbLens]);
 }
 
-void initIteratorCamera(Camera *c)
+int getNbLens(Camera *c)
 {
-    c->iterator = 0;
+    return c->nbLens;
 }
 
-int condIteratorCamera(Camera *c)
+Lens *getLensOfCamera(Camera *c, int n)
 {
-    return c->iterator < c->nbLens;
-}
-
-void nextIteratorCamera(Camera *c)
-{
-    c->iterator++;
-}
-
-Lens *lensIteratorCamera(Camera *c)
-{
-    return c->lensBuffer[c->iterator];
+    if (n >= 0 && n < c->nbLens)
+	return c->lensBuffer[n];
+    else
+	return NULL;
 }
 
 Frame *getPositionCamera(Camera *c)
