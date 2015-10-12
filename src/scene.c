@@ -95,7 +95,9 @@ void initScene(void)
 void updateScene(int *stop)
 {
     SDL_Event event;
-    SDL_WaitEvent(&event);
+    if ( !SDL_PollEvent(&event) )
+	return;
+    
     do {
 	switch (event.type) {
 	case SDL_QUIT:
