@@ -1,0 +1,8 @@
+frequency 1
+translationSpeed 0.1
+rotationSpeed 0.01
+position (0.,-5.,0.)
+theta 0.
+phi 0.
+rho 0.
+lens cameras/lens/standard.txt

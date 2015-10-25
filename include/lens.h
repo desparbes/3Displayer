@@ -8,9 +8,7 @@
 
 typedef struct Lens Lens;
 
-Lens *initLens(Point *offset, Coord *screenPosition, Color *filter, 
-	       int screenWidth, int screenHeight, float nearplan, 
-	       float farplan, int wfov, int hfov);
+Lens *initLens(char *fileName);
 void resetLens(Lens *l);
 void updateLens(Lens *l, Frame *camera);
 float *getZBuffer(Lens *l);

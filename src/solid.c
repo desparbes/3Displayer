@@ -1,16 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <SDL/SDL.h>
 #include <math.h>
 #include <string.h>
 
 #include "point.h"
 #include "color.h"
-#include "texture.h"
+#include "position.h"
 #include "project.h"
 #include "equation.h"
 #include "lens.h"
 #include "frame.h"
+#include "texture.h"
 
 #define MAXLENGTH 256
 #define EPSILON 0.001
@@ -33,8 +33,8 @@ typedef struct Solid {
     Point origin;
     Point *vertices;
     Point *normals;
-    Texture *coords;
-    SDL_Surface *texture;
+    Position *coords;
+    Texture *texture;
     Face *faces;
 } Solid;
 
@@ -154,7 +154,6 @@ void drawFrame(Lens *l, Frame *frame)
 Solid *loadSolid(const char *fileName, const char *bmpName)
 {
     FILE *file = fopen(fileName, "r");
-
     if (file == NULL) {
 	perror(fileName);
         return NULL;
@@ -188,12 +187,10 @@ Solid *loadSolid(const char *fileName, const char *bmpName)
     }
     solid->vertices = (Point*) malloc(solid->numVertices * sizeof(Point));
     solid->normals = (Point*) malloc(solid->numNormals * sizeof(Point));
-    solid->coords = (Texture*) malloc(solid->numCoords * sizeof(Texture));
+    solid->coords = (Position*) malloc(solid->numCoords * sizeof(Position));
     solid->faces = (Face *) malloc(solid->numFaces * sizeof(Face));
  
-   if ((solid->texture = SDL_LoadBMP(bmpName)) == NULL)
-       fprintf(stderr, "%s\n", SDL_GetError());
-   else
+    if((solid->texture = loadTexture(bmpName)))
        printf("Texture successfully loaded\n");
 
     rewind(file);
@@ -329,16 +326,16 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
 
     solid->vertices = malloc(solid->numVertices * sizeof(Point));
     solid->normals = malloc(solid->numNormals * sizeof(Point));
-    solid->coords = malloc(solid->numCoords * sizeof(Texture));
+    solid->coords = malloc(solid->numCoords * sizeof(Position));
     solid->faces = malloc(solid->numFaces * sizeof(Face));
 
-    setTexture(&solid->coords[0], 0., 0.);
-    setTexture(&solid->coords[1], 0., 1.);
-    setTexture(&solid->coords[2], 1., 0.);
-    setTexture(&solid->coords[3], 1., 1.);
+    setPosition(&solid->coords[0], 0., 0.);
+    setPosition(&solid->coords[1], 0., 1.);
+    setPosition(&solid->coords[2], 1., 0.);
+    setPosition(&solid->coords[3], 1., 1.);
 
-    if ((solid->texture = SDL_LoadBMP(bmpName)) == NULL)
-	fprintf(stderr, "%s\n", SDL_GetError());
+    if (solid->texture = loadTexture(bmpName))
+	printf("Texture successfully loaded\n");
     
     if (solid->numVertices > 0)
 	getValueFromEquation(x, y, z, s, t, &solid->vertices[0]);	
@@ -423,8 +420,7 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
 
 void freeSolid(Solid *solid)
 {
-    if (solid->texture != NULL)
-	SDL_FreeSurface(solid->texture);
+    freeTexture(solid->texture);
     free(solid->vertices);
     free(solid->normals);
     free(solid->coords);

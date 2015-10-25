@@ -1,4 +1,4 @@
-#include "texture.h"
+#include "position.h"
 
 static float loopFloat(float x)
 {
@@ -9,13 +9,13 @@ static float loopFloat(float x)
     return x;
 }
 
-void loopTexture(Texture *t)
+void loopPosition(Position *t)
 {
     t->x = loopFloat(t->x);
     t->y = loopFloat(t->y);
 }
 
-void setTexture(Texture *t, float x, float y)
+void setPosition(Position *t, float x, float y)
 {
     t->x = x;
     t->y = y;

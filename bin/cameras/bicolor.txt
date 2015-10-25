@@ -1,0 +1,9 @@
+frequency 2
+translationSpeed 0.1
+rotationSpeed 0.01
+position (0.,-5.,0.)
+theta 0.
+phi 0.
+rho 0.
+cameras/lens/red_left.txt
+cameras/lens/blue_right.txt

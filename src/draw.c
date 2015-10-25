@@ -4,9 +4,8 @@
 #include "coord.h"
 #include "color.h"
 #include "lens.h"
-#include "pixel.h"
+#include "display.h"
 #include "scene.h"
-#include "SDL/SDL.h"
 
 static inline int min(int a, int b)
 {
@@ -21,9 +20,10 @@ static inline int max(int a, int b)
 static void translatePixel(Lens *l, const Coord *A, const Color *color)
 {
     Coord B;
+    Color filtered = *color;
     sumCoord(A, getScreenPosition(l), &B);
-    filterColor(color, getFilter(l));
-    setPixel(&B, color);
+    filterColor(&filtered, getFilter(l));
+    pixelDisplay(&B, &filtered);
 }
 
 void drawPixel(Lens *l, const Coord *A, float depthA, const Color *color)
@@ -96,8 +96,8 @@ void drawSegment(Lens *l, const Coord *A, const Coord *B,
 
 void drawTriangle(Lens *l, const Coord *A, const Coord *B, const Coord *C,
 		  float depthA, float depthB, float depthC,
-		  SDL_Surface *triangle,
-		  const Texture *U, const Texture *V, const Texture *W,
+		  Texture *triangle,
+		  const Position *U, const Position *V, const Position *W,
 		  const Point *normalA,
 		  const Point *normalB,
 		  const Point *normalC)
@@ -153,22 +153,21 @@ void drawTriangle(Lens *l, const Coord *A, const Coord *B, const Coord *C,
     float scale;
     float depthM;
 
-    Texture N, u, v, w;
+    Position N, u, v, w;
     if (triangle != NULL) {
-	setTexture(&u,
+	setPosition(&u,
 		   U->x / depthA,
 		   U->y / depthA);
-	setTexture(&v,
+	setPosition(&v,
 	           V->x / depthB,
 		   V->y / depthB);
-	setTexture(&w,
+	setPosition(&w,
 		   W->x / depthC,
 		   W->y / depthC);
     }
 
     int det = productCoord(&AB, &AC);
-    Uint8 r, g, b;
-    Uint32 *pixel;
+    Color c;
 
     Coord M;
     Coord AM, BM, CM;
@@ -201,31 +200,24 @@ void drawTriangle(Lens *l, const Coord *A, const Coord *B, const Coord *C,
 		scale = scaleABC / 
 		    (gamma * scaleBC + beta * scaleCA + alpha * scaleAB);
 		
-		if (triangle != NULL) {
+		if (triangle) {
+		    float denominator = (gamma / depthA + 
+					 beta / depthB + 
+					 alpha / depthC);
 		    N.x = (gamma * u.x + beta * v.x + alpha * w.x) / 
-			(gamma / depthA + beta / depthB + alpha / depthC);
+			denominator;
 		    N.y = (gamma * u.y + beta * v.y + alpha * w.y) /
-			(gamma / depthA + beta / depthB + alpha / depthC);
+			denominator;
 
-		    loopTexture(&N);
-
-		    pixel = (Uint32 *) (triangle->pixels +
-					(int) (N.x * triangle->w) *
-					triangle->format->BitsPerPixel / 8 +
-					(int) (N.y * triangle->h) *
-					triangle->w *
-					triangle->format->BitsPerPixel / 8);
-	        
-		    SDL_GetRGB(*pixel, triangle->format, &r, &g, &b);
+		    loopPosition(&N);
+		    getPixelTexture(triangle, &N, &c);
 		} else {
-		    r = 255;
-		    g = 0;
-		    b = 255;
+		    c.r = 255;
+		    c.g = 0;
+		    c.b = 255;
 		}
-
-		Color scaled;
-		setColor(&scaled, scale * r, scale * g, scale * b);
-		translatePixel(l, &M, &scaled);
+		scaleColor(&c, scale);
+		translatePixel(l, &M, &c);
 		zB[M.w + M.h * sW] = depthM;
 	    }
 	    M.w++;

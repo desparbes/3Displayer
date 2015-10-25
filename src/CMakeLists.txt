@@ -6,7 +6,7 @@ set(
   project.c
   coord.c
   point.c
-  texture.c
+  position.c
   color.c
   solid.c
   scene.c
@@ -14,7 +14,8 @@ set(
   equation.c
   camera.c
   lens.c
-  pixel.c
+  display.c
+  texture.c
 )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})

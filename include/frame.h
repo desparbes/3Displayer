@@ -10,9 +10,11 @@ typedef struct Frame {
     Point k;
 } Frame;
 
-void resetFrame(Frame *frame, float x, float y, float z);
+
+void initFrame(Frame *f);
+void rotateFrameAroundPoint(Frame *f, const Point *axis, float angle);
 void rotateFrame(Frame *frame, float theta, float phi, float rho);
-void translateFrame(Frame *frame, float x, float y, float z);
-void absolutePointInFrame(const Frame *f, const Point *A, Point *B);
+void translateFrame(Frame *frame, Point *A, float scale);
+void getAbsolutePointFromFrame(const Frame *f, const Point *A, Point *B);
 
 #endif // FRAME_H 

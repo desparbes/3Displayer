@@ -8,6 +8,7 @@ typedef struct Color {
 } Color;
 
 Color *setColor(Color *color, unsigned char r, unsigned char g, unsigned char b);
-void filterColor(Color *color, const Color *filter);
+Color *filterColor(Color *color, const Color *filter);
+Color *scaleColor(Color *color, float scale);
 
 #endif // COLOR_H

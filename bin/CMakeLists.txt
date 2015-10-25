@@ -1,2 +1,4 @@
 install(DIRECTORY models DESTINATION .)
 install(DIRECTORY textures DESTINATION .)
+install(DIRECTORY cameras DESTINATION .)
+install(DIRECTORY config DESTINATION .)

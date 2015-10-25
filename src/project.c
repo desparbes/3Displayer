@@ -6,13 +6,7 @@
 #include "draw.h"
 #include "color.h"
 #include "scene.h"
-
-typedef struct {
-    Point *A, *B, *C;
-    Point *normalA, *normalB, *normalC;
-    Texture *textureA, *textureB, textureC;
-    SDL_Surface *texture;
-} Triangle;
+#include "texture.h"
 
 // return the vector between camera.O and the intersection of (AB) 
 // and the NEARPLAN
@@ -97,10 +91,10 @@ static void cutInOneTriangle(Lens *l,
 			     const Point *A, const Point *B, const Point *C,
 			     float depthA, float depthB, float depthC,
 			     const Point *OA,
-			     SDL_Surface *triangle,
-			     const Texture *U, 
-			     const Texture *V, 
-			     const Texture *W,
+			     Texture *triangle,
+			     const Position *U, 
+			     const Position *V, 
+			     const Position *W,
 			     const Point *normalA, 
 			     const Point *normalB,
 			     const Point *normalC)
@@ -130,11 +124,11 @@ static void cutInOneTriangle(Lens *l,
     projectCoord(l, &OpB, nearplan, &bn);
     projectCoord(l, &OpC, nearplan, &cn);
     
-    Texture UV, UW;
-    setTexture(&UV,
+    Position UV, UW;
+    setPosition(&UV,
 	       (V->x - U->x) * kB + U->x,
 	       (V->y - U->y) * kB + U->y);
-    setTexture(&UW,
+    setPosition(&UW,
 	       (W->x - U->x) * kC + U->x,
 	       (W->y - U->y) * kC + U->y);
     
@@ -161,10 +155,10 @@ static void cutInTwoTriangles(Lens *l,
 			      const Point *A, const Point *B, const Point *C,
 			      float depthA, float depthB, float depthC,
 			      const Point *OB, const Point *OC,
-			      SDL_Surface *triangle,
-			      const Texture *U, 
-			      const Texture *V, 
-			      const Texture *W,
+			      Texture *triangle,
+			      const Position *U, 
+			      const Position *V, 
+			      const Position *W,
 			      const Point *normalA, 
 			      const Point *normalB,
 			      const Point *normalC)
@@ -195,9 +189,9 @@ static void cutInTwoTriangles(Lens *l,
     projectCoord(l, &OpB, nearplan, &opbn);
     projectCoord(l, &OpC, nearplan, &opcn);
     
-    Texture VU, WU;
-    setTexture(&VU, (V->x - U->x) * kB + U->x, (V->y - U->y) * kB + U->y);
-    setTexture(&WU, (W->x - U->x) * kC + U->x, (W->y - U->y) * kC + U->y);
+    Position VU, WU;
+    setPosition(&VU, (V->x - U->x) * kB + U->x, (V->y - U->y) * kB + U->y);
+    setPosition(&WU, (W->x - U->x) * kC + U->x, (W->y - U->y) * kC + U->y);
     
     Point nAB, nAC;
     setPoint(&nAB,
@@ -226,8 +220,8 @@ static void cutInTwoTriangles(Lens *l,
 }
 
 void projectTriangle(Lens *l, const Point *A, const Point *B, const Point *C,
-		     SDL_Surface *triangle,
-		     const Texture *U, const Texture *V, const Texture *W,
+		     Texture *triangle,
+		     const Position *U, const Position *V, const Position *W,
 		     const Point *normalA, 
 		     const Point *normalB,
 		     const Point *normalC)

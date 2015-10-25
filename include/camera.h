@@ -8,15 +8,14 @@
 
 typedef struct Camera Camera;
 
-Camera *initCamera(Frame *position);
-void addLensToCamera(Camera *c, Point *offset, Coord *screenPosition, 
-		     Color *filter, int screenWidth, int screenHeight, 
-		     float nearplan, float farplan, int wfov, int hfov);
+Camera *initCamera(char *fileName);
 void resetCamera(Camera *c);
-void translateCamera(Camera *c, float x, float y, float z);
-void rotateCamera(Camera *c, float theta, float phi, float rho);
-void removeLensFromCamera(Camera *c);
-Lens *getLensOfCamera(Camera *c, int n);
+void translateCamera(Camera *c, int direction);
+void rotateCamera(Camera *c, int direction);
+void switchStateCamera(Camera *c, int state);
+int displayLensCamera(Camera *c, int lens);
+Lens *getLensOfCamera(Camera *c, int lens);
+int getStateCamera(Camera *c, int state);
 int getNbLens(Camera *c);
 void freeCamera(Camera *c);
 
