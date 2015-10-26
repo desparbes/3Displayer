@@ -334,7 +334,7 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
     setPosition(&solid->coords[2], 1., 0.);
     setPosition(&solid->coords[3], 1., 1.);
 
-    if (solid->texture = loadTexture(bmpName))
+    if ((solid->texture = loadTexture(bmpName)))
 	printf("Texture successfully loaded\n");
     
     if (solid->numVertices > 0)

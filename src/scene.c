@@ -68,7 +68,7 @@ void initScene(void)
 			    &scene.light.z) == 3)
 		match++;
 	    else if (strcmp(str, "background") == 0 &&
-		     fscanf(file, "(%d,%d,%d)", 
+		     fscanf(file, "(%hhd,%hhd,%hhd)", 
 			    &background.r, 
 			    &background.g, 
 			    &background.b) == 3)

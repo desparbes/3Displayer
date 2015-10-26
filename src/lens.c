@@ -189,5 +189,3 @@ void freeLens(Lens *l)
     free(l->zBuffer);
     free(l);
 }
-    
-    

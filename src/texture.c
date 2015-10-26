@@ -9,7 +9,7 @@ typedef struct Texture {
     SDL_Surface *t;
 } Texture;
 
-Texture *loadTexture(char *fileName)
+Texture *loadTexture(const char *fileName)
 {
     SDL_Surface *tmp = SDL_LoadBMP(fileName);
     if (!tmp) {
