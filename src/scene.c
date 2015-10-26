@@ -44,59 +44,57 @@ void initScene(void)
 {
     Color background;
     int screenWidth, screenHeight;
-    int match = 0;
-    scene.camera = NULL;
+    int checkCount = 0;
     initFrame(&scene.origin);
     char *fileName = "config/config.txt";
+    scene.camera = NULL;
+    scene.nbSolid = 0;
+    scene.bufferSize = 4;
+    scene.solidBuffer = malloc(scene.bufferSize * sizeof(Solid*));
     FILE *file = fopen(fileName, "r");
 
     if (file == NULL) {
-	perror(fileName);
+	printf("File %s not found", fileName);
     } else {
 	char str[MAXLENGTH];
 	while (fscanf(file, "%s", str) != EOF) {
 	    if (strcmp(str, "screenWidth") == 0 &&
 		fscanf(file, "%d", &screenWidth) == 1)
-		match++;
+		checkCount++;
 	    else if (strcmp(str, "screenHeight") == 0 &&
 		fscanf(file, "%d", &screenHeight) == 1)
-		match++;
+		checkCount++;
 	    else if (strcmp(str, "light") == 0 &&
 		     fscanf(file, "(%f,%f,%f)", 
 			    &scene.light.x, 
 			    &scene.light.y, 
 			    &scene.light.z) == 3)
-		match++;
+		checkCount++;
 	    else if (strcmp(str, "background") == 0 &&
 		     fscanf(file, "(%hhd,%hhd,%hhd)", 
 			    &background.r, 
 			    &background.g, 
 			    &background.b) == 3)
-		match++;
+		checkCount++;
 	    else if (strcmp(str, "camera") == 0 &&
 		fscanf(file, "%s", str) == 1)
 		scene.camera = initCamera(str);
 	}
-    }
-    if (scene.camera == NULL) {
-	printf("Cannot parse camera file name, default camera loaded\n");
-	scene.camera = initCamera("cameras/standard.txt");
+	fclose(file);
     }
 
-    if (match != NB_KEYWORDS) {
+    if (checkCount != NB_KEYWORDS) {
 	printf("Error parsing config.txt: default values loaded\n");
         setPoint(&scene.light, 1., -0.5, -2.);
 	setColor(&background, 128, 128, 128);
 	screenWidth = 1200;
 	screenHeight = 800;
-    } else {
-	printf("config.txt successfully loaded\n");
     }
-	    
-    scene.nbSolid = 0;
-    scene.bufferSize = 4;
-    scene.solidBuffer = malloc(scene.bufferSize * sizeof(Solid*));
-
+    if (!scene.camera) {
+	printf("Error parsing config.txt: default camera loaded\n");
+	scene.camera = initCamera("cameras/standard.txt");
+    }
+    normalizePoint(&scene.light, &scene.light);
     initDisplay(screenWidth, screenHeight, &background);
 }
 

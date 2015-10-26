@@ -45,64 +45,59 @@ static void loadDefaultLens(Lens *l)
 Lens *initLens(char *fileName)
 {
     Lens *l = malloc(sizeof(Lens));
-
-    FILE *file = fopen(fileName, "r");
-    if (file == NULL) {
-	perror(fileName);
-        return NULL;
-    }
-
-    char str[MAXLENGTH];
-    int tmp;
-    int r, g, b;
     int checkCount = 0;
+    FILE *file = fopen(fileName, "r");
 
-    while (fscanf(file, "%s", str) != EOF) {
-	if (strcmp(str, "offset") == 0 && 
-	    fscanf(file, "(%f,%f,%f)", 
-		   &l->offset.x, &l->offset.y, &l->offset.z) == 3)
-	    checkCount++;
-	else if (strcmp(str, "theta") == 0 &&
-		 fscanf(file, "%f", &l->theta) == 1)
-	    checkCount++;
-	else if (strcmp(str, "phi") == 0 &&
-		 fscanf(file, "%f", &l->phi) == 1)
-	    checkCount++;
-	else if (strcmp(str, "rho") == 0 &&
-		 fscanf(file, "%f", &l->rho) == 1)	    
-	    checkCount++;
-	else if (strcmp(str, "filter") == 0 && 
-		 fscanf(file, "(%d,%d,%d)", &r, &g, &b) == 3) {
-	    setColor(&l->filter, r, g, b);
-	    checkCount++;
-	} else if (strcmp(str, "screenPositionWidth") == 0 &&
-		   fscanf(file, "%d", &tmp) == 1) {
-	    l->screenPosition.w = tmp;
-	    checkCount++;
-	} else if (strcmp(str, "screenPositionHeight") == 0 &&
-		   fscanf(file, "%d", &tmp) == 1) {
-	    l->screenPosition.h = tmp;
-	    checkCount++;
-	} else if (strcmp(str, "screenWidth") == 0 &&
-		   fscanf(file, "%d", &tmp) == 1) {
-	    l->screenWidth = tmp;
-	    checkCount++;
-	} else if (strcmp(str, "screenHeight") == 0 &&
-		   fscanf(file, "%d", &tmp) == 1) {
-	    l->screenHeight = tmp;
-	    checkCount++;
-	} else if (strcmp(str, "nearplan") == 0 &&
-		   fscanf(file, "%f", &l->nearplan) == 1)	    
-	    checkCount++;
-	else if (strcmp(str, "farplan") == 0 &&
-		 fscanf(file, "%f", &l->farplan) == 1)	    
-	    checkCount++;
-	else if (strcmp(str, "wfov") == 0 &&
-		 fscanf(file, "%d", &l->wfov) == 1)	    
-	    checkCount++;
-	else if (strcmp(str, "hfov") == 0 &&
-		 fscanf(file, "%d", &l->hfov) == 1)	    
-	    checkCount++;
+    if (file == NULL) {
+        printf("File %s not found", fileName);
+    } else {
+	char str[MAXLENGTH];
+	while (fscanf(file, "%s", str) != EOF) {
+	    if (strcmp(str, "offset") == 0 && 
+		fscanf(file, "(%f,%f,%f)", 
+		       &l->offset.x, &l->offset.y, &l->offset.z) == 3)
+		checkCount++;
+	    else if (strcmp(str, "theta") == 0 &&
+		     fscanf(file, "%f", &l->theta) == 1)
+		checkCount++;
+	    else if (strcmp(str, "phi") == 0 &&
+		     fscanf(file, "%f", &l->phi) == 1)
+		checkCount++;
+	    else if (strcmp(str, "rho") == 0 &&
+		     fscanf(file, "%f", &l->rho) == 1)	    
+		checkCount++;
+	    else if (strcmp(str, "filter") == 0 && 
+		     fscanf(file, "(%hhd,%hhd,%hhd)", 
+			    &l->filter.r, 
+			    &l->filter.g, 
+			    &l->filter.b) == 3) {
+		checkCount++;
+	    } else if (strcmp(str, "screenPositionWidth") == 0 &&
+		       fscanf(file, "%d", &l->screenPosition.w) == 1) {
+		checkCount++;
+	    } else if (strcmp(str, "screenPositionHeight") == 0 &&
+		       fscanf(file, "%d", &l->screenPosition.h) == 1) {
+		checkCount++;
+	    } else if (strcmp(str, "screenWidth") == 0 &&
+		       fscanf(file, "%d", &l->screenWidth) == 1) {
+		checkCount++;
+	    } else if (strcmp(str, "screenHeight") == 0 &&
+		       fscanf(file, "%d", &l->screenHeight) == 1) {
+		checkCount++;
+	    } else if (strcmp(str, "nearplan") == 0 &&
+		       fscanf(file, "%f", &l->nearplan) == 1)	    
+		checkCount++;
+	    else if (strcmp(str, "farplan") == 0 &&
+		     fscanf(file, "%f", &l->farplan) == 1)	    
+		checkCount++;
+	    else if (strcmp(str, "wfov") == 0 &&
+		     fscanf(file, "%d", &l->wfov) == 1)	    
+		checkCount++;
+	    else if (strcmp(str, "hfov") == 0 &&
+		     fscanf(file, "%d", &l->hfov) == 1)	    
+		checkCount++;
+	}
+	fclose(file);
     }
     
     if (checkCount != NB_KEYWORDS) {
@@ -110,6 +105,7 @@ Lens *initLens(char *fileName)
 	loadDefaultLens(l);
     } else
 	printf("Lens %s successfully loaded\n", fileName);
+
     l->zBuffer = malloc(sizeof(float) * l->screenHeight * l->screenWidth);
     return l;
 }

@@ -62,7 +62,8 @@ static void loadDefaultCamera(Camera *c)
     c->phi = 0.;
     c->rho = 0.;
     setPoint(&c->position.O, 0., -5., 0.);
-    for (int i = 0; i < c->nbLens; i++)
+    int initialNbLens = c->nbLens;
+    for (int i = 0; i < initialNbLens; i++)
 	removeLensFromCamera(c);
     addLensToCamera(c, "cameras/lens/standard.txt");
 }
@@ -79,7 +80,7 @@ Camera *initCamera(char *fileName)
     FILE *file = fopen(fileName, "r");
 
     if (file == NULL) {
-	perror(fileName);
+        printf("File %s not found", fileName);
     } else {
 	char str[MAXLENGTH];
 	while (fscanf(file, "%s", str) != EOF) {
@@ -111,7 +112,9 @@ Camera *initCamera(char *fileName)
 		     fscanf(file, "%s", str) == 1)	    
 		addLensToCamera(c, str);
 	}
+	fclose(file);
     }
+
     if (checkCount != NB_KEYWORDS || c->nbLens == 0) {
 	printf("Error parsing camera %s: default camera loaded\n", fileName);
         loadDefaultCamera(c);

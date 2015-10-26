@@ -11,8 +11,8 @@ Color *setColor(Color *color, unsigned char r, unsigned char g, unsigned char b)
 Color *filterColor(Color *color, const Color *filter)
 {
     color->r *= (float)(filter->r) / 255.;
-    color->r *= (float)(filter->r) / 255.;
-    color->r *= (float)(filter->r) / 255.;
+    color->g *= (float)(filter->g) / 255.;
+    color->b *= (float)(filter->b) / 255.;
     return color;
 }
 
