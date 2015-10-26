@@ -119,7 +119,8 @@ Camera *initCamera(char *fileName)
 	printf("Error parsing camera %s: default camera loaded\n", fileName);
         loadDefaultCamera(c);
     } else {
-	rotateFrame(&c->position, c->theta, c->phi, c->rho);	
+	rotateFrame(&c->position, c->theta, c->phi, c->rho);
+	updateCamera(c);
 	printf("Camera %s successfully loaded\n", fileName);
     }
     return c;

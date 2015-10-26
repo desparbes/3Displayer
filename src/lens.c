@@ -32,8 +32,7 @@ static void loadDefaultLens(Lens *l)
     l->phi = 0.;
     l->rho = 0.;
     setColor(&l->filter, 255, 255, 255);
-    l->screenPosition.w = 0;
-    l->screenPosition.h = 0;
+    setCoord(&l->screenPosition, 0, 0);
     l->screenWidth = 1200;
     l->screenHeight = 800;
     l->nearplan = 1.;
@@ -106,6 +105,7 @@ Lens *initLens(char *fileName)
     } else
 	printf("Lens %s successfully loaded\n", fileName);
 
+    initFrame(&l->position);
     l->zBuffer = malloc(sizeof(float) * l->screenHeight * l->screenWidth);
     return l;
 }
