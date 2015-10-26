@@ -30,16 +30,6 @@ void getPixelTexture(const Texture *texture, const Position *p, Color *c)
 		      (int) (p->y * texture->t->h) *
 		      texture->t->w *
 		      texture->t->format->BitsPerPixel / 8);
-    int size = texture->t->w * texture->t->h;
-    int position = (int) (p->x * texture->t->w) * 
-	texture->t->format->BitsPerPixel / 8 +
-	(int) (p->y * texture->t->h) *
-	texture->t->w *
-	texture->t->format->BitsPerPixel / 8;
-    Uint32 *initial = texture->t->pixels;
-    Uint32 *final = texture->t->pixels + size;
-    if (pixel < initial || pixel >= final)
-	//printf("size: %d, position: %d\n", size, position);
     SDL_GetRGB(*pixel, texture->t->format, &c->r, &c->g, &c->b);
 }
 

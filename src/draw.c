@@ -102,15 +102,17 @@ void drawTriangle(Lens *l, const Coord *A, const Coord *B, const Coord *C,
 		  const Point *normalB,
 		  const Point *normalC)
 {
-    float *zB = getZBuffer(l);
-    int sW = getScreenWidth(l);
-    int sH = getScreenHeight(l);
-    Coord AB, BC;
+    Coord AB, BC, CA;
     diffCoord(B, A, &AB);
     diffCoord(C, B, &BC);
+    diffCoord(A, C, &CA);
 
     if (productCoord(&AB, &BC) <= 0)
 	return;
+
+    float *zB = getZBuffer(l);
+    int sW = getScreenWidth(l);
+    int sH = getScreenHeight(l);
 
     int minW = min(min(A->w, B->w), C->w);
     int maxW = max(max(A->w, B->w), C->w);
@@ -126,9 +128,6 @@ void drawTriangle(Lens *l, const Coord *A, const Coord *B, const Coord *C,
 	minH = 0;
     if (maxH >= sH)
 	maxH = sH - 1;
-
-    Coord AC;
-    diffCoord(C, A, &AC);
 
     Point p;
     sumPoint(normalA, getLight(), &p);
@@ -166,47 +165,51 @@ void drawTriangle(Lens *l, const Coord *A, const Coord *B, const Coord *C,
 		   W->y / depthC);
     }
 
-    int det = productCoord(&AB, &AC);
+    int det = productCoord(&CA, &AB);
+
     Color c;
 
     Coord M;
     Coord AM, BM, CM;
+    int PAlpha, PBeta, PGamma;
+
     for (M.h = minH; M.h <= maxH; ++M.h) {
 	M.w = minW;
-	diffCoord(&M, A, &AM);
-	diffCoord(&M, B, &BM);
-	diffCoord(&M, C, &CM);
-	while (M.w <= maxW
-	       && (productCoord(&AB, &AM) < 0
-		   || productCoord(&BC, &BM) < 0
-		   || productCoord(&CM, &AC) < 0)) {
-	    M.w++;
+
+	do {
 	    diffCoord(&M, A, &AM);
 	    diffCoord(&M, B, &BM);
 	    diffCoord(&M, C, &CM);
-	}
-	while (M.w <= maxW && productCoord(&AB, &AM) >= 0
-	       && productCoord(&BC, &BM) >= 0
-	       && productCoord(&CM, &AC) >= 0) {
-	    float alpha = (float) productCoord(&AB, &AM) / det;
-	    float beta = (float) productCoord(&AM, &AC) / det;
-	    float gamma = 1. - alpha - beta;
+	    M.w++;
+	} while (M.w <= maxW && 
+		 (productCoord(&AB, &AM) < 0 ||
+		  productCoord(&BC, &BM) < 0 || 
+		  productCoord(&CA, &CM) < 0));
+	M.w--;
+	while (M.w <= maxW && 
+	       (PAlpha = productCoord(&BC, &BM)) >= 0 && 
+	       (PBeta = productCoord(&CA, &CM)) >= 0 && 
+	       (PGamma = productCoord(&AB, &AM)) >= 0) {
+
+	    float alpha = (float) PAlpha / (float) det;
+	    float beta = (float) PBeta / (float) det;
+	    float gamma = (float) PGamma / (float) det;
 
 	    depthM = depthABC / 
-		(gamma * depthBC + beta * depthCA + alpha * depthAB);
+		(alpha * depthBC + beta * depthCA + gamma * depthAB);
 
 	    if (zB[M.w + M.h * sW] < 0
 		|| zB[M.w + M.h * sW] > depthM) {
 		scale = scaleABC / 
-		    (gamma * scaleBC + beta * scaleCA + alpha * scaleAB);
+		    (alpha * scaleBC + beta * scaleCA + gamma * scaleAB);
 		
 		if (triangle) {
-		    float denominator = (gamma / depthA + 
+		    float denominator = (alpha / depthA + 
 					 beta / depthB + 
-					 alpha / depthC);
-		    N.x = (gamma * u.x + beta * v.x + alpha * w.x) / 
+					 gamma / depthC);
+		    N.x = (alpha * u.x + beta * v.x + gamma * w.x) / 
 			denominator;
-		    N.y = (gamma * u.y + beta * v.y + alpha * w.y) /
+		    N.y = (alpha * u.y + beta * v.y + gamma * w.y) /
 			denominator;
 
 		    loopPosition(&N);
