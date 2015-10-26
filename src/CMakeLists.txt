@@ -16,6 +16,7 @@ set(
   lens.c
   display.c
   texture.c
+  ext.c
 )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})
