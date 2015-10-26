@@ -1,13 +1,13 @@
-offset (0.5,0.,0.)
+offset 0.5 0. 0.
 theta 0.
 phi 0.
 rho 0.
-filter (255,255,255)
+filter 255 255 255
 screenPositionWidth 600
 screenPositionHeight 0
 screenWidth 600
 screenHeight 800
 nearplan 1.
 farplan 20.
-wfov 60
-hfov 80
+wfov 80
+hfov 60

@@ -1,5 +1,5 @@
 screenWidth 1200
 screenHeight 800
-light (1,-0.5,-2)
-background (128,128,128)
-camera cameras/standard.txt
+light 1 -0.5 -2
+background 128 128 128
+camera cameras/bicolor.txt

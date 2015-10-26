@@ -61,7 +61,6 @@ static void loadDefaultCamera(Camera *c)
     c->theta = 0.;
     c->phi = 0.;
     c->rho = 0.;
-    setPoint(&c->position.O, 0., -5., 0.);
     int initialNbLens = c->nbLens;
     for (int i = 0; i < initialNbLens; i++)
 	removeLensFromCamera(c);
@@ -94,7 +93,7 @@ Camera *initCamera(char *fileName)
 		     fscanf(file, "%f", &c->rotationSpeed) == 1)
 		checkCount++;
 	    else if (strcmp(str, "position") == 0 && 
-		 fscanf(file, "(%f,%f,%f)", 
+		 fscanf(file, "%f %f %f", 
 			&c->position.O.x, 
 			&c->position.O.y,
 			&c->position.O.z) == 3)
@@ -119,10 +118,10 @@ Camera *initCamera(char *fileName)
 	printf("Error parsing camera %s: default camera loaded\n", fileName);
         loadDefaultCamera(c);
     } else {
-	rotateFrame(&c->position, c->theta, c->phi, c->rho);
-	updateCamera(c);
 	printf("Camera %s successfully loaded\n", fileName);
     }
+    rotateFrame(&c->position, c->theta, c->phi, c->rho);
+    updateCamera(c);
     return c;
 }
 

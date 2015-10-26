@@ -16,7 +16,6 @@ static void init(void)
     char pBuf[1024];
     
     int bytes = MIN(readlink("/proc/self/exe", pBuf, 1024), 1024 - 1);
-    printf("LOL %s\n", pBuf);
     if (bytes >= 0) pBuf[bytes] = '\0';
 
     dir = open(dirname(pBuf), O_DIRECTORY);

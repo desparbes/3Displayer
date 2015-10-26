@@ -53,7 +53,7 @@ Lens *initLens(char *fileName)
 	char str[MAXLENGTH];
 	while (fscanf(file, "%s", str) != EOF) {
 	    if (strcmp(str, "offset") == 0 && 
-		fscanf(file, "(%f,%f,%f)", 
+		fscanf(file, "%f %f %f", 
 		       &l->offset.x, &l->offset.y, &l->offset.z) == 3)
 		checkCount++;
 	    else if (strcmp(str, "theta") == 0 &&
@@ -66,7 +66,7 @@ Lens *initLens(char *fileName)
 		     fscanf(file, "%f", &l->rho) == 1)	    
 		checkCount++;
 	    else if (strcmp(str, "filter") == 0 && 
-		     fscanf(file, "(%hhd,%hhd,%hhd)", 
+		     fscanf(file, "%hhd %hhd %hhd", 
 			    &l->filter.r, 
 			    &l->filter.g, 
 			    &l->filter.b) == 3) {

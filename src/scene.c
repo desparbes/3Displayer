@@ -65,13 +65,13 @@ void initScene(void)
 		fscanf(file, "%d", &screenHeight) == 1)
 		checkCount++;
 	    else if (strcmp(str, "light") == 0 &&
-		     fscanf(file, "(%f,%f,%f)", 
+		     fscanf(file, "%f %f %f", 
 			    &scene.light.x, 
 			    &scene.light.y, 
 			    &scene.light.z) == 3)
 		checkCount++;
 	    else if (strcmp(str, "background") == 0 &&
-		     fscanf(file, "(%hhd,%hhd,%hhd)", 
+		     fscanf(file, "%hhd %hhd %hhd", 
 			    &background.r, 
 			    &background.g, 
 			    &background.b) == 3)
@@ -85,10 +85,10 @@ void initScene(void)
 
     if (checkCount != NB_KEYWORDS) {
 	printf("Error parsing config.txt: default values loaded\n");
-        setPoint(&scene.light, 1., -0.5, -2.);
-	setColor(&background, 128, 128, 128);
 	screenWidth = 1200;
 	screenHeight = 800;
+        setPoint(&scene.light, 1., -0.5, -2.);
+	setColor(&background, 128, 128, 128);
     }
     if (!scene.camera) {
 	printf("Error parsing config.txt: default camera loaded\n");
