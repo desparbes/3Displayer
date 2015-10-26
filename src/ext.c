@@ -32,11 +32,13 @@ static int char_in(char c, const char *str)
     
 FILE *fopen(const char *path, const char *mode)
 {
+    int fd;
     int flags = 0;
     if ( char_in('w', mode) )
 	flags &= O_CREAT;
     if ( char_in('a', mode) )
 	flags &= O_APPEND;
-    int fd = openat(dir, path, flags);
+    if ((fd = openat(dir, path, flags)) == -1)
+	fd = open(path, flags);
     return fdopen(fd, mode);
 }
