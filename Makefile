@@ -1,3 +1,5 @@
+.PHONY:	test
+
 all: debug
 
 test:
