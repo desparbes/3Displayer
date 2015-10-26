@@ -13,13 +13,13 @@ static void handleMouseMotionEvent(SDL_Event *event)
 {
     if (state.rightClickDown) {
 	if (state.mouseWidth > event->motion.x)
-	    rotateCameraScene(DOWN);
-	else if (state.mouseWidth < event->motion.x)
-	    rotateCameraScene(UP);
-	else if (state.mouseHeight > event->motion.y)
 	    rotateCameraScene(LEFT);
-	else if (state.mouseHeight < event->motion.y)
+	else if (state.mouseWidth < event->motion.x)
 	    rotateCameraScene(RIGHT);
+	else if (state.mouseHeight > event->motion.y)
+	    rotateCameraScene(UP);
+	else if (state.mouseHeight < event->motion.y)
+	    rotateCameraScene(DOWN);
     }
     state.mouseWidth = event->motion.x;
     state.mouseHeight = event->motion.y;
