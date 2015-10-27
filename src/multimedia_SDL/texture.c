@@ -40,3 +40,8 @@ void freeTexture_(Texture *texture)
 	free(texture);
     }
 }
+
+Texture *(*loadTexture)(const char *) = &loadTexture_;
+void (*getPixelTexture)(const Texture *, const Position *, Color *) = 
+    &getPixelTexture_;
+void (*freeTexture)(Texture *) = &freeTexture_;

@@ -114,10 +114,7 @@ static void handleKeyUpEvent(SDL_Event *event)
 void handleEvent_(int *stop)
 {
     SDL_Event event;
-    if ( !SDL_PollEvent(&event) )
-	return;
-    
-    do {
+    if (SDL_PollEvent(&event)) {
 	switch (event.type) {
 	case SDL_QUIT:
 	    *stop = 1;
@@ -138,5 +135,7 @@ void handleEvent_(int *stop)
 	    handleMouseButtonDownEvent(&event);
 	    break;
 	}
-    } while (SDL_PollEvent(&event));   
+    }
 }
+
+void (*handleEvent)(int *) = &handleEvent_;

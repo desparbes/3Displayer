@@ -55,3 +55,8 @@ void freeDisplay_()
     SDL_Quit();
 }
 
+void (*initDisplay)(int, int, const Color *) = &initDisplay_;
+void (*resetDisplay)() = &resetDisplay_;
+void (*pixelDisplay)(const Coord *, const Color *) = &pixelDisplay_;
+void (*blitDisplay)() = &blitDisplay_;
+void (*freeDisplay)() = &freeDisplay_;

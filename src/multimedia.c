@@ -6,9 +6,7 @@
 #include "color.h"
 #include "position.h"
 
-#define toString(x) #x
-#define append(x, y) toString(x ## y)
-#define loadFunction(x) loadFunction_(x, append(x, _))
+#define loadFunction(x) loadFunction_((void **)&x, #x)
 
 static void *handle;
 
@@ -26,10 +24,10 @@ void (*freeTexture)(Texture *);
 
 void (*handleEvent)(int *);
 
-static void loadFunction_(void *funAddress, const char *symbol)
+static void loadFunction_(void **funAddress, const char *symbol)
 {
-    funAddress = dlsym(handle, symbol);
-    if (funAddress == NULL) {
+    *funAddress = *(void **)dlsym(handle, symbol);
+    if (*funAddress == NULL) {
 	puts(dlerror());
 	exit(EXIT_FAILURE);
     }

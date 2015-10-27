@@ -51,6 +51,14 @@ void drawSegment(Lens *l, const Coord *A, const Coord *B,
     int sW = getScreenWidth(l);
     int sH = getScreenHeight(l);
 
+    alpha = (float) (M.w - A->w) / (B->w - A->w);
+    depthM = depthA * depthB / ((1 - alpha) * depthB + alpha * depthA);
+    if (M.h >= 0 && M.h < sH && M.w >= 0 && M.w < sW && 
+	(zB[M.w + M.h * sW] < 0 || zB[M.w + M.h * sW] > depthM)) {
+	translatePixel(l, &M, color);
+	zB[M.w + M.h * sW] = depthM;
+    }
+    
     if ((abs(dx) > abs(dy))) {
 	error = dx;
 	dx = 2 * dx;

@@ -4,10 +4,11 @@
 #include "color.h"
 #include "coord.h"
 
-void initDisplay(int screenWidth, int screenHeight, const Color *background);
-void resetDisplay();
-void pixelDisplay(const Coord *A, const Color *color);
-void blitDisplay();
-void freeDisplay();
+extern void (*initDisplay)(int screenWidth, int screenHeight, 
+			   const Color *background);
+extern void (*resetDisplay)();
+extern void (*pixelDisplay)(const Coord *A, const Color *color);
+extern void (*blitDisplay)();
+extern void (*freeDisplay)();
 
 #endif //DISPLAY_H

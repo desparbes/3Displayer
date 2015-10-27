@@ -9,5 +9,5 @@ screenWidth 1200
 screenHeight 800
 nearplan 1.
 farplan 20.
-wfov 60
-hfov 80
+wfov 80
+hfov 60
