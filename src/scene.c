@@ -12,6 +12,7 @@
 #include "camera.h"
 #include "display.h"
 #include "view.h"
+#include "multimedia.h"
 
 #define MAXLENGTH 128
 #define NB_KEYWORDS 4
@@ -76,6 +77,9 @@ void initScene(void)
 			    &background.g, 
 			    &background.b) == 3)
 		checkCount++;
+	    else if (strcmp(str, "multimedia") == 0 &&
+		fscanf(file, "%s", str) == 1)
+		initMultimedia(str);
 	    else if (strcmp(str, "camera") == 0 &&
 		fscanf(file, "%s", str) == 1)
 		scene.camera = initCamera(str);
@@ -234,4 +238,5 @@ void freeScene(void)
     free(scene.solidBuffer);
     freeCamera(scene.camera);
     freeDisplay();
+    freeMultimedia();
 }

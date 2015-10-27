@@ -111,7 +111,7 @@ static void handleKeyUpEvent(SDL_Event *event)
     }
 }
 
-void handleEvent(int *stop)
+void handleEvent_(int *stop)
 {
     SDL_Event event;
     if ( !SDL_PollEvent(&event) )

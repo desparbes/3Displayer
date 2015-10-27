@@ -9,7 +9,7 @@ typedef struct Texture {
     SDL_Surface *t;
 } Texture;
 
-Texture *loadTexture(const char *fileName)
+Texture *loadTexture_(const char *fileName)
 {
     SDL_Surface *tmp = SDL_LoadBMP(fileName);
     if (!tmp) {
@@ -21,7 +21,7 @@ Texture *loadTexture(const char *fileName)
     return texture;
 }
 
-void getPixelTexture(const Texture *texture, const Position *p, Color *c)
+void getPixelTexture_(const Texture *texture, const Position *p, Color *c)
 {
     Uint32 *pixel = (Uint32 *) 
 		     (texture->t->pixels +
@@ -33,7 +33,7 @@ void getPixelTexture(const Texture *texture, const Position *p, Color *c)
     SDL_GetRGB(*pixel, texture->t->format, &c->r, &c->g, &c->b);
 }
 
-void freeTexture(Texture *texture)
+void freeTexture_(Texture *texture)
 {
     if (texture) {
 	SDL_FreeSurface(texture->t);

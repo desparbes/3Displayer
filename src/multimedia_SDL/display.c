@@ -10,7 +10,7 @@ static struct {
     Uint32 background;
 } display;
 
-void initDisplay(int screenWidth, int screenHeight, const Color *background)
+void initDisplay_(int screenWidth, int screenHeight, const Color *background)
 {
     if (SDL_Init(SDL_INIT_VIDEO) == -1) {
 	fprintf(stderr, "Error SDL_Init: %s", SDL_GetError());
@@ -30,12 +30,12 @@ void initDisplay(int screenWidth, int screenHeight, const Color *background)
     SDL_EnableKeyRepeat(1, 10);
 }
 
-void resetDisplay()
+void resetDisplay_()
 {
     SDL_FillRect(display.screen, NULL, display.background);
 }
 
-void pixelDisplay(const Coord *A, const Color *color)
+void pixelDisplay_(const Coord *A, const Color *color)
 {
     SDL_Surface *s = display.screen;
     if (A->w >= 0 && A->w < s->w && A->h >= 0 && A->h < s->h) {
@@ -44,12 +44,12 @@ void pixelDisplay(const Coord *A, const Color *color)
     }
 }
 
-void blitDisplay()
+void blitDisplay_()
 {
     SDL_Flip(display.screen);
 }
 
-void freeDisplay()
+void freeDisplay_()
 {
     SDL_FreeSurface(display.screen);
     SDL_Quit();
