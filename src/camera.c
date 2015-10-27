@@ -19,6 +19,8 @@ typedef struct {
     int bufferSize;
     int nbLens;
     int frequency;
+    int lensToDisplay;
+    int lensLeft;
     int state[NB_STATE];
     float rotationSpeed;
     float translationSpeed;
@@ -73,6 +75,7 @@ Camera *initCamera(char *fileName)
     int checkCount = 0;
     initFrame(&c->position);
     initStateCamera(c);
+    c->lensToDisplay = 0;
     c->nbLens = 0;
     c->bufferSize = 2;
     c->lensBuffer = malloc(c->bufferSize * sizeof(Lens *));
@@ -127,6 +130,7 @@ Camera *initCamera(char *fileName)
 
 void resetCamera(Camera *c)
 {
+    c->lensLeft = c->frequency;
     for (int i = 0; i < c->nbLens; i++)
 	resetLens(c->lensBuffer[i]);
 }
@@ -183,7 +187,12 @@ void switchStateCamera(Camera *c, int state)
 
 int displayLensCamera(Camera *c, int lens)
 {
-    return 1;
+    if (c->lensLeft && c->lensToDisplay == lens) {
+	c->lensToDisplay = (c->lensToDisplay + 1) % c->nbLens;
+	c->lensLeft--;
+	return 1;
+    }
+    return 0;
 }
 
 Lens *getLensOfCamera(Camera *c, int lens)

@@ -1,4 +1,4 @@
-frequency 1
+frequency 2
 translationSpeed 0.1
 rotationSpeed 0.01
 position 0. -5. 0.
