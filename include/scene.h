@@ -12,6 +12,7 @@ void askEquationForScene();
 void removeSolidFromScene();
 void drawScene();
 void handleArgumentScene(int argc, char *argv[]);
+void resizeCameraScene(int screenWidth, int screenHeight);
 void rotateCameraScene(int direction);
 void translateCameraScene(int direction);
 void switchStateCameraScene(int state);

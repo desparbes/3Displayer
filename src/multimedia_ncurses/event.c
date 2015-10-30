@@ -19,6 +19,12 @@ void handleEvent_(int *stop)
     case KEY_DOWN:
 	rotateCameraScene(DOWN);	
 	break;
+    case KEY_RESIZE: {
+	int screenWidth, screenHeight;
+	getmaxyx(stdscr, screenHeight, screenWidth);
+	resizeCameraScene(screenWidth / 2, screenHeight);
+	break;
+    }
     case 'q':
 	translateCameraScene(LEFT);
 	break;

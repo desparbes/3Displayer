@@ -13,9 +13,13 @@
 #include "display.h"
 #include "view.h"
 #include "multimedia.h"
+#include "array.h"
 
 #define MAXLENGTH 128
-#define NB_KEYWORDS 4
+#define NB_KEYWORDS 7
+
+enum {SCREENWIDTH, SCREENHEIGHT, LIGHT, BACKGROUND, 
+      UNTEXTURED, MULTIMEDIA, CAMERA};
 
 static struct {
     Frame origin;
@@ -44,8 +48,8 @@ static void remove_space(char *buf)
 void initScene(void)
 {
     Color background;
+    Color untextured;
     int screenWidth, screenHeight;
-    int checkCount = 0;
     initFrame(&scene.origin);
     char *fileName = "config/config.txt";
     scene.camera = NULL;
@@ -53,6 +57,11 @@ void initScene(void)
     scene.bufferSize = 4;
     scene.solidBuffer = malloc(scene.bufferSize * sizeof(Solid*));
     FILE *file = fopen(fileName, "r");
+    char camera[MAXLENGTH];
+    char multimedia[MAXLENGTH];
+    int check[NB_KEYWORDS] = {0};
+    int template[NB_KEYWORDS];
+    initArray(template, NB_KEYWORDS, 1);
 
     if (file == NULL) {
 	printf("File %s not found", fileName);
@@ -61,45 +70,55 @@ void initScene(void)
 	while (fscanf(file, "%s", str) != EOF) {
 	    if (strcmp(str, "screenWidth") == 0 &&
 		fscanf(file, "%d", &screenWidth) == 1)
-		checkCount++;
+		check[SCREENWIDTH]++;
 	    else if (strcmp(str, "screenHeight") == 0 &&
-		fscanf(file, "%d", &screenHeight) == 1)
-		checkCount++;
+		     fscanf(file, "%d", &screenHeight) == 1)
+		check[SCREENHEIGHT]++;
 	    else if (strcmp(str, "light") == 0 &&
 		     fscanf(file, "%f %f %f", 
 			    &scene.light.x, 
 			    &scene.light.y, 
 			    &scene.light.z) == 3)
-		checkCount++;
+		check[LIGHT]++;
 	    else if (strcmp(str, "background") == 0 &&
 		     fscanf(file, "%hhd %hhd %hhd", 
 			    &background.r, 
 			    &background.g, 
 			    &background.b) == 3)
-		checkCount++;
+		check[BACKGROUND]++;
+	    else if (strcmp(str, "untextured") == 0 &&
+		     fscanf(file, "%hhd %hhd %hhd", 
+			    &untextured.r, 
+			    &untextured.g, 
+			    &untextured.b) == 3)
+		check[UNTEXTURED]++;
 	    else if (strcmp(str, "multimedia") == 0 &&
-		fscanf(file, "%s", str) == 1)
-		initMultimedia(str);
+		     fscanf(file, "%s", multimedia) == 1)
+		check[MULTIMEDIA]++;
 	    else if (strcmp(str, "camera") == 0 &&
-		fscanf(file, "%s", str) == 1)
-		scene.camera = initCamera(str);
+		     fscanf(file, "%s", camera) == 1)
+		check[CAMERA]++;
 	}
 	fclose(file);
     }
 
-    if (checkCount != NB_KEYWORDS) {
+    if (!areEqualsArray(check, template, NB_KEYWORDS)) {
 	printf("Error parsing config.txt: default values loaded\n");
 	screenWidth = 1200;
 	screenHeight = 800;
         setPoint(&scene.light, 1., -0.5, -2.);
 	setColor(&background, 128, 128, 128);
-    }
-    if (!scene.camera) {
-	printf("Error parsing config.txt: default camera loaded\n");
+	setColor(&untextured, 0, 255, 255);
+	initMultimedia("multimedia/libmultimedia_SDL.so");
+	initDisplay(screenWidth, screenHeight, &background, &untextured);
 	scene.camera = initCamera("cameras/standard.txt");
+    } else {
+	initMultimedia(multimedia);
+	initDisplay(screenWidth, screenHeight, &background, &untextured);
+	scene.camera = initCamera(camera);
     }
+    refreshCamera(scene.camera, screenWidth, screenHeight);
     normalizePoint(&scene.light, &scene.light);
-    initDisplay(screenWidth, screenHeight, &background);
 }
 
 void addSolidToScene(Solid *solid)
@@ -209,6 +228,12 @@ void handleArgumentScene(int argc, char *argv[])
     default:
 	break;
     }
+}
+
+void resizeCameraScene(int screenWidth, int screenHeight)
+{
+    resizeDisplay(screenWidth, screenHeight);
+    refreshCamera(scene.camera, screenWidth, screenHeight);
 }
 
 void rotateCameraScene(int direction)

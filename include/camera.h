@@ -5,11 +5,13 @@
 #include "coord.h"
 #include "point.h"
 #include "lens.h"
+#include "color.h"
 
 typedef struct Camera Camera;
 
 Camera *initCamera(char *fileName);
 void resetCamera(Camera *c);
+void refreshCamera(Camera *c, int screenWidth, int screenHeight);
 void translateCamera(Camera *c, int direction);
 void rotateCamera(Camera *c, int direction);
 void switchStateCamera(Camera *c, int state);

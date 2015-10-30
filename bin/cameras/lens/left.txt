@@ -5,9 +5,8 @@ rho 0.
 filter 255 255 255
 screenPositionWidth 0
 screenPositionHeight 0
-screenWidth 600
-screenHeight 800
+screenWidth 4
+screenHeight 8
 nearplan 1.
 farplan 20.
-wfov 80
-hfov 60
+wfov 90

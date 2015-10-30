@@ -114,10 +114,16 @@ static void handleKeyUpEvent(SDL_Event *event)
 void handleEvent_(int *stop)
 {
     SDL_Event event;
-    if (SDL_PollEvent(&event)) {
+    if (!SDL_PollEvent(&event))
+	return;
+    
+    do {
 	switch (event.type) {
 	case SDL_QUIT:
 	    *stop = 1;
+	    break;
+	case SDL_VIDEORESIZE:
+	    resizeCameraScene(event.resize.w, event.resize.h);
 	    break;
 	case SDL_KEYDOWN:
 	    handleKeyDownEvent(&event);
@@ -135,7 +141,7 @@ void handleEvent_(int *stop)
 	    handleMouseButtonDownEvent(&event);
 	    break;
 	}
-    }
+    } while (SDL_PollEvent(&event));
 }
 
 void (*handleEvent)(int *) = &handleEvent_;

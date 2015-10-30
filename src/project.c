@@ -34,11 +34,11 @@ static void projectCoord(Lens *l, const Point *OA, float depth, Coord *S)
     Frame *p = getPosition(l);
 
     S->w = sW / 
-	(2. * tan(getHfov(l) * M_PI / 360.)) * 
+	(2. * tan(getHfov(l) / 2.)) * 
 	scalarProduct(&p->i, OA) / 
 	depth + sW / 2;
     S->h = -sH / 
-	(2. * tan(getWfov(l) * M_PI / 360.)) * 
+	(2. * tan(getWfov(l) / 2.)) * 
 	scalarProduct(&p->k, OA) / 
 	depth + sH / 2;
 }

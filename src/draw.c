@@ -19,9 +19,9 @@ static inline int max(int a, int b)
 
 static void translatePixel(Lens *l, const Coord *A, const Color *color)
 {
-    Coord B;
+    Coord B = *A;
     Color filtered = *color;
-    sumCoord(A, getScreenPosition(l), &B);
+    translateCoord(&B, getWidthPosition(l), getHeightPosition(l));
     filterColor(&filtered, getFilter(l));
     pixelDisplay(&B, &filtered);
 }
@@ -31,7 +31,7 @@ void drawPixel(Lens *l, const Coord *A, float depthA, const Color *color)
     int i = A->w + A->h * getScreenWidth(l);
     if (A->h >= 0 && A->h < getScreenHeight(l) && 
 	A->w >= 0 && A->w < getScreenWidth(l) && 
-	(getZBuffer(l)[i] < 0 || 
+	(getZBuffer(l)[i] < getNearplan(l) || 
 	 getZBuffer(l)[i] > depthA))
 	translatePixel(l, A, color);
 }
@@ -54,7 +54,7 @@ void drawSegment(Lens *l, const Coord *A, const Coord *B,
     alpha = (float) (M.w - A->w) / (B->w - A->w);
     depthM = depthA * depthB / ((1 - alpha) * depthB + alpha * depthA);
     if (M.h >= 0 && M.h < sH && M.w >= 0 && M.w < sW && 
-	(zB[M.w + M.h * sW] < 0 || zB[M.w + M.h * sW] > depthM)) {
+	(zB[M.w + M.h * sW] < getNearplan(l) || zB[M.w + M.h * sW] > depthM)) {
 	translatePixel(l, &M, color);
 	zB[M.w + M.h * sW] = depthM;
     }
@@ -72,7 +72,8 @@ void drawSegment(Lens *l, const Coord *A, const Coord *B,
 		error += xIncr * dx;
 	    }
 	    if (M.h >= 0 && M.h < sH && M.w >= 0 && M.w < sW && 
-		(zB[M.w + M.h * sW] < 0 || zB[M.w + M.h * sW] > depthM)) {
+		(zB[M.w + M.h * sW] < getNearplan(l) || 
+		 zB[M.w + M.h * sW] > depthM)) {
 		translatePixel(l, &M, color);
 		//setPixel(M, {255 /depthM , 255 /depthM, 255 /depthM});
 		//setPixel(M, {255 * alpha, 0, 0});
@@ -92,7 +93,8 @@ void drawSegment(Lens *l, const Coord *A, const Coord *B,
 		error += yIncr * dy;
 	    }
 	    if (M.h >= 0 && M.h < sH && M.w >= 0 && M.w < sW && 
-		(zB[M.w + M.h * sW] < 0 || zB[M.w + M.h * sW] > depthM)) {
+		(zB[M.w + M.h * sW] < getNearplan(l) || 
+		 zB[M.w + M.h * sW] > depthM)) {
 		translatePixel(l, &M, color);
 		//setPixel(M, {255 /depthM , 255 /depthM, 255 /depthM});
 		//setPixel(M, {255 * alpha, 0, 0});
@@ -206,8 +208,8 @@ void drawTriangle(Lens *l, const Coord *A, const Coord *B, const Coord *C,
 	    depthM = depthABC / 
 		(alpha * depthBC + beta * depthCA + gamma * depthAB);
 
-	    if (zB[M.w + M.h * sW] < 0
-		|| zB[M.w + M.h * sW] > depthM) {
+	    if (zB[M.w + M.h * sW] < getNearplan(l) || 
+		zB[M.w + M.h * sW] > depthM) {
 		scale = scaleABC / 
 		    (alpha * scaleBC + beta * scaleCA + gamma * scaleAB);
 		

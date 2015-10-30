@@ -1,6 +1,7 @@
-screenWidth 120
-screenHeight 80
+screenWidth 1200
+screenHeight 800
 light 1 -0.5 -2
 background 128 128 128
-camera cameras/ncurses.txt
-multimedia multimedia/libmultimedia_ncurses.so
+untextured 255 0 255
+camera cameras/standard.txt
+multimedia multimedia/libmultimedia_SDL.so

@@ -26,6 +26,11 @@ void initDisplay_(int screenWidth, int screenHeight, const Color *background)
     init_pair(7, COLOR_WHITE, COLOR_WHITE);
 }
 
+void resizeDisplay_(int screenWidth, int screenHeight)
+{
+    resize_term(screenHeight, 2 * screenWidth);
+}
+
 void resetDisplay_() 
 {
     clear();
@@ -50,7 +55,7 @@ void pixelDisplay_(const Coord *A, const Color *color)
     int maxW = 0;
     int maxH = 0;
     getmaxyx(stdscr, maxH, maxW);
-    if (A->w >= 0 && A->w < maxW && A->h >= 0 && A->h < maxH) {
+    if (A->w >= 0 && A->w < maxW / 2 && A->h >= 0 && A->h < maxH) {
 	int c = getColor(color);
 	attron(COLOR_PAIR(c));
 	mvprintw(A->h, 2 * A->w, "  ");
@@ -63,13 +68,26 @@ void blitDisplay_()
     refresh();
 }
 
+int getWidthDisplay_()
+{
+    return stdscr->_maxx;
+}
+
+int getHeightDisplay_()
+{
+    return stdscr->_maxy;
+}
+
 void freeDisplay_()
 {
     endwin();
 }
 
 void (*initDisplay)(int, int, const Color *) = &initDisplay_;
+void (*resizeDisplay)(int, int) = &resizeDisplay_;
 void (*resetDisplay)() = &resetDisplay_;
 void (*pixelDisplay)(const Coord *, const Color *) = &pixelDisplay_;
 void (*blitDisplay)() = &blitDisplay_;
 void (*freeDisplay)() = &freeDisplay_;
+int (*getWidthDisplay)() = &getWidthDisplay_;
+int (*getHeightDisplay)() = &getHeightDisplay_;

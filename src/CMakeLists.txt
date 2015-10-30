@@ -15,6 +15,7 @@ set(
   lens.c
   ext.c
   multimedia.c
+  array.c
   )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})

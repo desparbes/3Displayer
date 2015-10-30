@@ -8,6 +8,12 @@ void setCoord(Coord *c, int w, int h)
     c->h = h;
 }
 
+void translateCoord(Coord *c, int w, int h)
+{
+    c->w += w;
+    c->h += h;
+}
+
 void diffCoord(const Coord *A, const Coord *B, Coord *S)
 {
     setCoord(S,

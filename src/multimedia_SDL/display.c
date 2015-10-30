@@ -10,18 +10,24 @@ static struct {
     Uint32 background;
 } display;
 
+void resizeDisplay_(int screenWidth, int screenHeight)
+{
+    if ((display.screen = SDL_SetVideoMode(screenWidth, screenHeight, 32, 
+					   SDL_HWSURFACE | SDL_DOUBLEBUF | 
+					   SDL_RESIZABLE)) 
+	== NULL) {
+	fprintf(stderr, "Error SDL_SetVideoMode: %s", SDL_GetError());
+	exit(EXIT_FAILURE);
+    }
+}
+
 void initDisplay_(int screenWidth, int screenHeight, const Color *background)
 {
     if (SDL_Init(SDL_INIT_VIDEO) == -1) {
 	fprintf(stderr, "Error SDL_Init: %s", SDL_GetError());
 	exit(EXIT_FAILURE);
     }
-    if ((display.screen = SDL_SetVideoMode(screenWidth, screenHeight, 
-					   32, SDL_HWSURFACE | SDL_DOUBLEBUF)) 
-	== NULL) {
-	fprintf(stderr, "Error SDL_SetVideoMode: %s", SDL_GetError());
-	exit(EXIT_FAILURE);
-    }
+    resizeDisplay_(screenWidth, screenHeight);
     display.background = SDL_MapRGB(display.screen->format, 
 				    background->r, 
 				    background->g, 
@@ -49,6 +55,16 @@ void blitDisplay_()
     SDL_Flip(display.screen);
 }
 
+int getWidthDisplay_()
+{
+    return display.screen->w;
+}
+
+int getHeightDisplay_()
+{
+    return display.screen->h;
+}
+
 void freeDisplay_()
 {
     SDL_FreeSurface(display.screen);
@@ -56,7 +72,10 @@ void freeDisplay_()
 }
 
 void (*initDisplay)(int, int, const Color *) = &initDisplay_;
+void (*resizeDisplay)(int, int) = &resizeDisplay_;
 void (*resetDisplay)() = &resetDisplay_;
 void (*pixelDisplay)(const Coord *, const Color *) = &pixelDisplay_;
 void (*blitDisplay)() = &blitDisplay_;
+int (*getWidthDisplay)() = &getWidthDisplay_;
+int (*getHeightDisplay)() = &getHeightDisplay_;
 void (*freeDisplay)() = &freeDisplay_;

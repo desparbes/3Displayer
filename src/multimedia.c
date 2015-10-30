@@ -11,9 +11,12 @@
 static void *handle;
 
 void (*initDisplay)(int, int, const Color *);
+void (*resizeDisplay)(int, int);
 void (*resetDisplay)();
 void (*pixelDisplay)(const Coord *, const Color *);
 void (*blitDisplay)();
+int (*getWidthDisplay)();
+int (*getHeightDisplay)();
 void (*freeDisplay)();
 
 typedef struct Texture Texture;
@@ -41,9 +44,12 @@ void initMultimedia(const char *libPath)
     }
 
     loadFunction(initDisplay);
+    loadFunction(resizeDisplay);
     loadFunction(resetDisplay);
     loadFunction(pixelDisplay);
     loadFunction(blitDisplay);
+    loadFunction(getWidthDisplay);
+    loadFunction(getHeightDisplay);
     loadFunction(freeDisplay);
 
     loadFunction(loadTexture);

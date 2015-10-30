@@ -8,9 +8,12 @@
 #include "point.h"
 #include "direction.h"
 #include "view.h"
+#include "array.h"
 
 #define MAXLENGTH 256
 #define NB_KEYWORDS 7
+
+enum {FREQUENCY, TRANSLATIONSPEED, ROTATIONSPEED, POSITION, THETA, PHI, RHO};
 
 typedef struct {
     Frame position;
@@ -72,7 +75,9 @@ static void loadDefaultCamera(Camera *c)
 Camera *initCamera(char *fileName)
 {
     Camera *c = malloc(sizeof(Camera));
-    int checkCount = 0;
+    int check[NB_KEYWORDS] = {0};
+    int template[NB_KEYWORDS];
+    initArray(template, NB_KEYWORDS, 1);
     initFrame(&c->position);
     initStateCamera(c);
     c->lensToDisplay = 0;
@@ -88,28 +93,28 @@ Camera *initCamera(char *fileName)
 	while (fscanf(file, "%s", str) != EOF) {
 	    if (strcmp(str, "frequency") == 0 && 
 		fscanf(file, "%d", &c->frequency) == 1)
-		checkCount++;
+		check[FREQUENCY]++;
 	    else if (strcmp(str, "translationSpeed") == 0 &&
 		     fscanf(file, "%f", &c->translationSpeed) == 1)
-		checkCount++;
+		check[TRANSLATIONSPEED]++;
 	    else if (strcmp(str, "rotationSpeed") == 0 &&
 		     fscanf(file, "%f", &c->rotationSpeed) == 1)
-		checkCount++;
+		check[ROTATIONSPEED]++;
 	    else if (strcmp(str, "position") == 0 && 
 		 fscanf(file, "%f %f %f", 
 			&c->position.O.x, 
 			&c->position.O.y,
 			&c->position.O.z) == 3)
-		checkCount++;
+		check[POSITION]++;
 	    else if (strcmp(str, "theta") == 0 &&
 		     fscanf(file, "%f", &c->theta) == 1)
-		checkCount++;
+		check[THETA]++;
 	    else if (strcmp(str, "phi") == 0 &&
 		 fscanf(file, "%f", &c->phi) == 1)
-		checkCount++;
+		check[PHI]++;
 	    else if (strcmp(str, "rho") == 0 &&
 		     fscanf(file, "%f", &c->rho) == 1)	    
-		checkCount++;
+		check[RHO]++;
 	    else if (strcmp(str, "lens") == 0 &&
 		     fscanf(file, "%s", str) == 1)	    
 		addLensToCamera(c, str);
@@ -117,7 +122,7 @@ Camera *initCamera(char *fileName)
 	fclose(file);
     }
 
-    if (checkCount != NB_KEYWORDS || c->nbLens == 0) {
+    if (!areEqualsArray(check, template, NB_KEYWORDS)) {
 	printf("Error parsing camera %s: default camera loaded\n", fileName);
         loadDefaultCamera(c);
     } else {
@@ -178,6 +183,12 @@ void rotateCamera(Camera *c, int direction)
     }	
     rotateFrame(&c->position, c->theta, c->phi, c->rho);
     updateCamera(c);
+}
+
+void refreshCamera(Camera *c, int screenWidth, int screenHeight)
+{
+    for (int i = 0; i < c->nbLens; i++)	
+	refreshLens(c->lensBuffer[i], screenWidth, screenHeight);
 }
 
 void switchStateCamera(Camera *c, int state)
