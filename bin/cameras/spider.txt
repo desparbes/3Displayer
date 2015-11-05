@@ -1,0 +1,15 @@
+frequency 8
+translationSpeed 0.1
+rotationSpeed 0.01
+position 0. -5. 0.
+theta 0.
+phi 0.
+rho 0.
+lens cameras/spider/1.txt
+lens cameras/spider/2.txt
+lens cameras/spider/3.txt
+lens cameras/spider/4.txt
+lens cameras/spider/5.txt
+lens cameras/spider/6.txt
+lens cameras/spider/7.txt
+lens cameras/spider/8.txt

@@ -10,12 +10,14 @@ set(
   solid.c
   scene.c
   frame.c
-  equation.c
   camera.c
   lens.c
   ext.c
   multimedia.c
   array.c
+  equation.c
+  light.c
+  pixel.c
   )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})

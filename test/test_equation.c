@@ -3,6 +3,7 @@
 #include <assert.h>
 
 #include "../src/equation.c"
+#include "../src/array.c"
 
 void test_analyseNumber(void)
 {

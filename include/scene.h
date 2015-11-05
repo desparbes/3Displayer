@@ -3,10 +3,9 @@
 
 #include "point.h"
 #include "solid.h"
-#include "SDL/SDL.h"
+#include "color.h"
 
 void initScene();
-void addSolidToScene(Solid *solid);
 void askSolidForScene();
 void askEquationForScene();
 void removeSolidFromScene();
@@ -16,8 +15,7 @@ void resizeCameraScene(int screenWidth, int screenHeight);
 void rotateCameraScene(int direction);
 void translateCameraScene(int direction);
 void switchStateCameraScene(int state);
+void calculateLightScene(const Point *A, const Point *nA, Color *c);
 void freeScene(); 
-
-Point *getLight();
 
 #endif // SCENE_H

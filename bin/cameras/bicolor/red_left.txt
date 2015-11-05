@@ -1,0 +1,12 @@
+offset -0.5 0. 0.
+theta 0.
+phi 0.
+rho 0.
+filter 255 0 0
+screenPositionWidth 0
+screenPositionHeight 0
+screenWidth 8
+screenHeight 8
+nearplan 1.
+farplan 20.
+wfov 90

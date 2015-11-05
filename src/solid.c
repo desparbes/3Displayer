@@ -15,6 +15,8 @@
 #define MAXLENGTH 256
 #define EPSILON 0.001
 
+#define HANDLE(x) if(!x){printf("Equation error\n");freeEquation();return NULL;}
+
 typedef struct Vertex {
     int point;
     int normal;
@@ -38,11 +40,6 @@ typedef struct Solid {
     Face *faces;
 } Solid;
 
-Point *getOriginSolid(Solid *solid)
-{
-    return &solid->origin;
-}
-
 static void calculateOriginSolid(Solid *solid)
 {
     for (int i = 0; i < solid->numVertices; i++) {
@@ -53,6 +50,11 @@ static void calculateOriginSolid(Solid *solid)
     solid->origin.x /= solid->numVertices;
     solid->origin.y /= solid->numVertices;
     solid->origin.z /= solid->numVertices;
+}
+
+Point *getOriginSolid(Solid *solid)
+{
+    return &solid->origin;
 }
 
 void translateSolid(Solid *solid, float x, float y, float z)
@@ -310,8 +312,7 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
 		      x, y, z, MAXLENGTH, eqName)) {
 	fprintf(stderr, "Error loading equation\n");
 	return NULL;
-    } else 
-	printf("Equation successfully initialized\n");
+    }
 
     Solid *solid = malloc(sizeof(Solid));
     int p, f = 0;
@@ -337,8 +338,9 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
     if ((solid->texture = loadTexture(bmpName)))
 	printf("Texture successfully loaded\n");
     
-    if (solid->numVertices > 0)
-	getValueFromEquation(x, y, z, s, t, &solid->vertices[0]);	
+    if (solid->numVertices > 0) {
+	HANDLE(getValueFromEquation(x, y, z, s, t, &solid->vertices[0]))
+    }
 
     for (p = 0; p < solid->numVertices; p++) {
 	Point *A;
@@ -355,26 +357,27 @@ Solid *equationSolid(const char *eqName, const char *bmpName)
 	    A = &solid->vertices[p + precisionS];
 	    B = &solid->vertices[p - 1];
 
-	    getValueFromEquation(x, y, z, s, t + dt, A);
+	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, A))
+
 	    s = minS;
 	    t += dt;
 	} else if (p >= (solid->numVertices - precisionS)) { // north
 	    A = &solid->vertices[p - precisionS];
 	    B = &solid->vertices[p + 1];
-
+	    
 	    s += ds;
 	} else if (p < precisionS) { // south
 	    A = &solid->vertices[p + 1];
 	    B = &solid->vertices[p + precisionS];
 	    
-	    getValueFromEquation(x, y, z, s + ds, t, A);
-	    getValueFromEquation(x, y, z, s, t + dt, B);
+	    HANDLE(getValueFromEquation(x, y, z, s + ds, t, A))
+	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, B))
 	    s += ds;
 	} else { // elsewhere
 	    A = &solid->vertices[p + 1];
 	    B = &solid->vertices[p + precisionS];
 	    
-	    getValueFromEquation(x, y, z, s, t + dt, B);
+	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, B))
 	    s += ds;
 	}
 	diffPoint(A, O, &u);

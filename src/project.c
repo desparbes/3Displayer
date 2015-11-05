@@ -7,6 +7,7 @@
 #include "color.h"
 #include "scene.h"
 #include "texture.h"
+#include "pixel.h"
 
 // return the vector between camera.O and the intersection of (AB) 
 // and the NEARPLAN
@@ -141,7 +142,20 @@ static void cutInOneTriangle(Lens *l,
 	     (normalC->x - normalA->x) * kC + normalA->x,
 	     (normalC->y - normalA->y) * kC + normalA->y,
 	     (normalC->z - normalA->z) * kC + normalA->z);
-    
+
+    Color lA, lB, lC;
+    calculateLightScene(A, normalA, &lA); 
+    calculateLightScene(&OpB, &nAB, &lB); 
+    calculateLightScene(&OpC, &nAC, &lC); 
+
+    Pixel pA, pB, pC;
+    setPixel(&pA, &a, depthA, &lA, U);
+    setPixel(&pB, &bn, (depthB - depthA) * kB + depthA, &lB, &UV);
+    setPixel(&pC, &cn, (depthC - depthA) * kC + depthA, &lC, &UW);
+  
+    drawTriangle(l, triangle, &pA, &pB, &pC);
+  
+/*
     drawTriangle(l, &a, &bn, &cn,
 		 depthA,
 		 (depthB - depthA) * kB + depthA,
@@ -149,6 +163,7 @@ static void cutInOneTriangle(Lens *l,
 		 triangle,
 		 U, &UV, &UW,
 		 normalA, &nAB, &nAC);
+*/
 }
 
 static void cutInTwoTriangles(Lens *l,
@@ -202,7 +217,23 @@ static void cutInTwoTriangles(Lens *l,
 	     (normalC->x - normalA->x) * kC + normalA->x,
 	     (normalC->y - normalA->y) * kC + normalA->y,
 	     (normalC->z - normalA->z) * kC + normalA->z);
+
+    Color lB, lC, lBn, lCn;
+    calculateLightScene(B, normalB, &lB); 
+    calculateLightScene(C, normalC, &lC); 
+    calculateLightScene(&OpB, &nAB, &lBn); 
+    calculateLightScene(&OpC, &nAC, &lCn); 
+
+    Pixel pB, pC, pBn, pCn;
+    setPixel(&pB, &b, depthB, &lB, V);
+    setPixel(&pC, &c, depthC, &lC, W);
+    setPixel(&pBn, &opbn, (depthB - depthA) * kB + depthA, &lBn, &VU);
+    setPixel(&pCn, &opcn, (depthC - depthA) * kC + depthA, &lCn, &WU);
+  
+    drawTriangle(l, triangle, &pBn, &pC, &pCn);
+    drawTriangle(l, triangle, &pBn, &pB, &pC);
     
+/*
     drawTriangle(l, &opbn, &c, &opcn,
 		 (depthB - depthA) * kB + depthA,
 		 depthC,
@@ -217,6 +248,7 @@ static void cutInTwoTriangles(Lens *l,
 		 triangle,
 		 &VU, V, W,
 		 &nAB, normalB, normalC);
+*/
 }
 
 void projectTriangle(Lens *l, const Point *A, const Point *B, const Point *C,
@@ -237,15 +269,23 @@ void projectTriangle(Lens *l, const Point *A, const Point *B, const Point *C,
     float depthC = scalarProduct(&camera->j, &OC);
 
     if (depthA > nearplan && depthB > nearplan && depthC > nearplan){
+	Pixel pA, pB, pC;
 	Coord a, b, c;
+	Color lA, lB, lC;
+	
 	projectCoord(l, &OA, depthA, &a);
 	projectCoord(l, &OB, depthB, &b);
 	projectCoord(l, &OC, depthC, &c);
-	drawTriangle(l, &a, &b, &c,
-		     depthA, depthB, depthC,
-		     triangle,
-		     U, V, W,
-		     normalA, normalB, normalC);
+
+	calculateLightScene(A, normalA, &lA);
+	calculateLightScene(B, normalB, &lB);
+	calculateLightScene(C, normalC, &lC);
+
+	setPixel(&pA, &a, depthA, &lA, U);
+	setPixel(&pB, &b, depthB, &lB, V);
+	setPixel(&pC, &c, depthC, &lC, W);
+
+	drawTriangle(l, triangle, &pA, &pB, &pC);
     } else if (depthB > nearplan && depthC > nearplan){
 	cutInTwoTriangles(l, A, B, C,
 			  depthA, depthB, depthC,

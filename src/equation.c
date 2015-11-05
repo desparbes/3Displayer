@@ -7,9 +7,11 @@
 #include "point.h"
 #include "stack.h"
 #include "state.h"
+#include "array.h"
 
 #define MAXLENGTH 256
 #define NB_FUNCTIONS 4
+#define NB_KEYWORDS 9
 
 typedef struct ElementEquation {
     int valueType;
@@ -39,6 +41,10 @@ enum {
 
 enum {
     POTENTIAL, ACCEPT, REFUSE
+};
+
+enum {
+    MINS, MAXS, PRECISIONS, MINT, MAXT, PRECISIONT, X, Y, Z
 };
 
 static inline int isNumber(char c)
@@ -215,7 +221,7 @@ static float computeFunction(int function, float x)
     return 0.;
 }	
 	    
-static void getValueFromLine(char *xyz, float s, float t, float *XYZ)
+static int getValueFromLine(char *xyz, float s, float t, float *XYZ)
 {
     ElementEquation result;
     resetStack(Equation.stack);
@@ -238,23 +244,26 @@ static void getValueFromLine(char *xyz, float s, float t, float *XYZ)
 		elmtA.valueType = FUNCTION;
 	    } else {
 		fprintf(stderr, "Error parsing equation: unknown symbol\n");
+		return 0;
 	    }
 	    addDataStack(Equation.stack, &elmtA);
 	} else if (isBinaryOperator(xyz[i])) {
 	    elmtA.value.operator = analyseBinaryOperator(xyz, &i);
 	    elmtA.valueType = OPERATOR;
 	    addDataStack(Equation.stack, &elmtA);
-	} else if (xyz[i] == ')') {
+	} else if (xyz[i] == ')' && !voidStack(Equation.stack)) {
 	    elmtA = *((ElementEquation *)readDataStack(Equation.stack));
 	    removeDataStack(Equation.stack);
-	    if (elmtA.valueType == NUMBER) {
+	    if (elmtA.valueType == NUMBER && !voidStack(Equation.stack)) {
 		elmtB = *((ElementEquation *)readDataStack(Equation.stack));
 		removeDataStack(Equation.stack);
-	        if (elmtB.valueType == OPERATOR) {
+	        if (elmtB.valueType == OPERATOR && !voidStack(Equation.stack)) {
 		    elmtC = *((ElementEquation *)readDataStack(Equation.stack));
 		    removeDataStack(Equation.stack);
-		    if (elmtC.valueType != NUMBER)
+		    if (elmtC.valueType != NUMBER) {
 			fprintf(stderr, "Error parsing equation: bad + 1");
+			return 0;
+		    }			
 		    result.value.number = computeOperator(elmtC.value.number, 
 							  elmtB.value.operator, 
 							  elmtA.value.number);
@@ -265,20 +274,31 @@ static void getValueFromLine(char *xyz, float s, float t, float *XYZ)
 							  elmtA.value.number);
 		    result.valueType = NUMBER;
 		    addDataStack(Equation.stack, &result);
-		} else
+		} else {
 		    fprintf(stderr, "Error parsing equation\n");		
-	    } else 
+		    return 0;
+		}
+	    } else {
 		fprintf(stderr, "Error parsing equation: structural problem\n");
+		return 0;
+	    }
 	}
+    }
+
+    if (voidStack(Equation.stack)) {
+	fprintf(stderr, "Error parsing equation: no result\n");
+	return 0;
     }
 
     result = *((ElementEquation *)readDataStack(Equation.stack));
     removeDataStack(Equation.stack);
-    
-    if (result.valueType == NUMBER)
-	*XYZ = result.value.number;
-    else
-	fprintf(stderr, "Error parsing equation: incomplete\n");
+
+    if (result.valueType != NUMBER) {
+	fprintf(stderr, "Error parsing equation: not a number\n");
+	return 0;
+    }
+    *XYZ = result.value.number;
+    return 1;
 }
 
 int initEquation(float *minS, float *maxS, int *precisionS,
@@ -287,75 +307,55 @@ int initEquation(float *minS, float *maxS, int *precisionS,
 		 const char *eqName)
 {
     FILE *file = fopen(eqName, "r");
-    Equation.state = initState(NB_FUNCTIONS);
-    Equation.stack = initStack(sizeof(ElementEquation));
-
     if (file == NULL) {
 	perror(eqName);
         return 0;
     }
+    
     char str[MAXLENGTH];
+    int check[NB_KEYWORDS] = {0};
+    int template[NB_KEYWORDS];
+    initArray(template, NB_KEYWORDS, 1);
     
     while (fscanf(file, "%s", str) != EOF) {
-	if (strcmp(str, "minS") == 0 && fscanf(file, "%f", minS) != 1) {
-		fprintf(stderr, "Error loading minS\n");
-		fclose(file);
-		return 0;
-	}
-	if (strcmp(str, "maxS") == 0 && fscanf(file, "%f", maxS) != 1) {
-		fprintf(stderr, "Error loading maxS\n");
-		fclose(file);
-		return 0;
-	}
-	if (strcmp(str, "precisionS") == 0 && 
-	    fscanf(file, "%d", precisionS) != 1) {
-		fprintf(stderr, "Error loading precisionS\n");
-		fclose(file);
-		return 0;
-	}
-	if (strcmp(str, "minT") == 0 && fscanf(file, "%f", minT) != 1) {
-		fprintf(stderr, "Error loading minT\n");
-		fclose(file);
-		return 0;
-	}
-	if (strcmp(str, "maxT") == 0 && fscanf(file, "%f", maxT) != 1) {
-		fprintf(stderr, "Error loading maxT\n");
-		fclose(file);
-		return 0;
-	}
-	if (strcmp(str, "precisionT") == 0 && 
-	    fscanf(file, "%d", precisionT) != 1) {
-		fprintf(stderr, "Error loading precisionT\n");
-		fclose(file);
-		return 0;
-	}
-	if (strcmp(str, "x") == 0 && fscanf(file, "%s", x) != 1) {
-		fprintf(stderr, "Error loading x\n");
-		fclose(file);
-		return 0;
-	}
-	if (strcmp(str, "y") == 0 && fscanf(file, "%s", y) != 1) {
-		fprintf(stderr, "Error loading y\n");
-		fclose(file);
-		return 0;
-	}
-	if (strcmp(str, "z") == 0 && fscanf(file, "%s", z) != 1) {
-		fprintf(stderr, "Error loading z\n");
-		fclose(file);
-		return 0;
-	}
+	if (strcmp(str, "minS") == 0 && fscanf(file, "%f", minS) == 1)
+	    check[MINS]++;
+	else if (strcmp(str, "maxS") == 0 && fscanf(file, "%f", maxS) == 1)
+	    check[MAXS]++;
+	else if (strcmp(str, "precisionS") == 0 &&
+	    fscanf(file, "%d", precisionS) == 1)
+	    check[PRECISIONS]++;
+	else if (strcmp(str, "minT") == 0 && fscanf(file, "%f", minT) == 1)
+	    check[MINT]++;
+	else if (strcmp(str, "maxT") == 0 && fscanf(file, "%f", maxT) == 1)
+	    check[MAXT]++;
+	else if (strcmp(str, "precisionT") == 0 && 
+	    fscanf(file, "%d", precisionT) == 1)
+	    check[PRECISIONT]++;
+	else if (strcmp(str, "x") == 0 && fscanf(file, "%s", x) == 1)
+	    check[X]++;
+	else if (strcmp(str, "y") == 0 && fscanf(file, "%s", y) == 1)
+	    check[Y]++;
+	else if (strcmp(str, "z") == 0 && fscanf(file, "%s", z) == 1)
+	    check[Z]++;
+    }
+    if (!areEqualsArray(check, template, NB_KEYWORDS)) {
+	printf("Error parsing equation\n");
+	return 0;
     }
 
+    Equation.state = initState(NB_FUNCTIONS);
+    Equation.stack = initStack(sizeof(ElementEquation));
     fclose(file);
     return 1;
 }
 
-void getValueFromEquation(char *x, char *y, char *z, 
-			  float s, float t, Point *p)
+int getValueFromEquation(char *x, char *y, char *z, 
+			 float s, float t, Point *p)
 {
-    getValueFromLine(x, s, t, &p->x);
-    getValueFromLine(y, s, t, &p->y);
-    getValueFromLine(z, s, t, &p->z);
+    return (getValueFromLine(x, s, t, &p->x) &&
+	    getValueFromLine(y, s, t, &p->y) &&
+	    getValueFromLine(z, s, t, &p->z));
 }
 
 void freeEquation()

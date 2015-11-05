@@ -14,21 +14,23 @@
 #include "view.h"
 #include "multimedia.h"
 #include "array.h"
+#include "light.h"
 
 #define MAXLENGTH 128
-#define NB_KEYWORDS 7
+#define NB_KEYWORDS 6
 
-enum {SCREENWIDTH, SCREENHEIGHT, LIGHT, BACKGROUND, 
-      UNTEXTURED, MULTIMEDIA, CAMERA};
+enum {SCREENWIDTH, SCREENHEIGHT, BACKGROUND, UNTEXTURED, MULTIMEDIA, CAMERA};
 
 static struct {
     Frame origin;
 
-    Point light;
+    Light **lightBuffer;
+    int nbLight;
+    int lightSize;
 
     Solid **solidBuffer;
     int nbSolid;
-    int bufferSize;
+    int solidSize;
 
     Camera *camera;
 } scene;
@@ -45,6 +47,42 @@ static void remove_space(char *buf)
     }
 }
 
+static void addSolidToScene(Solid *solid)
+{
+    if(scene.nbSolid >= scene.solidSize){
+	scene.solidSize *= 2;
+	scene.solidBuffer = realloc(scene.solidBuffer, 
+				    scene.solidSize * 
+				    sizeof(Solid *));
+    }
+    scene.solidBuffer[scene.nbSolid++] = solid;   
+}
+
+static void addLightToScene(Light *light)
+{
+    if(scene.nbLight >= scene.lightSize){
+	scene.lightSize *= 2;
+	scene.lightBuffer = realloc(scene.lightBuffer, 
+				    scene.lightSize * 
+				    sizeof(Light *));
+    }
+    scene.lightBuffer[scene.nbLight++] = light;   
+}
+
+static void freeSolidBuffer()
+{
+    for(int i = 0; i < scene.nbSolid; i++)
+	freeSolid(scene.solidBuffer[i]);
+    free(scene.solidBuffer);
+}
+
+static void freeLightBuffer()
+{
+    for(int i = 0; i < scene.nbLight; i++)
+	freeLight(scene.lightBuffer[i]);
+    free(scene.lightBuffer);
+}
+
 void initScene(void)
 {
     Color background;
@@ -54,8 +92,11 @@ void initScene(void)
     char *fileName = "config/config.txt";
     scene.camera = NULL;
     scene.nbSolid = 0;
-    scene.bufferSize = 4;
-    scene.solidBuffer = malloc(scene.bufferSize * sizeof(Solid*));
+    scene.solidSize = 4;
+    scene.solidBuffer = malloc(scene.solidSize * sizeof(Solid*));
+    scene.nbLight = 0;
+    scene.lightSize = 4;
+    scene.lightBuffer = malloc(scene.lightSize * sizeof(Light*));
     FILE *file = fopen(fileName, "r");
     char camera[MAXLENGTH];
     char multimedia[MAXLENGTH];
@@ -75,11 +116,8 @@ void initScene(void)
 		     fscanf(file, "%d", &screenHeight) == 1)
 		check[SCREENHEIGHT]++;
 	    else if (strcmp(str, "light") == 0 &&
-		     fscanf(file, "%f %f %f", 
-			    &scene.light.x, 
-			    &scene.light.y, 
-			    &scene.light.z) == 3)
-		check[LIGHT]++;
+		     fscanf(file, "%s", str) == 1)
+		addLightToScene(loadLight(str));
 	    else if (strcmp(str, "background") == 0 &&
 		     fscanf(file, "%hhd %hhd %hhd", 
 			    &background.r, 
@@ -106,30 +144,19 @@ void initScene(void)
 	printf("Error parsing config.txt: default values loaded\n");
 	screenWidth = 1200;
 	screenHeight = 800;
-        setPoint(&scene.light, 1., -0.5, -2.);
 	setColor(&background, 128, 128, 128);
 	setColor(&untextured, 0, 255, 255);
 	initMultimedia("multimedia/libmultimedia_SDL.so");
 	initDisplay(screenWidth, screenHeight, &background, &untextured);
 	scene.camera = initCamera("cameras/standard.txt");
+	freeLightBuffer();
+	addLightToScene(loadLight("light/standard.txt"));
     } else {
 	initMultimedia(multimedia);
 	initDisplay(screenWidth, screenHeight, &background, &untextured);
 	scene.camera = initCamera(camera);
     }
     refreshCamera(scene.camera, screenWidth, screenHeight);
-    normalizePoint(&scene.light, &scene.light);
-}
-
-void addSolidToScene(Solid *solid)
-{
-    if(scene.nbSolid >= scene.bufferSize){
-	scene.bufferSize *= 2;
-	scene.solidBuffer = realloc(scene.solidBuffer, 
-				    scene.bufferSize * 
-				    sizeof(Solid *));
-    }
-    scene.solidBuffer[scene.nbSolid++] = solid;   
 }
 
 void removeSolidFromScene()
@@ -230,6 +257,17 @@ void handleArgumentScene(int argc, char *argv[])
     }
 }
 
+
+void calculateLightScene(const Point *A, const Point *nA, Color *c)
+{
+    setColor(c, 0, 0, 0);
+    for (int i = 0; i < scene.nbLight; i++) {
+	Color tmp;
+	calculateLight(scene.lightBuffer[i], A, nA, &tmp);
+	sumColor(c, &tmp, c);
+    }
+}
+
 void resizeCameraScene(int screenWidth, int screenHeight)
 {
     resizeDisplay(screenWidth, screenHeight);
@@ -251,16 +289,10 @@ void switchStateCameraScene(int state)
     switchStateCamera(scene.camera, state);
 }
 
-Point *getLight(void)
-{
-    return &scene.light;
-}
-
 void freeScene(void)
 {
-    for(int i = 0; i < scene.nbSolid; i++)
-	freeSolid(scene.solidBuffer[i]);
-    free(scene.solidBuffer);
+    freeSolidBuffer();
+    freeLightBuffer();
     freeCamera(scene.camera);
     freeDisplay();
     freeMultimedia();
