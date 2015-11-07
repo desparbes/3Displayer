@@ -15,6 +15,7 @@ void (*resizeDisplay)(int, int);
 void (*resetDisplay)();
 void (*pixelDisplay)(const Coord *, const Color *);
 void (*blitDisplay)();
+void (*getUntexturedDisplay)(Color *);
 int (*getWidthDisplay)();
 int (*getHeightDisplay)();
 void (*freeDisplay)();
@@ -48,6 +49,7 @@ void initMultimedia(const char *libPath)
     loadFunction(resetDisplay);
     loadFunction(pixelDisplay);
     loadFunction(blitDisplay);
+    loadFunction(getUntexturedDisplay);
     loadFunction(getWidthDisplay);
     loadFunction(getHeightDisplay);
     loadFunction(freeDisplay);

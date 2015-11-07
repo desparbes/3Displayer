@@ -102,15 +102,15 @@ static void cutInOneTriangle(Lens *l,
 {
     float nearplan = getNearplan(l);
     Frame *camera = getPosition(l);
-    Point AB, AC;
-    Point OpB, OpC;
 
+    Point AB, AC;
     diffPoint(B, A, &AB);
     diffPoint(C, A, &AC);
     
     float kB = (nearplan - depthA) / scalarProduct(&camera->j, &AB);
     float kC = (nearplan - depthA) / scalarProduct(&camera->j, &AC);
     
+    Point OpB, OpC;
     setPoint(&OpB, 
 	     A->x + kB * AB.x - camera->O.x,
 	     A->y + kB * AB.y - camera->O.y,
@@ -154,16 +154,6 @@ static void cutInOneTriangle(Lens *l,
     setPixel(&pC, &cn, (depthC - depthA) * kC + depthA, &lC, &UW);
   
     drawTriangle(l, triangle, &pA, &pB, &pC);
-  
-/*
-    drawTriangle(l, &a, &bn, &cn,
-		 depthA,
-		 (depthB - depthA) * kB + depthA,
-		 (depthC - depthA) * kC + depthA,
-		 triangle,
-		 U, &UV, &UW,
-		 normalA, &nAB, &nAC);
-*/
 }
 
 static void cutInTwoTriangles(Lens *l,
@@ -180,8 +170,8 @@ static void cutInTwoTriangles(Lens *l,
 {
     float nearplan = getNearplan(l);
     Frame *camera = getPosition(l);
-    Point AB, AC;
 
+    Point AB, AC;
     diffPoint(B, A, &AB);
     diffPoint(C, A, &AC);
     
@@ -232,23 +222,6 @@ static void cutInTwoTriangles(Lens *l,
   
     drawTriangle(l, triangle, &pBn, &pC, &pCn);
     drawTriangle(l, triangle, &pBn, &pB, &pC);
-    
-/*
-    drawTriangle(l, &opbn, &c, &opcn,
-		 (depthB - depthA) * kB + depthA,
-		 depthC,
-		 (depthC - depthA) * kC + depthA,
-		 triangle,
-		 &VU, W, &WU,
-		 &nAB, normalC, &nAC);
-    
-    drawTriangle(l, &opbn, &b, &c,
-		 (depthB - depthA) * kB + depthA,
-		 depthB, depthC,
-		 triangle,
-		 &VU, V, W,
-		 &nAB, normalB, normalC);
-*/
 }
 
 void projectTriangle(Lens *l, const Point *A, const Point *B, const Point *C,

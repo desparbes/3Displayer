@@ -299,7 +299,8 @@ Solid *loadSolid(const char *fileName, const char *bmpName)
     return solid;
 }
 
-Solid *equationSolid(const char *eqName, const char *bmpName)
+Solid *equationSolid(const char *eqName, const char *bmpName, 
+		     const Color *untextured)
 {
     float minS, maxS, minT, maxT;
     int precisionS, precisionT;

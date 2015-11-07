@@ -2,6 +2,6 @@ screenWidth 1200
 screenHeight 800
 light light/standard.txt
 background 128 128 128
-untextured 255 0 255
-camera cameras/standard.txt
+untextured 31 141 159
+camera cameras/bicolor.txt
 multimedia multimedia/libmultimedia_SDL.so

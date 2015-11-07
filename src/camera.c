@@ -69,7 +69,7 @@ static void loadDefaultCamera(Camera *c)
     int initialNbLens = c->nbLens;
     for (int i = 0; i < initialNbLens; i++)
 	removeLensFromCamera(c);
-    addLensToCamera(c, "cameras/lens/standard.txt");
+    addLensToCamera(c, "cameras/standard/standard.txt");
 }
 
 Camera *initCamera(char *fileName)
@@ -87,7 +87,7 @@ Camera *initCamera(char *fileName)
     FILE *file = fopen(fileName, "r");
 
     if (file == NULL) {
-        printf("File %s not found", fileName);
+        printf("File %s not found\n", fileName);
     } else {
 	char str[MAXLENGTH];
 	while (fscanf(file, "%s", str) != EOF) {

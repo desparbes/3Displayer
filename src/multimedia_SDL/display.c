@@ -8,6 +8,7 @@
 static struct {
     SDL_Surface *screen;
     Uint32 background;
+    Color untextured;
 } display;
 
 void resizeDisplay_(int screenWidth, int screenHeight)
@@ -21,13 +22,15 @@ void resizeDisplay_(int screenWidth, int screenHeight)
     }
 }
 
-void initDisplay_(int screenWidth, int screenHeight, const Color *background)
+void initDisplay_(int screenWidth, int screenHeight, const Color *background,
+    const Color *untextured)
 {
     if (SDL_Init(SDL_INIT_VIDEO) == -1) {
 	fprintf(stderr, "Error SDL_Init: %s", SDL_GetError());
 	exit(EXIT_FAILURE);
     }
     resizeDisplay_(screenWidth, screenHeight);
+    display.untextured = *untextured;
     display.background = SDL_MapRGB(display.screen->format, 
 				    background->r, 
 				    background->g, 
@@ -55,6 +58,11 @@ void blitDisplay_()
     SDL_Flip(display.screen);
 }
 
+void getUntexturedDisplay_(Color *c)
+{
+    *c = display.untextured;
+}
+
 int getWidthDisplay_()
 {
     return display.screen->w;
@@ -71,11 +79,12 @@ void freeDisplay_()
     SDL_Quit();
 }
 
-void (*initDisplay)(int, int, const Color *) = &initDisplay_;
+void (*initDisplay)(int, int, const Color *, const Color *) = &initDisplay_;
 void (*resizeDisplay)(int, int) = &resizeDisplay_;
 void (*resetDisplay)() = &resetDisplay_;
 void (*pixelDisplay)(const Coord *, const Color *) = &pixelDisplay_;
 void (*blitDisplay)() = &blitDisplay_;
+void (*getUntexturedDisplay)(Color *) = &getUntexturedDisplay_;
 int (*getWidthDisplay)() = &getWidthDisplay_;
 int (*getHeightDisplay)() = &getHeightDisplay_;
 void (*freeDisplay)() = &freeDisplay_;

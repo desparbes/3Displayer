@@ -6,7 +6,6 @@
 #include "color.h"
 #include "lens.h"
 #include "display.h"
-#include "scene.h"
 #include "pixel.h"
 
 static inline int min(int a, int b)
@@ -138,7 +137,7 @@ void drawTriangle(Lens *l, Texture *triangle, Pixel *A, Pixel *B, Pixel *C)
 
     Position u, v, w;
 
-    if (triangle != NULL) {
+    if (triangle) {
 	setPosition(&u, A->p.x / A->depth, A->p.y / A->depth);
 	setPosition(&v, B->p.x / B->depth, B->p.y / B->depth);
 	setPosition(&w, C->p.x / C->depth, C->p.y / C->depth);
@@ -195,9 +194,7 @@ void drawTriangle(Lens *l, Texture *triangle, Pixel *A, Pixel *B, Pixel *C)
 		    loopPosition(&N);
 		    getPixelTexture(triangle, &N, &c);
 		} else {
-		    c.r = 255;
-		    c.g = 0;
-		    c.b = 255;
+		    getUntexturedDisplay(&c);
 		}
 		productColor(&c, &colorM, &c);
 		translatePixel(l, &M, &c);

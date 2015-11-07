@@ -105,7 +105,7 @@ void initScene(void)
     initArray(template, NB_KEYWORDS, 1);
 
     if (file == NULL) {
-	printf("File %s not found", fileName);
+	printf("File %s not found\n", fileName);
     } else {
 	char str[MAXLENGTH];
 	while (fscanf(file, "%s", str) != EOF) {
@@ -256,7 +256,6 @@ void handleArgumentScene(int argc, char *argv[])
 	break;
     }
 }
-
 
 void calculateLightScene(const Point *A, const Point *nA, Color *c)
 {

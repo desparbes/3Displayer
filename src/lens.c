@@ -74,7 +74,7 @@ Lens *initLens(char *fileName)
     FILE *file = fopen(fileName, "r");
 
     if (file == NULL) {
-        printf("File %s not found", fileName);
+        printf("File %s not found\n", fileName);
     } else {
 	char str[MAXLENGTH];
 	while (fscanf(file, "%s", str) != EOF) {

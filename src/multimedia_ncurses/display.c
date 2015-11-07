@@ -5,8 +5,12 @@
 #include "coord.h"
 #include "color.h"
 
+static struct {
+    Color untextured;
+} display;
 
-void initDisplay_(int screenWidth, int screenHeight, const Color *background)
+void initDisplay_(int screenWidth, int screenHeight, const Color *background, 
+		  const Color *untextured)
 {
     initscr();
     keypad(stdscr, TRUE);
@@ -24,6 +28,7 @@ void initDisplay_(int screenWidth, int screenHeight, const Color *background)
     init_pair(5, COLOR_MAGENTA, COLOR_MAGENTA);
     init_pair(6, COLOR_YELLOW,COLOR_YELLOW);
     init_pair(7, COLOR_WHITE, COLOR_WHITE);
+    display.untextured = *untextured;
 }
 
 void resizeDisplay_(int screenWidth, int screenHeight)
@@ -68,6 +73,11 @@ void blitDisplay_()
     refresh();
 }
 
+void getUntexturedDisplay_(Color *c)
+{
+    *c = display.untextured;
+}
+
 int getWidthDisplay_()
 {
     return stdscr->_maxx;
@@ -83,11 +93,12 @@ void freeDisplay_()
     endwin();
 }
 
-void (*initDisplay)(int, int, const Color *) = &initDisplay_;
+void (*initDisplay)(int, int, const Color *, const Color *) = &initDisplay_;
 void (*resizeDisplay)(int, int) = &resizeDisplay_;
 void (*resetDisplay)() = &resetDisplay_;
 void (*pixelDisplay)(const Coord *, const Color *) = &pixelDisplay_;
 void (*blitDisplay)() = &blitDisplay_;
-void (*freeDisplay)() = &freeDisplay_;
+void (*getUntexturedDisplay)(Color *) = &getUntexturedDisplay_;
 int (*getWidthDisplay)() = &getWidthDisplay_;
 int (*getHeightDisplay)() = &getHeightDisplay_;
+void (*freeDisplay)() = &freeDisplay_;

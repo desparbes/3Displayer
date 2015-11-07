@@ -46,9 +46,9 @@ Color *productColor(const Color *A, const Color *B, Color *C)
 
 Color *filterColor(Color *color, const Color *filter)
 {
-    color->r *= (float)(filter->r) / 255.;
-    color->g *= (float)(filter->g) / 255.;
-    color->b *= (float)(filter->b) / 255.;
+    color->r = (color->r * filter->r) / 255.;
+    color->g = (color->g * filter->g) / 255.;
+    color->b = (color->b * filter->b) / 255.;
     return color;
 }
 
@@ -59,12 +59,3 @@ Color *scaleColor(Color *output, const Color *input, float scale)
     output->b = scale * input->b;
     return output;
 }
-/*
-Color *enlightColor(Color *color, const Color *light, float scale)
-{
-    color->r = (light->r - color->r)  * scale + color->r;
-    color->g = (light->g - color->g)  * scale + color->g;
-    color->b = (light->b - color->b)  * scale + color->b;
-    return color;
-}
-*/

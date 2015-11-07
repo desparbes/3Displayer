@@ -12,10 +12,8 @@ typedef struct Texture {
 Texture *loadTexture_(const char *fileName)
 {
     SDL_Surface *tmp = SDL_LoadBMP(fileName);
-    if (!tmp) {
-	fprintf(stderr, "%s\n", SDL_GetError());
+    if (!tmp)
 	return NULL;
-    }
     Texture *texture = malloc(sizeof(Texture));
     texture->t = tmp;
     return texture;

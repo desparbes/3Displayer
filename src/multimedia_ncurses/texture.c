@@ -12,10 +12,7 @@ Texture *loadTexture_(const char *fileName)
     return NULL;
 }
 
-void getPixelTexture_(const Texture *texture, const Position *p, Color *c)
-{
-    setColor(c, 0, 0, 0);
-}
+void getPixelTexture_(const Texture *texture, const Position *p, Color *c) {}
 
 void freeTexture_(Texture *texture) {}
 
