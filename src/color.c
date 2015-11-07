@@ -46,9 +46,9 @@ Color *productColor(const Color *A, const Color *B, Color *C)
 
 Color *filterColor(Color *color, const Color *filter)
 {
-    color->r = (color->r * filter->r) / 255.;
-    color->g = (color->g * filter->g) / 255.;
-    color->b = (color->b * filter->b) / 255.;
+    color->r = color->r * filter->r / 255.;
+    color->g = color->g * filter->g / 255.;
+    color->b = color->b * filter->b / 255.;
     return color;
 }
 
@@ -59,3 +59,12 @@ Color *scaleColor(Color *output, const Color *input, float scale)
     output->b = scale * input->b;
     return output;
 }
+
+Color *averageColor(Color *front, const Color *back, unsigned char scale)
+{
+    front->r = (back->r - front->r) * scale / 255 + front->r;
+    front->g = (back->g - front->g) * scale / 255 + front->g;
+    front->b = (back->b - front->b) * scale / 255 + front->b;
+    return front;
+}
+

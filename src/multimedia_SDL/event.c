@@ -113,10 +113,7 @@ static void handleKeyUpEvent(SDL_Event *event)
 
 void handleEvent_(int *stop)
 {
-    SDL_Event event;
-    if (!SDL_PollEvent(&event))
-	return;
-    
+    SDL_Event event;    
     do {
 	switch (event.type) {
 	case SDL_QUIT:

@@ -24,7 +24,12 @@ static void translatePixel(Lens *l, const Coord *A, const Color *color)
     Color filtered = *color;
     translateCoord(&B, getWidthPosition(l), getHeightPosition(l));
     filterColor(&filtered, getFilter(l));
-    pixelDisplay(&B, &filtered);
+    if (getOverlapping(l)) {
+	Color back;
+	getPixelDisplay(&B, &back);
+	averageColor(&filtered, &back, 128);
+    }
+    setPixelDisplay(&B, &filtered);
 }
 
 void drawPixel(Lens *l, const Coord *A, float depthA, const Color *color)

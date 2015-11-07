@@ -11,9 +11,9 @@
 #include "array.h"
 
 #define MAXLENGTH 256
-#define NB_KEYWORDS 7
+#define NB_KEYWORDS 6
 
-enum {FREQUENCY, TRANSLATIONSPEED, ROTATIONSPEED, POSITION, THETA, PHI, RHO};
+enum {TRANSLATIONSPEED, ROTATIONSPEED, POSITION, THETA, PHI, RHO};
 
 typedef struct {
     Frame position;
@@ -21,9 +21,6 @@ typedef struct {
     Lens **lensBuffer;
     int bufferSize;
     int nbLens;
-    int frequency;
-    int lensToDisplay;
-    int lensLeft;
     int state[NB_STATE];
     float rotationSpeed;
     float translationSpeed;
@@ -60,7 +57,6 @@ static void initStateCamera(Camera *c)
 
 static void loadDefaultCamera(Camera *c)
 {
-    c->frequency = 1;
     c->translationSpeed = 0.1;
     c->rotationSpeed = 0.01;
     c->theta = 0.;
@@ -80,7 +76,6 @@ Camera *initCamera(char *fileName)
     initArray(template, NB_KEYWORDS, 1);
     initFrame(&c->position);
     initStateCamera(c);
-    c->lensToDisplay = 0;
     c->nbLens = 0;
     c->bufferSize = 2;
     c->lensBuffer = malloc(c->bufferSize * sizeof(Lens *));
@@ -91,10 +86,7 @@ Camera *initCamera(char *fileName)
     } else {
 	char str[MAXLENGTH];
 	while (fscanf(file, "%s", str) != EOF) {
-	    if (strcmp(str, "frequency") == 0 && 
-		fscanf(file, "%d", &c->frequency) == 1)
-		check[FREQUENCY]++;
-	    else if (strcmp(str, "translationSpeed") == 0 &&
+	    if (strcmp(str, "translationSpeed") == 0 &&
 		     fscanf(file, "%f", &c->translationSpeed) == 1)
 		check[TRANSLATIONSPEED]++;
 	    else if (strcmp(str, "rotationSpeed") == 0 &&
@@ -135,7 +127,6 @@ Camera *initCamera(char *fileName)
 
 void resetCamera(Camera *c)
 {
-    c->lensLeft = c->frequency;
     for (int i = 0; i < c->nbLens; i++)
 	resetLens(c->lensBuffer[i]);
 }
@@ -194,16 +185,6 @@ void refreshCamera(Camera *c, int screenWidth, int screenHeight)
 void switchStateCamera(Camera *c, int state)
 {
     c->state[state] = (c->state[state] + 1) % 2;
-}
-
-int displayLensCamera(Camera *c, int lens)
-{
-    if (c->lensLeft && c->lensToDisplay == lens) {
-	c->lensToDisplay = (c->lensToDisplay + 1) % c->nbLens;
-	c->lensLeft--;
-	return 1;
-    }
-    return 0;
 }
 
 Lens *getLensOfCamera(Camera *c, int lens)

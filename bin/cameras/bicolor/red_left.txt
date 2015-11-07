@@ -7,6 +7,7 @@ screenPositionWidth 0
 screenPositionHeight 0
 screenWidth 8
 screenHeight 8
+overlapping 1
 nearplan 1.
 farplan 20.
 wfov 90

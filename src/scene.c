@@ -210,25 +210,23 @@ void drawScene(void)
     resetCamera(C);
     resetDisplay();
     for (int j = 0; j < nbLens; j++) {
-	if (displayLensCamera(C, j)) {
-	    if (getStateCamera(C, DRAW))
-		for (int i = 0; i < scene.nbSolid; i++)
-		    drawSolid(getLensOfCamera(C, j), scene.solidBuffer[i]);
-	    if (getStateCamera(C, WIREFRAME))
-		for (int i = 0; i < scene.nbSolid; i++)
-		    wireframeSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
-				   setColor(&color, 255, 0, 0));
-	    if (getStateCamera(C, NORMAL))
-		for (int i = 0; i < scene.nbSolid; i++)
-		    normalSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
-				setColor(&color, 0, 255, 0));
-	    if (getStateCamera(C, VERTEX))
-		for (int i = 0; i < scene.nbSolid; i++)
-		    vertexSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
+	if (getStateCamera(C, DRAW))
+	    for (int i = 0; i < scene.nbSolid; i++)
+		drawSolid(getLensOfCamera(C, j), scene.solidBuffer[i]);
+	if (getStateCamera(C, WIREFRAME))
+	    for (int i = 0; i < scene.nbSolid; i++)
+		wireframeSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
+			       setColor(&color, 255, 0, 0));
+	if (getStateCamera(C, NORMAL))
+	    for (int i = 0; i < scene.nbSolid; i++)
+		normalSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
+			    setColor(&color, 0, 255, 0));
+	if (getStateCamera(C, VERTEX))
+	    for (int i = 0; i < scene.nbSolid; i++)
+		vertexSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
 			    setColor(&color, 0, 0, 255));
-	    if (getStateCamera(C, FRAME))
-		drawFrame(getLensOfCamera(C, j), &scene.origin);
-	}
+	if (getStateCamera(C, FRAME))
+	    drawFrame(getLensOfCamera(C, j), &scene.origin);
     }
     blitDisplay();
 }

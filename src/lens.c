@@ -11,12 +11,12 @@
 #include "display.h"
 
 #define MAXLENGTH 256
-#define NB_KEYWORDS 12
+#define NB_KEYWORDS 13
 #define MAXWINDOWS 8
 #define SQRMAXWINDOWS (MAXWINDOWS * MAXWINDOWS)
 
 enum {OFFSET, THETA, PHI, RHO, FILTER, WIDTHPOSITION, HEIGHTPOSITION,
-SCREENWIDTH, SCREENHEIGHT, NEARPLAN, FARPLAN, WFOV};
+      SCREENWIDTH, SCREENHEIGHT, OVERLAPPING, NEARPLAN, FARPLAN, WFOV};
 
 typedef struct {
     Frame position; //Absolute
@@ -31,6 +31,7 @@ typedef struct {
     int screenWidth; //Relative
     int screenHeightA;
     int screenHeight; //Relative
+    int overlapping;
     float *zBuffer;
     float nearplan;
     float farplan;
@@ -51,6 +52,7 @@ static inline float degreeToRadian(int d)
 static void loadDefaultLens(Lens *l)
 {
     setPoint(&l->offset, 0.,0.,0.);
+    l->overlapping = 0;
     l->theta = 0.;
     l->phi = 0.;
     l->rho = 0.;
@@ -113,6 +115,9 @@ Lens *initLens(char *fileName)
 		       fscanf(file, "%d", &l->screenHeight) == 1 &&
 		       isInRange(l->screenHeight)) {
 		check[SCREENHEIGHT]++;
+	    } else if (strcmp(str, "overlapping") == 0 &&
+		       fscanf(file, "%d", &l->overlapping) == 1) {
+		check[OVERLAPPING]++;
 	    } else if (strcmp(str, "nearplan") == 0 &&
 		       fscanf(file, "%f", &l->nearplan) == 1)	    
 		check[NEARPLAN]++;
@@ -221,6 +226,11 @@ int getWidthPosition(Lens *l)
 int getHeightPosition(Lens *l)
 {
     return l->heightPositionA;
+}
+
+int getOverlapping(Lens *l)
+{
+    return l->overlapping;
 }
     
 void freeLens(Lens *l)

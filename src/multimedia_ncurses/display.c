@@ -55,7 +55,12 @@ static int getColor(const Color *color)
     return c;
 }
 
-void pixelDisplay_(const Coord *A, const Color *color)
+void getPixelDisplay_(const Coord *A, Color *color)
+{
+    //chtype c = mvinch(A->h, A->w * 2);
+}
+
+void setPixelDisplay_(const Coord *A, const Color *color)
 {
     int maxW = 0;
     int maxH = 0;
@@ -96,7 +101,8 @@ void freeDisplay_()
 void (*initDisplay)(int, int, const Color *, const Color *) = &initDisplay_;
 void (*resizeDisplay)(int, int) = &resizeDisplay_;
 void (*resetDisplay)() = &resetDisplay_;
-void (*pixelDisplay)(const Coord *, const Color *) = &pixelDisplay_;
+void (*getPixelDisplay)(const Coord *, Color *) = &getPixelDisplay_;
+void (*setPixelDisplay)(const Coord *, const Color *) = &setPixelDisplay_;
 void (*blitDisplay)() = &blitDisplay_;
 void (*getUntexturedDisplay)(Color *) = &getUntexturedDisplay_;
 int (*getWidthDisplay)() = &getWidthDisplay_;
