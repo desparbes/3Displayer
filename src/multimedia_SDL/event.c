@@ -82,7 +82,7 @@ static void handleKeyDownEvent(SDL_Event *event)
 static void handleKeyUpEvent(SDL_Event *event)
 {
     switch (event->key.keysym.sym) {
-    case SDLK_d:
+    case SDLK_o:
 	switchStateCameraScene(DRAW);
 	break;
     case SDLK_w:
@@ -102,9 +102,6 @@ static void handleKeyUpEvent(SDL_Event *event)
 	break;
     case SDLK_u:
 	removeSolidFromScene();
-	break;
-    case SDLK_e:
-	askEquationForScene();
 	break;
     default:
 	break;

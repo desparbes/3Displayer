@@ -5,5 +5,5 @@ light light/green.txt
 light light/blue.txt
 background 128 128 128
 untextured 255 255 255
-camera cameras/ncurses.txt
-multimedia multimedia/libmultimedia_ncurses.so
+camera cameras/standard.txt
+multimedia multimedia/libmultimedia_SDL.so

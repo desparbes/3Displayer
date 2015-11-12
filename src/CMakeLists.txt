@@ -18,6 +18,7 @@ set(
   equation.c
   light.c
   pixel.c
+  object.c
   )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})

@@ -51,7 +51,7 @@ static void addSolidToScene(Solid *solid)
 {
     if (!solid)
 	return;
-
+    calculateOriginSolid(solid);
     if(scene.nbSolid >= scene.solidSize){
 	scene.solidSize *= 2;
 	scene.solidBuffer = realloc(scene.solidBuffer, 
@@ -175,29 +175,14 @@ void askSolidForScene(void)
 {
     char *buf, *objstr;
     
-    buf = readline("obj path: ");
+    buf = readline("Solid path: ");
     remove_space(buf);
     objstr = strdup(buf);
     add_history(buf);
-    buf = readline("bmp path: ");
+    buf = readline("Bitmap path: ");
     remove_space(buf);    
     addSolidToScene(loadSolid(objstr, buf));
     free(objstr);
-    add_history(buf);
-}
-
-void askEquationForScene(void)
-{
-    char *buf, *eqstr;
-    
-    buf = readline("eq path: ");
-    remove_space(buf);
-    eqstr = strdup(buf);
-    add_history(buf);
-    buf = readline("bmp path: ");
-    remove_space(buf);
-    addSolidToScene(equationSolid(eqstr, buf));
-    free(eqstr);
     add_history(buf);
 }
     
@@ -233,26 +218,10 @@ void drawScene(void)
 
 void handleArgumentScene(int argc, char *argv[])
 {
-    Solid *solid;
-
-    switch (argc) {
-    case 3:
-	if ((strcmp(argv[1], "-l") == 0 && 
-	     (solid = loadSolid(argv[2], NULL))) ||
-	    (strcmp(argv[1], "-e") == 0 && 
-	     (solid = equationSolid(argv[2], NULL))))
-	    addSolidToScene(solid);
-	break;
-    case 4:
-	if ((strcmp(argv[1], "-l") == 0 && 
-	     (solid = loadSolid(argv[2], argv[3]))) ||
-	    (strcmp(argv[1], "-e") == 0 && 
-	     (solid = equationSolid(argv[2], argv[3]))))
-	    addSolidToScene(solid);
-	break;
-    default:
-	break;
-    }
+    if (argc == 2)
+	addSolidToScene(loadSolid(argv[1], NULL));
+    else if (argc == 3)
+	addSolidToScene(loadSolid(argv[1], argv[2]));
 }
 
 void calculateLightScene(const Point *A, const Point *nA, Color *c)

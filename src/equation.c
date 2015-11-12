@@ -3,7 +3,9 @@
 #include <math.h>
 #include <string.h>
 
-#include "equation.h"
+#include "build.h"
+#include "position.h"
+#include "texture.h"
 #include "point.h"
 #include "stack.h"
 #include "state.h"
@@ -12,6 +14,9 @@
 #define MAXLENGTH 256
 #define NB_FUNCTIONS 4
 #define NB_KEYWORDS 9
+
+
+#define HANDLE(x) if(!x){printf("Equation error\n");freeEquation();return NULL;}
 
 typedef struct ElementEquation {
     int valueType;
@@ -149,7 +154,7 @@ static int isBinaryOperator(char c)
     return (c == '+' || c == '-' || c == '*' || c == '/');
 }
 
-int analyseBinaryOperator(char *xyz, int *i)
+static int analyseBinaryOperator(char *xyz, int *i)
 {
     switch (xyz[*i]) {
     case '+':
@@ -301,7 +306,7 @@ static int getValueFromLine(char *xyz, float s, float t, float *XYZ)
     return 1;
 }
 
-int initEquation(float *minS, float *maxS, int *precisionS,
+static int initEquation(float *minS, float *maxS, int *precisionS,
 		 float *minT, float *maxT, int *precisionT,
 		 char *x, char *y, char *z, int stringSize, 
 		 const char *eqName)
@@ -350,7 +355,7 @@ int initEquation(float *minS, float *maxS, int *precisionS,
     return 1;
 }
 
-int getValueFromEquation(char *x, char *y, char *z, 
+static int getValueFromEquation(char *x, char *y, char *z, 
 			 float s, float t, Point *p)
 {
     return (getValueFromLine(x, s, t, &p->x) &&
@@ -358,10 +363,131 @@ int getValueFromEquation(char *x, char *y, char *z,
 	    getValueFromLine(z, s, t, &p->z));
 }
 
-void freeEquation()
+static void freeEquation()
 {
     destroyStack(Equation.stack);
     destroyState(Equation.state);
+}
+
+Solid *loadEquation(const char *eqName, const char *bmpName)
+{
+    float minS, maxS, minT, maxT;
+    int precisionS, precisionT;
+    char x[MAXLENGTH];
+    char y[MAXLENGTH];
+    char z[MAXLENGTH];
+    
+    if (!initEquation(&minS, &maxS, &precisionS,
+		      &minT, &maxT, &precisionT,
+		      x, y, z, MAXLENGTH, eqName)) {
+	fprintf(stderr, "Error loading equation\n");
+	return NULL;
+    }
+
+    Solid *solid = malloc(sizeof(Solid));
+    int p, f = 0;
+    float s = minS, t = minT;
+    float ds = (maxS - minS) / (precisionS - 1);
+    float dt = (maxT - minT) / (precisionT - 1);
+
+    solid->numVertices = precisionS * precisionT;
+    solid->numNormals = solid->numVertices;
+    solid->numCoords = 4;
+    solid->numFaces = 2 * (precisionS - 1) * (precisionT - 1);
+
+    solid->vertices = malloc(solid->numVertices * sizeof(Point));
+    solid->normals = malloc(solid->numNormals * sizeof(Point));
+    solid->coords = malloc(solid->numCoords * sizeof(Position));
+    solid->faces = malloc(solid->numFaces * sizeof(Face));
+
+    setPosition(&solid->coords[0], 0., 0.);
+    setPosition(&solid->coords[1], 0., 1.);
+    setPosition(&solid->coords[2], 1., 0.);
+    setPosition(&solid->coords[3], 1., 1.);
+
+    if ((solid->texture = loadTexture(bmpName)))
+	printf("Texture successfully loaded\n");
+    
+    if (solid->numVertices > 0) {
+	HANDLE(getValueFromEquation(x, y, z, s, t, &solid->vertices[0]))
+    }
+
+    for (p = 0; p < solid->numVertices; p++) {
+	Point *A;
+	Point *B;
+	Point *O = &solid->vertices[p];
+	Point *normal = &solid->normals[p];
+	Point u;
+	Point v;
+
+        if (p == solid->numVertices - 1) { // north-east
+	    A = &solid->vertices[p - 1];
+	    B = &solid->vertices[p - precisionS];
+	} else if (p % precisionS == precisionS - 1) { // east
+	    A = &solid->vertices[p + precisionS];
+	    B = &solid->vertices[p - 1];
+
+	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, A))
+
+	    s = minS;
+	    t += dt;
+	} else if (p >= (solid->numVertices - precisionS)) { // north
+	    A = &solid->vertices[p - precisionS];
+	    B = &solid->vertices[p + 1];
+	    
+	    s += ds;
+	} else if (p < precisionS) { // south
+	    A = &solid->vertices[p + 1];
+	    B = &solid->vertices[p + precisionS];
+	    
+	    HANDLE(getValueFromEquation(x, y, z, s + ds, t, A))
+	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, B))
+	    s += ds;
+	} else { // elsewhere
+	    A = &solid->vertices[p + 1];
+	    B = &solid->vertices[p + precisionS];
+	    
+	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, B))
+	    s += ds;
+	}
+	diffPoint(A, O, &u);
+	diffPoint(B, O, &v);
+	pointProduct(&u, &v, normal);
+	normalizePoint(normal, normal);
+    }
+
+    p = 0;
+    while (f < solid->numFaces) {
+	if (p % precisionS != precisionS - 1) {
+	    solid->faces[f].vertices[0].point = p;
+	    solid->faces[f].vertices[1].point = p + 1;
+	    solid->faces[f].vertices[2].point = p + precisionS;
+	    solid->faces[f].vertices[0].normal = p;
+	    solid->faces[f].vertices[1].normal = p + 1;
+	    solid->faces[f].vertices[2].normal = p + precisionS;
+	    solid->faces[f].vertices[0].coord = 1;
+	    solid->faces[f].vertices[1].coord = 3;
+	    solid->faces[f].vertices[2].coord = 0;
+
+	    f++;
+
+	    solid->faces[f].vertices[0].point = p + precisionS;
+	    solid->faces[f].vertices[1].point = p + 1;
+	    solid->faces[f].vertices[2].point = p + 1 + precisionS;
+	    solid->faces[f].vertices[0].normal = p + precisionS;
+	    solid->faces[f].vertices[1].normal = p + 1;
+	    solid->faces[f].vertices[2].normal = p + 1 + precisionS;
+	    solid->faces[f].vertices[0].coord = 0;
+	    solid->faces[f].vertices[1].coord = 3;
+	    solid->faces[f].vertices[2].coord = 2;
+
+	    f++;
+	}
+	p++;
+    }
+    freeEquation();
+    printf("Equation successfully loaded\n");
+    return solid;
 }
 
 

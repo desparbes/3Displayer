@@ -7,7 +7,6 @@
 
 void initScene();
 void askSolidForScene();
-void askEquationForScene();
 void removeSolidFromScene();
 void drawScene();
 void handleArgumentScene(int argc, char *argv[]);

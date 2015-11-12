@@ -69,11 +69,6 @@ void handleEvent_(int *stop)
     case 'u':
 	removeSolidFromScene();
 	break;
-    case 'i':
-	clear();
-	refresh();
-	askEquationForScene();
-	break;
     default:
 	break;
     }

@@ -5,42 +5,40 @@
 
 #include "point.h"
 #include "color.h"
-#include "position.h"
 #include "project.h"
 #include "equation.h"
+#include "object.h"
 #include "lens.h"
 #include "frame.h"
 #include "texture.h"
+#include "build.h"
 
 #define MAXLENGTH 256
 #define EPSILON 0.001
 
-#define HANDLE(x) if(!x){printf("Equation error\n");freeEquation();return NULL;}
+static void getExtension(const char *file, char *ext)
+{
+    if (!file)
+	return;
+    int i;
+    for (i = 0; file[i] && file[i] != '.'; i++);
+    for (int j = 0; file[i] && j < MAXLENGTH; i++, j++) 
+	ext[j] = file[i];
+}
 
-typedef struct Vertex {
-    int point;
-    int normal;
-    int coord;
-} Vertex;
+Solid *loadSolid(const char *fileName, const char *bmpName)
+{
+    char ext[MAXLENGTH] = {0};
+    getExtension(fileName, ext);
+    if (strcmp(ext, ".obj") == 0)
+	return loadObject(fileName, bmpName);
+    else if (strcmp(ext, ".eq") == 0)
+	return loadEquation(fileName, bmpName);
+    fprintf(stderr, "Extension non reconnue\n");
+    return NULL;
+}
 
-typedef struct Face {
-    Vertex vertices[3];
-} Face;
-
-typedef struct Solid {
-    int numVertices;
-    int numNormals;
-    int numCoords;
-    int numFaces;
-    Point origin;
-    Point *vertices;
-    Point *normals;
-    Position *coords;
-    Texture *texture;
-    Face *faces;
-} Solid;
-
-static void calculateOriginSolid(Solid *solid)
+void calculateOriginSolid(Solid *solid)
 {
     for (int i = 0; i < solid->numVertices; i++) {
 	solid->origin.x += solid->vertices[i].x;
@@ -51,6 +49,7 @@ static void calculateOriginSolid(Solid *solid)
     solid->origin.y /= solid->numVertices;
     solid->origin.z /= solid->numVertices;
 }
+
 
 Point *getOriginSolid(Solid *solid)
 {
@@ -150,276 +149,6 @@ void drawFrame(Lens *l, Frame *frame)
     projectSegment(l, &frame->O, &frame->i, setColor(&color, 255, 0, 0));
     projectSegment(l, &frame->O, &frame->j, setColor(&color, 0, 255, 0));
     projectSegment(l, &frame->O, &frame->k, setColor(&color, 0, 0, 255));
-}
-
-// load .obj files
-Solid *loadSolid(const char *fileName, const char *bmpName)
-{
-    FILE *file = fopen(fileName, "r");
-    if (file == NULL) {
-	perror(fileName);
-        return NULL;
-    }
-
-    int a = 0, b = 0, c = 0, d = 0, n, stock;
-    Solid *solid = malloc(sizeof(Solid));
-    char str[MAXLENGTH] = { 0 };
-    char f;
-    
-    solid->numVertices = 0;
-    solid->numNormals = 0;
-    solid->numCoords = 0;
-    solid->numFaces = 0;
-  
-    while (fscanf(file, "%s", str) != EOF) {
-	if (strcmp(str, "v") == 0)
-	    solid->numVertices++;
-	else if (strcmp(str, "vn") == 0)
-	    solid->numNormals++;
-	else if (strcmp(str, "vt") == 0)
-	    solid->numCoords++;
-	else if (strcmp(str, "f") == 0) {
-	    n = 0;
-	    while (fscanf(file, "%c", &f) != EOF && f != '\n') {
-		if (f == '/')
-		    n++;
-	    }
-	    solid->numFaces += n / 2 - 2;
-	}
-    }
-    solid->vertices = (Point*) malloc(solid->numVertices * sizeof(Point));
-    solid->normals = (Point*) malloc(solid->numNormals * sizeof(Point));
-    solid->coords = (Position*) malloc(solid->numCoords * sizeof(Position));
-    solid->faces = (Face *) malloc(solid->numFaces * sizeof(Face));
- 
-    if((solid->texture = loadTexture(bmpName)))
-       printf("Texture successfully loaded\n");
-
-    rewind(file);
-    while (fscanf(file, "%s", str) != EOF) {
-	if (strcmp(str, "v") == 0) {
-	    if (fscanf
-		(file, "%f %f %f\n", 
-		 &solid->vertices[a].y,
-		 &solid->vertices[a].z, 
-		 &solid->vertices[a].x) != 3) {
-		fprintf(stderr, "Error loading vertices\n");
-		free(solid);
-		fclose(file);
-		return NULL;
-	    }
-	    a++;
-	} else if (strcmp(str, "vn") == 0) {
-	    if (fscanf
-		(file, "%f %f %f\n", 
-		 &solid->normals[b].y,
-		 &solid->normals[b].z, 
-		 &solid->normals[b].x) != 3) {
-		fprintf(stderr, "Error loading normals\n");
-		free(solid);
-		fclose(file);
-		return NULL;
-	    }
-	    b++;
-	} else if (strcmp(str, "vt") == 0) {
-	    if (fscanf
-		(file, "%f %f\n", 
-		 &solid->coords[c].x,
-		 &solid->coords[c].y) != 2) {
-		fprintf(stderr, "Error loading texture coordinates\n");
-		free(solid);
-		fclose(file);
-		return NULL;
-	    }
-	    solid->coords[c].y = 1 - solid->coords[c].y;
-	    c++;
-	} else if (strcmp(str, "f") == 0) {
-
-	    stock = d;
-
-	    if (fscanf
-		(file, "%d/%d/%d", &solid->faces[d].vertices[0].point,
-		 &solid->faces[d].vertices[0].coord,
-		 &solid->faces[d].vertices[0].normal) != 3
-		|| fscanf(file, "%d/%d/%d",
-			  &solid->faces[d].vertices[1].point,
-			  &solid->faces[d].vertices[1].coord,
-			  &solid->faces[d].vertices[1].normal) != 3
-		|| fscanf(file, "%d/%d/%d",
-			  &solid->faces[d].vertices[2].point,
-			  &solid->faces[d].vertices[2].coord,
-			  &solid->faces[d].vertices[2].normal) != 3) {
-		fprintf(stderr, "Error during faces enumeration\n");
-		free(solid);
-		fclose(file);
-		return NULL;
-	    }
-
-	    solid->faces[d].vertices[0].point--;
-	    solid->faces[d].vertices[0].coord--;
-	    solid->faces[d].vertices[0].normal--;
-	    solid->faces[d].vertices[1].point--;
-	    solid->faces[d].vertices[1].coord--;
-	    solid->faces[d].vertices[1].normal--;
-	    solid->faces[d].vertices[2].point--;
-	    solid->faces[d].vertices[2].coord--;
-	    solid->faces[d].vertices[2].normal--;
-
-	    d++;
-
-	    while (fscanf
-		   (file, "%d/%d/%d", &solid->faces[d].vertices[2].point,
-		    &solid->faces[d].vertices[2].coord,
-		    &solid->faces[d].vertices[2].normal) == 3) {
-		solid->faces[d].vertices[0].point =
-		    solid->faces[stock].vertices[0].point;
-		solid->faces[d].vertices[0].coord =
-		    solid->faces[stock].vertices[0].coord;
-		solid->faces[d].vertices[0].normal =
-		    solid->faces[stock].vertices[0].normal;
-
-		solid->faces[d].vertices[1].point =
-		    solid->faces[d - 1].vertices[2].point;
-		solid->faces[d].vertices[1].coord =
-		    solid->faces[d - 1].vertices[2].coord;
-		solid->faces[d].vertices[1].normal =
-		    solid->faces[d - 1].vertices[2].normal;
-
-		solid->faces[d].vertices[2].point--;
-		solid->faces[d].vertices[2].coord--;
-		solid->faces[d].vertices[2].normal--;
-
-		d++;
-	    }
-	}
-    }
-    calculateOriginSolid(solid);
-    printf("Solid successfully loaded\n");
-    fclose(file);
-    return solid;
-}
-
-Solid *equationSolid(const char *eqName, const char *bmpName, 
-		     const Color *untextured)
-{
-    float minS, maxS, minT, maxT;
-    int precisionS, precisionT;
-    char x[MAXLENGTH];
-    char y[MAXLENGTH];
-    char z[MAXLENGTH];
-    
-    if (!initEquation(&minS, &maxS, &precisionS,
-		      &minT, &maxT, &precisionT,
-		      x, y, z, MAXLENGTH, eqName)) {
-	fprintf(stderr, "Error loading equation\n");
-	return NULL;
-    }
-
-    Solid *solid = malloc(sizeof(Solid));
-    int p, f = 0;
-    float s = minS, t = minT;
-    float ds = (maxS - minS) / (precisionS - 1);
-    float dt = (maxT - minT) / (precisionT - 1);
-
-    solid->numVertices = precisionS * precisionT;
-    solid->numNormals = solid->numVertices;
-    solid->numCoords = 4;
-    solid->numFaces = 2 * (precisionS - 1) * (precisionT - 1);
-
-    solid->vertices = malloc(solid->numVertices * sizeof(Point));
-    solid->normals = malloc(solid->numNormals * sizeof(Point));
-    solid->coords = malloc(solid->numCoords * sizeof(Position));
-    solid->faces = malloc(solid->numFaces * sizeof(Face));
-
-    setPosition(&solid->coords[0], 0., 0.);
-    setPosition(&solid->coords[1], 0., 1.);
-    setPosition(&solid->coords[2], 1., 0.);
-    setPosition(&solid->coords[3], 1., 1.);
-
-    if ((solid->texture = loadTexture(bmpName)))
-	printf("Texture successfully loaded\n");
-    
-    if (solid->numVertices > 0) {
-	HANDLE(getValueFromEquation(x, y, z, s, t, &solid->vertices[0]))
-    }
-
-    for (p = 0; p < solid->numVertices; p++) {
-	Point *A;
-	Point *B;
-	Point *O = &solid->vertices[p];
-	Point *normal = &solid->normals[p];
-	Point u;
-	Point v;
-
-        if (p == solid->numVertices - 1) { // north-east
-	    A = &solid->vertices[p - 1];
-	    B = &solid->vertices[p - precisionS];
-	} else if (p % precisionS == precisionS - 1) { // east
-	    A = &solid->vertices[p + precisionS];
-	    B = &solid->vertices[p - 1];
-
-	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, A))
-
-	    s = minS;
-	    t += dt;
-	} else if (p >= (solid->numVertices - precisionS)) { // north
-	    A = &solid->vertices[p - precisionS];
-	    B = &solid->vertices[p + 1];
-	    
-	    s += ds;
-	} else if (p < precisionS) { // south
-	    A = &solid->vertices[p + 1];
-	    B = &solid->vertices[p + precisionS];
-	    
-	    HANDLE(getValueFromEquation(x, y, z, s + ds, t, A))
-	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, B))
-	    s += ds;
-	} else { // elsewhere
-	    A = &solid->vertices[p + 1];
-	    B = &solid->vertices[p + precisionS];
-	    
-	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, B))
-	    s += ds;
-	}
-	diffPoint(A, O, &u);
-	diffPoint(B, O, &v);
-	pointProduct(&u, &v, normal);
-	normalizePoint(normal, normal);
-    }
-
-    p = 0;
-    while (f < solid->numFaces) {
-	if (p % precisionS != precisionS - 1) {
-	    solid->faces[f].vertices[0].point = p;
-	    solid->faces[f].vertices[1].point = p + 1;
-	    solid->faces[f].vertices[2].point = p + precisionS;
-	    solid->faces[f].vertices[0].normal = p;
-	    solid->faces[f].vertices[1].normal = p + 1;
-	    solid->faces[f].vertices[2].normal = p + precisionS;
-	    solid->faces[f].vertices[0].coord = 1;
-	    solid->faces[f].vertices[1].coord = 3;
-	    solid->faces[f].vertices[2].coord = 0;
-
-	    f++;
-
-	    solid->faces[f].vertices[0].point = p + precisionS;
-	    solid->faces[f].vertices[1].point = p + 1;
-	    solid->faces[f].vertices[2].point = p + 1 + precisionS;
-	    solid->faces[f].vertices[0].normal = p + precisionS;
-	    solid->faces[f].vertices[1].normal = p + 1;
-	    solid->faces[f].vertices[2].normal = p + 1 + precisionS;
-	    solid->faces[f].vertices[0].coord = 0;
-	    solid->faces[f].vertices[1].coord = 3;
-	    solid->faces[f].vertices[2].coord = 2;
-
-	    f++;
-	}
-	p++;
-    }
-    calculateOriginSolid(solid);
-    freeEquation();
-    printf("Equation successfully loaded\n");
-    return solid;
 }
 
 void freeSolid(Solid *solid)

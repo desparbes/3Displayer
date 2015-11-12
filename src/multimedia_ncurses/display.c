@@ -116,10 +116,7 @@ void resetDisplay_()
     clear();
 }
 
-void getPixelDisplay_(const Coord *A, Color *color)
-{
-    //chtype c = mvinch(A->h, A->w * 2);
-}
+void getPixelDisplay_(const Coord *A, Color *color) {}
 
 void setPixelDisplay_(const Coord *A, const Color *color)
 {
