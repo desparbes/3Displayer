@@ -1,0 +1,6 @@
+position -0.5 -0.29 2
+direction 0. 0. -1.
+intensity 2.
+inner 360
+outer 360
+color 0 0 255
