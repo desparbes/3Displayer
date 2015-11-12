@@ -1,5 +1,6 @@
 position -0.5 -0.29 2
 direction 0. 0. -1.
 intensity 2.
-angle 30
+inner 30
+outer 45
 color 0 0 255

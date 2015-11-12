@@ -1,5 +1,6 @@
 position -2. -2. 3.
 direction 0.5 1. -2.
 intensity 1.
-angle -1
+inner -1
+outer -1
 color 255 255 255

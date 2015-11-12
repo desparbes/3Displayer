@@ -49,6 +49,9 @@ static void remove_space(char *buf)
 
 static void addSolidToScene(Solid *solid)
 {
+    if (!solid)
+	return;
+
     if(scene.nbSolid >= scene.solidSize){
 	scene.solidSize *= 2;
 	scene.solidBuffer = realloc(scene.solidBuffer, 
@@ -60,6 +63,9 @@ static void addSolidToScene(Solid *solid)
 
 static void addLightToScene(Light *light)
 {
+    if (!light)
+	return;
+
     if(scene.nbLight >= scene.lightSize){
 	scene.lightSize *= 2;
 	scene.lightBuffer = realloc(scene.lightBuffer, 
@@ -167,7 +173,6 @@ void removeSolidFromScene()
 
 void askSolidForScene(void)
 {
-    Solid *solid;
     char *buf, *objstr;
     
     buf = readline("obj path: ");
@@ -176,16 +181,13 @@ void askSolidForScene(void)
     add_history(buf);
     buf = readline("bmp path: ");
     remove_space(buf);    
-
-    if ((solid = loadSolid(objstr, buf)))
-	addSolidToScene(solid);
+    addSolidToScene(loadSolid(objstr, buf));
     free(objstr);
     add_history(buf);
 }
 
 void askEquationForScene(void)
 {
-    Solid *solid;
     char *buf, *eqstr;
     
     buf = readline("eq path: ");
@@ -194,9 +196,7 @@ void askEquationForScene(void)
     add_history(buf);
     buf = readline("bmp path: ");
     remove_space(buf);
-    
-    if ((solid = equationSolid(eqstr, buf)))
-	addSolidToScene(solid);
+    addSolidToScene(equationSolid(eqstr, buf));
     free(eqstr);
     add_history(buf);
 }
