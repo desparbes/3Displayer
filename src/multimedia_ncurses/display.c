@@ -95,6 +95,7 @@ void initDisplay_(int screenWidth, int screenHeight, const Color *background,
     initscr();
     keypad(stdscr, TRUE);
     noecho();
+    nodelay(stdscr, TRUE);
     cbreak();
     curs_set(0);
     display.untextured = *untextured;

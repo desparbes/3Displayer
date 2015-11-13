@@ -407,7 +407,9 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
 
     if ((solid->texture = loadTexture(bmpName)))
 	printf("Texture successfully loaded\n");
-    
+    else
+	printf("Error loading texture\n");
+
     if (solid->numVertices > 0) {
 	HANDLE(getValueFromEquation(x, y, z, s, t, &solid->vertices[0]))
     }

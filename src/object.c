@@ -49,7 +49,9 @@ Solid *loadObject(const char *fileName, const char *bmpName)
     solid->faces = (Face *) malloc(solid->numFaces * sizeof(Face));
  
     if((solid->texture = loadTexture(bmpName)))
-       printf("Texture successfully loaded\n");
+	printf("Texture successfully loaded\n");
+    else
+	printf("Error loading texture\n");
 
     rewind(file);
     while (fscanf(file, "%s", str) != EOF) {
