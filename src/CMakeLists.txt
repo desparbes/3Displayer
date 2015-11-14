@@ -19,10 +19,11 @@ set(
   light.c
   pixel.c
   object.c
+  texture.c
   )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})
-target_link_libraries(3Displayer dl m swap state stack readline)
+target_link_libraries(3Displayer dl m swap state stack readline SDL)
 install(TARGETS 3Displayer DESTINATION .)
 add_subdirectory(multimedia_SDL)
 add_subdirectory(multimedia_ncurses)

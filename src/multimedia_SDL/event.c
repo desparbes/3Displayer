@@ -58,17 +58,35 @@ static void handleKeyDownEvent(SDL_Event *event)
     SDL_Event q;
     
     switch (event->key.keysym.sym) {
-    case SDLK_LEFT:
+    case SDLK_q:
 	translateCameraScene(LEFT);
 	break;
-    case SDLK_RIGHT:
+    case SDLK_d:
 	translateCameraScene(RIGHT);
 	break;
-    case SDLK_UP:
+    case SDLK_e:
 	translateCameraScene(UP);
 	break;
-    case SDLK_DOWN:
+    case SDLK_a:
 	translateCameraScene(DOWN);
+	break;
+    case SDLK_z:
+	translateCameraScene(FORWARD);
+	break;
+    case SDLK_s:
+	translateCameraScene(BACKWARD);
+	break;
+    case SDLK_LEFT:
+	rotateCameraScene(LEFT);
+	break;
+    case SDLK_RIGHT:
+	rotateCameraScene(RIGHT);
+	break;
+    case SDLK_UP:
+	rotateCameraScene(UP);
+	break;
+    case SDLK_DOWN:
+	rotateCameraScene(DOWN);
 	break;
     case SDLK_ESCAPE:
 	q.type = SDL_QUIT;
@@ -108,11 +126,14 @@ static void handleKeyUpEvent(SDL_Event *event)
     }
 }
 
+void initEvent_(void){}
+
 void handleEvent_(int *stop)
 {
     SDL_Event event;
+    while (!SDL_PollEvent(&event));
     
-    while (SDL_PollEvent(&event)) {
+    do {
 	switch (event.type) {
 	case SDL_QUIT:
 	    *stop = 1;
@@ -136,7 +157,11 @@ void handleEvent_(int *stop)
 	    handleMouseButtonDownEvent(&event);
 	    break;
 	}
-    }
+    } while (SDL_PollEvent(&event));
 }
 
+void freeEvent_(void){}
+
+void (*initEvent)() = &initEvent_;
 void (*handleEvent)(int *) = &handleEvent_;
+void (*freeEvent)() = &freeEvent_;

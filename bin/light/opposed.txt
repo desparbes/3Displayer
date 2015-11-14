@@ -1,5 +1,5 @@
-position -2. -2. 3.
-direction 0.75 1. -2.
+position 2. 2. -3.
+direction -0.75 -1. 2.
 intensity 1.
 inner -1
 outer -1

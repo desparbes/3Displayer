@@ -21,13 +21,9 @@ int (*getWidthDisplay)();
 int (*getHeightDisplay)();
 void (*freeDisplay)();
 
-typedef struct Texture Texture;
-
-Texture *(*loadTexture)(const char *);
-void (*getPixelTexture)(const Texture *, const Position *, Color *);
-void (*freeTexture)(Texture *);
-
+void (*initEvent)();
 void (*handleEvent)(int *);
+void (*freeEvent)();
 
 static void loadFunction_(void **funAddress, const char *symbol)
 {
@@ -56,11 +52,9 @@ void initMultimedia(const char *libPath)
     loadFunction(getHeightDisplay);
     loadFunction(freeDisplay);
 
-    loadFunction(loadTexture);
-    loadFunction(getPixelTexture);
-    loadFunction(freeTexture);
-
+    loadFunction(initEvent);
     loadFunction(handleEvent);
+    loadFunction(freeEvent);
 }
 
 void freeMultimedia(void)

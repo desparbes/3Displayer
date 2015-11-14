@@ -8,6 +8,7 @@
 int main(int argc, char *argv[])
 {
     initScene();
+    initEvent();
     handleArgumentScene(argc, argv);
     rl_bind_key('\t', rl_complete);
     
@@ -16,7 +17,7 @@ int main(int argc, char *argv[])
 	handleEvent(&stop);
 	drawScene();
     }
-    
+    freeEvent();
     freeScene();
     return EXIT_SUCCESS;
 }

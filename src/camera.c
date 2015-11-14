@@ -51,8 +51,11 @@ static void removeLensFromCamera(Camera *c)
 
 static void initStateCamera(Camera *c)
 {
-    for (int i = 0; i < NB_STATE; i++)
-	c->state[i] = 0;
+    c->state[DRAW] = 1;
+    c->state[WIREFRAME] = 0;
+    c->state[NORMAL] = 0;
+    c->state[VERTEX] = 0;
+    c->state[FRAME] = 1;
 }
 
 static void loadDefaultCamera(Camera *c)

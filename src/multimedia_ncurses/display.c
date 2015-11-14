@@ -42,6 +42,14 @@ static int getRange(int nbColor)
     return a;
 }
 
+// 0 <= COLOR <= 1000 et 0 <= r, g et b < range1
+static void getCOLORFromRGB(int *r, int *g, int *b)
+{
+    *r = *r * RANGENC / (display.range1 - 1);
+    *g = *g * RANGENC / (display.range1 - 1);
+    *b = *b * RANGENC / (display.range1 - 1);
+}
+
 // 0 <= id < nbColor et 0 <= r, g et b < range1
 static void getRGBFromId(int id, int *r, int *g, int *b)
 {
@@ -62,20 +70,13 @@ static int getIdFromColor(const Color *c)
     return r * display.range2 + g * display.range1 + b;
 }
 
-// 0 <= COLOR <= 1000 et 0 <= r, g et b < range1
-static void getCOLORFromRGB(int *r, int *g, int *b)
-{
-    *r = *r * RANGENC / (display.range1 - 1);
-    *g = *g * RANGENC / (display.range1 - 1);
-    *b = *b * RANGENC / (display.range1 - 1);
-}
-
-static int initColor()
+static int initColor(const Color *background, const Color *untextured)
 {
     if (has_colors() == FALSE || can_change_color() == FALSE)
 	return 0;
 
     start_color();
+    display.untextured = *untextured;
     display.range1 = getRange(min(COLOR_PAIRS, COLORS));
     display.range2 = display.range1 * display.range1;
     display.nbColor = display.range2 * display.range1;
@@ -86,6 +87,7 @@ static int initColor()
 	init_color(i, r, g, b);
 	init_pair(i, i, i);
     }
+    wbkgd(stdscr, COLOR_PAIR(getIdFromColor(background)));
     return 1;
 }
 
@@ -98,11 +100,9 @@ void initDisplay_(int screenWidth, int screenHeight, const Color *background,
     nodelay(stdscr, TRUE);
     cbreak();
     curs_set(0);
-    display.untextured = *untextured;
-    if(!initColor()) {
-	mvprintw(0, 0, "Terminal does not support colors\n");
-	getch();
+    if(!initColor(background, untextured)) {
 	endwin();
+	printf("Terminal does not support colors\n");
 	exit(1);
     }	
 }
@@ -126,9 +126,6 @@ void setPixelDisplay_(const Coord *A, const Color *color)
     getmaxyx(stdscr, maxH, maxW);
     if (A->w >= 0 && A->w < maxW / 2 && A->h >= 0 && A->h < maxH) {
 	int c = getIdFromColor(color);
-	int r, g, b;
-	getRGBFromId(c, &r, &g, &b);
-	getCOLORFromRGB(&r, &g, &b);
 	attron(COLOR_PAIR(c));
 	mvprintw(A->h, 2 * A->w, "  ");
 	attroff(COLOR_PAIR(c));

@@ -10,6 +10,11 @@ static void resize()
     resizeCameraScene(screenWidth / 2, screenHeight);
 }
 
+void initEvent_(void)
+{
+    resize();
+}
+
 void handleEvent_(int *stop)
 {
     int c;
@@ -83,4 +88,8 @@ void handleEvent_(int *stop)
     } while ((c = getch()) != ERR);
 }
 
-    void (*handleEvent)(int *) = &handleEvent_;
+void freeEvent_(void){}
+
+void (*initEvent)() = &initEvent_;
+void (*handleEvent)(int *) = &handleEvent_;
+void (*freeEvent)() = &freeEvent_;
