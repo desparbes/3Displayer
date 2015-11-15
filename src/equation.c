@@ -385,7 +385,7 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
     }
 
     Solid *solid = malloc(sizeof(Solid));
-    int p, f = 0;
+    int p, f = 0, e = 0;
     float s = minS, t = minT;
     float ds = (maxS - minS) / (precisionS - 1);
     float dt = (maxT - minT) / (precisionT - 1);
@@ -393,11 +393,14 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
     solid->numVertices = precisionS * precisionT;
     solid->numNormals = solid->numVertices;
     solid->numCoords = 4;
+    solid->numSegments = 3 * precisionS * precisionT - 
+	2 * (precisionS + precisionT) + 1;
     solid->numFaces = 2 * (precisionS - 1) * (precisionT - 1);
 
     solid->vertices = malloc(solid->numVertices * sizeof(Point));
     solid->normals = malloc(solid->numNormals * sizeof(Point));
     solid->coords = malloc(solid->numCoords * sizeof(Position));
+    solid->segments = malloc(solid->numSegments * sizeof(Segment));
     solid->faces = malloc(solid->numFaces * sizeof(Face));
 
     setPosition(&solid->coords[0], 0., 0.);
@@ -430,26 +433,38 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
 	    B = &solid->vertices[p - 1];
 
 	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, A))
+	    solid->segments[e].A = p; 
+	    solid->segments[e].B = p + precisionS; 	    
+	    e++;
 
 	    s = minS;
 	    t += dt;
 	} else if (p >= (solid->numVertices - precisionS)) { // north
 	    A = &solid->vertices[p - precisionS];
 	    B = &solid->vertices[p + 1];
-	    
+
+	    solid->segments[e].A = p; 
+	    solid->segments[e].B = p + 1;	    
+	    e++;
+
 	    s += ds;
-	} else if (p < precisionS) { // south
+	} else { //elsewhere
 	    A = &solid->vertices[p + 1];
 	    B = &solid->vertices[p + precisionS];
 	    
-	    HANDLE(getValueFromEquation(x, y, z, s + ds, t, A))
+	    if (p < precisionS) // south
+		HANDLE(getValueFromEquation(x, y, z, s + ds, t, A))
 	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, B))
-	    s += ds;
-	} else { // elsewhere
-	    A = &solid->vertices[p + 1];
-	    B = &solid->vertices[p + precisionS];
-	    
-	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, B))
+	    solid->segments[e].A = p; 
+	    solid->segments[e].B = p + 1; 
+	    e++;
+	    solid->segments[e].A = p; 
+	    solid->segments[e].B = p + precisionS; 
+	    e++;
+	    solid->segments[e].A = p; 
+	    solid->segments[e].B = p + precisionS + 1; 
+	    e++;
+
 	    s += ds;
 	}
 	diffPoint(A, O, &u);
@@ -458,8 +473,7 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
 	normalizePoint(normal, normal);
     }
 
-    p = 0;
-    while (f < solid->numFaces) {
+    for (p = 0; f < solid->numFaces; p++) {
 	if (p % precisionS != precisionS - 1) {
 	    solid->faces[f].vertices[0].point = p;
 	    solid->faces[f].vertices[1].point = p + 1;
@@ -485,7 +499,6 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
 
 	    f++;
 	}
-	p++;
     }
     freeEquation();
     printf("Equation successfully loaded\n");

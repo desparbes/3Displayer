@@ -99,14 +99,11 @@ void vertexSolid(Lens *l, const Solid *solid, const Color *color)
   
 void wireframeSolid(Lens *l, const Solid *solid, const Color *color)
 {
-    for (int i = 0; i < solid->numFaces; i++) {
-	Face *f = &solid->faces[i];
-	for (int k = 0; k < 3; k++) {
-	    int point1 = f->vertices[k].point;
-	    int point2 = f->vertices[(k+1)%3].point;
-	    projectSegment(l, &solid->vertices[point1],
-			   &solid->vertices[point2], color);
-	}
+    for (int i = 0; i < solid->numSegments; i++) {
+	projectSegment(l, 
+		       &solid->vertices[solid->segments[i].A],
+		       &solid->vertices[solid->segments[i].B], 
+		       color);
     }
 }
 
@@ -157,6 +154,7 @@ void freeSolid(Solid *solid)
     free(solid->vertices);
     free(solid->normals);
     free(solid->coords);
+    free(solid->segments);
     free(solid->faces);
     free(solid);
 }

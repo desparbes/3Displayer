@@ -20,6 +20,7 @@ set(
   pixel.c
   object.c
   texture.c
+  build.c
   )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})

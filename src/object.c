@@ -17,7 +17,7 @@ Solid *loadObject(const char *fileName, const char *bmpName)
         return NULL;
     }
 
-    int a = 0, b = 0, c = 0, d = 0, n, stock;
+    int a = 0, b = 0, c = 0, d = 0, n, stock, bufferSize = 1;
     Solid *solid = malloc(sizeof(Solid));
     char str[MAXLENGTH] = {0};
     char f;
@@ -25,6 +25,7 @@ Solid *loadObject(const char *fileName, const char *bmpName)
     solid->numVertices = 0;
     solid->numNormals = 0;
     solid->numCoords = 0;
+    solid->numSegments = 0;
     solid->numFaces = 0;
   
     while (fscanf(file, "%s", str) != EOF) {
@@ -46,6 +47,7 @@ Solid *loadObject(const char *fileName, const char *bmpName)
     solid->vertices = (Point*) malloc(solid->numVertices * sizeof(Point));
     solid->normals = (Point*) malloc(solid->numNormals * sizeof(Point));
     solid->coords = (Position*) malloc(solid->numCoords * sizeof(Position));
+    solid->segments = (Segment*) malloc(bufferSize * sizeof(Segment));
     solid->faces = (Face *) malloc(solid->numFaces * sizeof(Face));
  
     if((solid->texture = loadTexture(bmpName)))
@@ -95,18 +97,18 @@ Solid *loadObject(const char *fileName, const char *bmpName)
 
 	    stock = d;
 
-	    if (fscanf
-		(file, "%d/%d/%d", &solid->faces[d].vertices[0].point,
-		 &solid->faces[d].vertices[0].coord,
-		 &solid->faces[d].vertices[0].normal) != 3
-		|| fscanf(file, "%d/%d/%d",
-			  &solid->faces[d].vertices[1].point,
-			  &solid->faces[d].vertices[1].coord,
-			  &solid->faces[d].vertices[1].normal) != 3
-		|| fscanf(file, "%d/%d/%d",
-			  &solid->faces[d].vertices[2].point,
-			  &solid->faces[d].vertices[2].coord,
-			  &solid->faces[d].vertices[2].normal) != 3) {
+	    if (fscanf(file, "%d/%d/%d", 
+		       &solid->faces[d].vertices[0].point,
+		       &solid->faces[d].vertices[0].coord,
+		       &solid->faces[d].vertices[0].normal) != 3 || 
+		fscanf(file, "%d/%d/%d",
+		       &solid->faces[d].vertices[1].point,
+		       &solid->faces[d].vertices[1].coord,
+		       &solid->faces[d].vertices[1].normal) != 3 || 
+		fscanf(file, "%d/%d/%d",
+		       &solid->faces[d].vertices[2].point,
+		       &solid->faces[d].vertices[2].coord,
+		       &solid->faces[d].vertices[2].normal) != 3) {
 		fprintf(stderr, "Error during faces enumeration\n");
 		free(solid);
 		fclose(file);
@@ -122,13 +124,28 @@ Solid *loadObject(const char *fileName, const char *bmpName)
 	    solid->faces[d].vertices[2].point--;
 	    solid->faces[d].vertices[2].coord--;
 	    solid->faces[d].vertices[2].normal--;
+	    
+	    Segment u;
+	    setSegmentBuild(&u, 
+			    solid->faces[d].vertices[0].point,
+			    solid->faces[d].vertices[1].point);
+	    addSegmentBuild(solid, &u, &bufferSize);
+	    setSegmentBuild(&u, 
+			    solid->faces[d].vertices[1].point,
+			    solid->faces[d].vertices[2].point);
+	    addSegmentBuild(solid, &u, &bufferSize);
+	    setSegmentBuild(&u, 
+			    solid->faces[d].vertices[2].point,
+			    solid->faces[d].vertices[0].point);
+	    addSegmentBuild(solid, &u, &bufferSize);
+	    
 
 	    d++;
 
-	    while (fscanf
-		   (file, "%d/%d/%d", &solid->faces[d].vertices[2].point,
-		    &solid->faces[d].vertices[2].coord,
-		    &solid->faces[d].vertices[2].normal) == 3) {
+	    while (fscanf(file, "%d/%d/%d", 
+			  &solid->faces[d].vertices[2].point,
+			  &solid->faces[d].vertices[2].coord,
+			  &solid->faces[d].vertices[2].normal) == 3) {
 		solid->faces[d].vertices[0].point =
 		    solid->faces[stock].vertices[0].point;
 		solid->faces[d].vertices[0].coord =
@@ -147,10 +164,23 @@ Solid *loadObject(const char *fileName, const char *bmpName)
 		solid->faces[d].vertices[2].coord--;
 		solid->faces[d].vertices[2].normal--;
 
+		setSegmentBuild(&u, 
+				solid->faces[d].vertices[1].point,
+				solid->faces[d].vertices[2].point);
+		addSegmentBuild(solid, &u, &bufferSize);
+
+		setSegmentBuild(&u, 
+				solid->faces[d].vertices[2].point,
+				solid->faces[d].vertices[0].point);
+		addSegmentBuild(solid, &u, &bufferSize);
+
 		d++;
 	    }
 	}
     }
+    qsort(solid->segments, solid->numSegments, sizeof(Segment), 
+	  compareSegmentBuild);
+    formatSegmentBuild(solid);
     printf("Object successfully loaded\n");
     fclose(file);
     return solid;
