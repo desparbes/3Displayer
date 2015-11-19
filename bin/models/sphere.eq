@@ -1,9 +1,5 @@
-minS -3.14
-maxS 3.14
-precisionS 20
-minT -1.57
-maxT 1.57
-precisionT 20
-x (sin(s)*cos(t))
-y (cos(s)*cos(t))
-z (0-sin(t))
+input -3.14 3.14 20
+input -1.57 1.57 20
+output (sin($0)*cos($1))
+output (cos($0)*cos($1))
+output (0-sin($1))

@@ -1,5 +1,5 @@
 translationSpeed 0.1
-rotationSpeed 0.05
+rotationSpeed 0.1
 position 0. -5. 0.
 theta 0.
 phi 0.

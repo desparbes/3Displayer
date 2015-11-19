@@ -1,9 +1,5 @@
-minS -2
-maxS 2
-precisionS 20
-minT -2
-maxT 2
-precisionT 20
-x s
-y t
-z 1
+input -2 2 20
+input -2 2 20
+output $0
+output $1
+output 1

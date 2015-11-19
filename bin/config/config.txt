@@ -10,5 +10,5 @@ untextured 256 256 256
 //camera cameras/ncurses.txt
 //camera cameras/bicolor.txt
 camera cameras/standard.txt
-multimedia multimedia/libmultimedia_ncurses.so
-//multimedia multimedia/libmultimedia_SDL.so
+//multimedia multimedia/libmultimedia_ncurses.so
+multimedia multimedia/libmultimedia_SDL.so

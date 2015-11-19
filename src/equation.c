@@ -10,6 +10,7 @@
 #include "stack.h"
 #include "state.h"
 #include "array.h"
+#include "equation.h"
 
 #define MAXLENGTH 256
 #define NB_FUNCTIONS 4
@@ -30,6 +31,9 @@ typedef struct ElementEquation {
 static struct{
     State *state;
     Stack *stack;
+    int input;
+    int output;
+    char **equation;
 } Equation;
 
 enum {
@@ -69,10 +73,10 @@ static int numberLength(char *number)
     return i;
 }
 
-static float analyseNumber(char *xyz, int *i)
+static int analyseInt(char *xyz, int *i)
 {
-    float number = 0.;
-    float pow = 1.;
+    int number = 0;
+    int pow = 1.;
     int beginning = *i;
     int length = numberLength(&xyz[beginning]);
     int end = beginning + length;
@@ -81,40 +85,43 @@ static float analyseNumber(char *xyz, int *i)
 	number += pow * charToInt(xyz[j]);
 	pow *= 10.;
     }
+    *i = end - 1;
+    return number;
+}
 
-    if (xyz[end] == '.') {
-	pow = 0.1;
+static float analyseFloat(char *xyz, int *i)
+{
+    float number = analyseInt(xyz, i);
+
+    if (xyz[*i + 1] == '.') {
+	float pow = 0.1;
 	int j;
-	for (j = end + 1; isNumber(xyz[j]); j++) {
+	for (j = *i + 2; isNumber(xyz[j]); j++) {
 	    number += pow * charToInt(xyz[j]);
 	    pow /= 10.;
 	}
 	*i = j - 1;
-    } else
-	*i = end - 1;
+    }
 
     return number;
 }
+
 
 static inline int isLetter(char c)
 {
     return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
 }
 
-static inline int isVariable(char *xyz, int i)
+static float analyseVariable(char *s, int *i, float *input)
 {
-    return ((xyz[i] == 's' || xyz[i] == 't') && !isLetter(xyz[i + 1]));
-}
+    *i = *i + 1;
+    int variable = analyseInt(s, i);
 
-static float analyseVariable(char c, float s, float t)
-{
-    if (c == 's')
-	return s;
-    else if (c == 't')
-	return t;
-    else 
-	fprintf(stderr, "Error analyzing variable: doesn't exist\n");
-    return 0.;
+    if (variable < 0 || variable >= Equation.input) {
+	fprintf(stderr, "Error analyzing variable: index not in range\n");
+	return 0;
+    }
+    return input[variable];
 }
 
 static void handleFunction(int id, char xyz, char f, int fFinalCharId, int j)
@@ -226,47 +233,62 @@ static float computeFunction(int function, float x)
     return 0.;
 }	
 	    
-static int getValueFromLine(char *xyz, float s, float t, float *XYZ)
+static float getValue(float *input, int output)
 {
     ElementEquation result;
     resetStack(Equation.stack);
-    *XYZ = s + t;
+    char *s = Equation.equation[output];
 
-    for (int i = 0; xyz[i]; i++) {
+    for (int i = 0; s[i]; i++) {
 	ElementEquation elmtA;
 	ElementEquation elmtB;
 	ElementEquation elmtC;
 	
-	if (isNumber(xyz[i])) {
-	    elmtA.value.number = analyseNumber(xyz, &i);
+	if (isNumber(s[i])) {
+	    elmtA.value.number = analyseFloat(s, &i);
 	    elmtA.valueType = NUMBER;
 	    addDataStack(Equation.stack, &elmtA);
-	} else if (isLetter(xyz[i])) {
-	    if (isVariable(xyz, i)) {
-		elmtA.value.number = analyseVariable(xyz[i], s, t);
-		elmtA.valueType = NUMBER;
-	    } else if ((elmtA.value.function = analyseFunction(xyz, &i)) != -1) {
+	} else if (isLetter(s[i])) {
+	    if ((elmtA.value.function = analyseFunction(s, &i)) != -1) {
 		elmtA.valueType = FUNCTION;
 	    } else {
 		fprintf(stderr, "Error parsing equation: unknown symbol\n");
 		return 0;
 	    }
 	    addDataStack(Equation.stack, &elmtA);
-	} else if (isBinaryOperator(xyz[i])) {
-	    elmtA.value.operator = analyseBinaryOperator(xyz, &i);
+	} else if (s[i] == '$') {
+	    elmtA.value.number = analyseVariable(s, &i, input);
+	    elmtA.valueType = NUMBER;
+	    addDataStack(Equation.stack, &elmtA);
+	} else if (isBinaryOperator(s[i])) {
+	    elmtA.value.operator = analyseBinaryOperator(s, &i);
 	    elmtA.valueType = OPERATOR;
 	    addDataStack(Equation.stack, &elmtA);
-	} else if (xyz[i] == ')' && !voidStack(Equation.stack)) {
+	} else if (s[i] == ')') {
+	    if (voidStack(Equation.stack)) {
+		fprintf(stderr, "Error parsing equation: expected expression before ')'\n");
+		return 0;
+	    }			
+		
 	    elmtA = *((ElementEquation *)readDataStack(Equation.stack));
 	    removeDataStack(Equation.stack);
-	    if (elmtA.valueType == NUMBER && !voidStack(Equation.stack)) {
+	    if (elmtA.valueType == NUMBER) {
+		if (voidStack(Equation.stack)) {
+		fprintf(stderr, "Error parsing equation: expected expression before number\n");
+		return 0;
+	    }
 		elmtB = *((ElementEquation *)readDataStack(Equation.stack));
 		removeDataStack(Equation.stack);
-	        if (elmtB.valueType == OPERATOR && !voidStack(Equation.stack)) {
+	        if (elmtB.valueType == OPERATOR) {
+		    if (voidStack(Equation.stack)) {
+			fprintf(stderr, "Error parsing equation: expecting expression before operator\n");
+			return 0;
+		    }			
+			
 		    elmtC = *((ElementEquation *)readDataStack(Equation.stack));
 		    removeDataStack(Equation.stack);
 		    if (elmtC.valueType != NUMBER) {
-			fprintf(stderr, "Error parsing equation: bad + 1");
+			fprintf(stderr, "Error parsing equation: first argument of operator is not a number\n");
 			return 0;
 		    }			
 		    result.value.number = computeOperator(elmtC.value.number, 
@@ -280,7 +302,7 @@ static int getValueFromLine(char *xyz, float s, float t, float *XYZ)
 		    result.valueType = NUMBER;
 		    addDataStack(Equation.stack, &result);
 		} else {
-		    fprintf(stderr, "Error parsing equation\n");		
+		    fprintf(stderr, "Error parsing equation: double number\n");
 		    return 0;
 		}
 	    } else {
@@ -302,14 +324,20 @@ static int getValueFromLine(char *xyz, float s, float t, float *XYZ)
 	fprintf(stderr, "Error parsing equation: not a number\n");
 	return 0;
     }
-    *XYZ = result.value.number;
-    return 1;
+    return result.value.number;
 }
 
-static int initEquation(float *minS, float *maxS, int *precisionS,
-		 float *minT, float *maxT, int *precisionT,
-		 char *x, char *y, char *z, int stringSize, 
-		 const char *eqName)
+static void freeEquation()
+{
+    destroyStack(Equation.stack);
+    destroyState(Equation.state);
+    for (int i = 0; i < Equation.output; i++)
+	free(Equation.equation[i]);
+    free(Equation.equation);
+}
+
+static int initEquation(float **min, float **max, int **precision, 
+			int *nbInput, int *nbOutput, const char *eqName) 
 {
     FILE *file = fopen(eqName, "r");
     if (file == NULL) {
@@ -318,105 +346,202 @@ static int initEquation(float *minS, float *maxS, int *precisionS,
     }
     
     char str[MAXLENGTH];
-    int check[NB_KEYWORDS] = {0};
-    int template[NB_KEYWORDS];
-    initArray(template, NB_KEYWORDS, 1);
-    
+    int i = 0, j = 0;
+    Equation.input = 0;
+    Equation.output = 0;
+
     while (fscanf(file, "%s", str) != EOF) {
-	if (strcmp(str, "minS") == 0 && fscanf(file, "%f", minS) == 1)
-	    check[MINS]++;
-	else if (strcmp(str, "maxS") == 0 && fscanf(file, "%f", maxS) == 1)
-	    check[MAXS]++;
-	else if (strcmp(str, "precisionS") == 0 &&
-	    fscanf(file, "%d", precisionS) == 1)
-	    check[PRECISIONS]++;
-	else if (strcmp(str, "minT") == 0 && fscanf(file, "%f", minT) == 1)
-	    check[MINT]++;
-	else if (strcmp(str, "maxT") == 0 && fscanf(file, "%f", maxT) == 1)
-	    check[MAXT]++;
-	else if (strcmp(str, "precisionT") == 0 && 
-	    fscanf(file, "%d", precisionT) == 1)
-	    check[PRECISIONT]++;
-	else if (strcmp(str, "x") == 0 && fscanf(file, "%s", x) == 1)
-	    check[X]++;
-	else if (strcmp(str, "y") == 0 && fscanf(file, "%s", y) == 1)
-	    check[Y]++;
-	else if (strcmp(str, "z") == 0 && fscanf(file, "%s", z) == 1)
-	    check[Z]++;
+	if (strcmp(str, "input") == 0)
+	    Equation.input++;
+	else if (strcmp(str, "output") == 0)
+	    Equation.output++;
     }
-    if (!areEqualsArray(check, template, NB_KEYWORDS)) {
-	printf("Error parsing equation\n");
-	return 0;
+    rewind(file);
+
+    *min = malloc(Equation.input * sizeof(float));
+    *max = malloc(Equation.input * sizeof(float));
+    *precision = malloc(Equation.input * sizeof(int));
+    Equation.equation = malloc(Equation.output * sizeof(char *));
+
+    while (fscanf(file, "%s", str) != EOF) {
+	if (strcmp(str, "input") == 0 && 
+	    fscanf(file, "%f %f %d", &((*min)[i]), &((*max)[i]), &((*precision)[i])))
+	    i++;
+	else if (strcmp(str, "output") == 0 && fscanf(file, "%s", str)) {
+	    Equation.equation[j] = malloc((strlen(str) + 1) * sizeof(char));
+	    strcpy(Equation.equation[j], str);
+	    j++;
+	}
     }
 
     Equation.state = initState(NB_FUNCTIONS);
     Equation.stack = initStack(sizeof(ElementEquation));
+    *nbInput = Equation.input;
+    *nbOutput = Equation.output;
+
     fclose(file);
+    if (i != Equation.input || j != Equation.output) {
+	freeEquation();
+	return 0;
+    }
     return 1;
 }
 
-static int getValueFromEquation(char *x, char *y, char *z, 
-			 float s, float t, Point *p)
+static void getValueFromEquation(float *input, float *output)
 {
-    return (getValueFromLine(x, s, t, &p->x) &&
-	    getValueFromLine(y, s, t, &p->y) &&
-	    getValueFromLine(z, s, t, &p->z));
+    for (int i = 0; i < Equation.output; i++)
+	output[i] = getValue(input, i);
 }
 
-static void freeEquation()
+
+
+static int minimum(int a, int b)
 {
-    destroyStack(Equation.stack);
-    destroyState(Equation.state);
+    return a < b ? a : b;
+}
+
+static int getNumVertices(int *precision, int size)
+{
+    int r = 1;
+    for (int i = 0; i < size; i++) {
+	r *= precision[i];
+    }
+    return r;
+}
+
+static int getNumSegments(int *precision, int size)
+{
+    int s = 0;
+    for (int i = 0; i < size; i++) {
+	int p = (precision[i] - 1);
+	for (int j = 1; j < size; j++)
+	    p *= precision[(i + j) % size];
+	s += p;
+    }
+    return s;
+}
+
+static void getGridFromId(int id, int size, int *precision, int *grid, int dim)
+{
+    for (int i = dim - 1; i >= 0; i--) {
+	size /= precision[i];
+	grid[i] = id / size;
+	id -= grid[i] * size;
+    }
+}
+
+static void updateInput(float *input, float *min, float *interval, 
+			int *grid, int dim)
+{
+    for (int i = 0; i < dim; i++)
+	input[i] = min[i] + interval[i] * grid[i];
+}
+
+static void mapOutput(float *output, Point *A, int dim)
+{
+    switch (dim) {
+    case 1:
+	A->x = output[0];
+	A->y = 0;
+	A->z = 0;
+	break;
+    case 2:
+	A->x = output[0];
+	A->y = output[1];
+	A->z = 0;
+	break;
+    case 3:
+	A->x = output[0];
+	A->y = output[1];
+	A->z = output[2];
+	break;
+    default:
+	A->x = 0;
+	A->y = 0;
+	A->z = 0;
+	break;
+    }
 }
 
 Solid *loadEquation(const char *eqName, const char *bmpName)
 {
-    float minS, maxS, minT, maxT;
-    int precisionS, precisionT;
-    char x[MAXLENGTH];
-    char y[MAXLENGTH];
-    char z[MAXLENGTH];
+    float *min = NULL, *max = NULL;
+    int *precision = NULL;
+    int nbInput;
+    int nbOutput;
     
-    if (!initEquation(&minS, &maxS, &precisionS,
-		      &minT, &maxT, &precisionT,
-		      x, y, z, MAXLENGTH, eqName)) {
+    if (!initEquation(&min, &max, &precision, &nbInput, &nbOutput, eqName)) {
 	fprintf(stderr, "Error loading equation\n");
 	return NULL;
     }
 
     Solid *solid = malloc(sizeof(Solid));
-    int p, f = 0, e = 0;
-    float s = minS, t = minT;
-    float ds = (maxS - minS) / (precisionS - 1);
-    float dt = (maxT - minT) / (precisionT - 1);
+    float *input = malloc(nbInput * sizeof(float));
+    float *output = malloc(nbOutput * sizeof(float));
+    float *interval = malloc(nbInput * sizeof(float));
+    int minInput = minimum(nbInput, 3);
+    int p, e = 0;
+    for (int i = 0; i < nbInput; i++) {
+	input[i] = min[i];
+	interval[i] = (max[i] - min[i]) / (precision[i] - 1);
+    } 
 
-    solid->numVertices = precisionS * precisionT;
-    solid->numNormals = solid->numVertices;
-    solid->numCoords = 4;
-    solid->numSegments = 3 * precisionS * precisionT - 
-	2 * (precisionS + precisionT) + 1;
-    solid->numFaces = 2 * (precisionS - 1) * (precisionT - 1);
+    solid->numVertices = getNumVertices(precision, minInput);
+    solid->numSegments = getNumSegments(precision, minInput);
+    solid->numCoords = 4;    
+
+    if (nbInput == 2) {
+	solid->numNormals = solid->numVertices;
+	solid->numFaces = 2 * (precision[0] - 1) * (precision[1] - 1);
+
+	if ((solid->texture = loadTexture(bmpName)))
+	    printf("Texture successfully loaded\n");
+	else
+	    printf("Error loading texture\n");
+
+    } else {
+	solid->numNormals = 0;
+	solid->numFaces = 0;
+	solid->texture = NULL;
+    }
 
     solid->vertices = malloc(solid->numVertices * sizeof(Point));
     solid->normals = malloc(solid->numNormals * sizeof(Point));
-    solid->coords = malloc(solid->numCoords * sizeof(Position));
     solid->segments = malloc(solid->numSegments * sizeof(Segment));
     solid->faces = malloc(solid->numFaces * sizeof(Face));
+    solid->coords = malloc(solid->numCoords * sizeof(Position));
 
     setPosition(&solid->coords[0], 0., 0.);
     setPosition(&solid->coords[1], 0., 1.);
     setPosition(&solid->coords[2], 1., 0.);
     setPosition(&solid->coords[3], 1., 1.);
 
-    if ((solid->texture = loadTexture(bmpName)))
-	printf("Texture successfully loaded\n");
-    else
-	printf("Error loading texture\n");
+    for (p = 0; p < solid->numVertices; p++) {
+	int grid[3];
 
-    if (solid->numVertices > 0) {
-	HANDLE(getValueFromEquation(x, y, z, s, t, &solid->vertices[0]))
+	getGridFromId(p, solid->numVertices, precision, grid, minInput);
+	updateInput(input, min, interval, grid, minInput);
+	getValueFromEquation(input, output);
+	mapOutput(output, &solid->vertices[p], nbOutput);
+	
+	int delta = 1;
+	for (int i = 0; i < minInput; i++) {
+	    if (grid[i] < precision[i] - 1) {
+	        solid->segments[e].A = p; 
+		solid->segments[e].B = p + delta; 
+		e++;
+	    }
+	    delta *= precision[i];
+	}
+	
+	if (nbInput == 2) {
+	    
+
+	}
+	
     }
 
+    /*
     for (p = 0; p < solid->numVertices; p++) {
 	Point *A;
 	Point *B;
@@ -500,6 +625,13 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
 	    f++;
 	}
     }
+    */
+    free(min);
+    free(max);
+    free(precision);
+    free(interval);
+    free(input);
+    free(output);
     freeEquation();
     printf("Equation successfully loaded\n");
     return solid;

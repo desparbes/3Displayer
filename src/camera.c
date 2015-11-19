@@ -51,7 +51,7 @@ static void removeLensFromCamera(Camera *c)
 
 static void initStateCamera(Camera *c)
 {
-    c->state[DRAW] = 1;
+    c->state[DRAW] = 0;
     c->state[WIREFRAME] = 0;
     c->state[NORMAL] = 0;
     c->state[VERTEX] = 0;
