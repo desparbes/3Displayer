@@ -79,55 +79,51 @@ static void getGridFromId(int id, int size, int *precision, int *grid, int dim)
     }
 }
 
+
 static int getIdFromGrid(int *precision, int *grid, int dim)
 {
-    int r = grid[0];
-    for (int i = 1; i < dim; i++)
-	r += precision[i - 1] * grid[i];
+    int scale = 1;
+    int r = 0;
+    for (int i = 0; i < dim; i++) {
+	r += scale * grid[i];
+	scale *= precision[i];
+    }
     return r;
 }
 
-static void addGrid(int *A, int x, int y, int z, int dim, int *result)
+static void setGrid(int A[3], int x, int y, int z, int result[3])
 {
-    dim >= 1 ? (result[0] = A[0] + x) : (result[0] = 0); 
-    dim >= 2 ? (result[1] = A[1] + y) : (result[1] = 0); 
-    dim >= 3 ? (result[2] = A[2] + x) : (result[2] = 0); 
+    result[0] = A[0] + x;
+    result[1] = A[1] + y;
+    result[2] = A[2] + z;
 }
 
-static int isInRangeGrid(int *A, int *precision, int dim)
+static int isInRange(int M[3], int lengths[3])
 {
-    for (int i = 0; i < dim; i++) {
-	if (A[i] < 0 || A[i] >= precision[i])
+    for (int i = 0; i < 3; i++) {
+	if (M[i] < 0 || M[i] >= lengths[i])
 	    return 0;
     }
     return 1;
 }
 
-static int isOnBorderGrid(int *A, int *precision, int dim)
+void setNormal(Solid *solid, int O, int A, int B, int **normalBuffer, 
+	       int dim, int *n)
 {
-    for (int i = 0; i < dim; i++) {
-	if (A[i] == 0 || A[i] == precision[i] - 1)
-	    return 1;
-    }
-    return 0;
-}
-
-void setNormal(Solid *solid, int **normalBuffer, int O, int A, int B, int dim)
-{
-    static int n = 0;
     Point u, v, normal;
+
     diffPoint(&solid->vertices[A], &solid->vertices[O], &u);
     diffPoint(&solid->vertices[B], &solid->vertices[O], &v);
     pointProduct(&u, &v, &normal);
     normalizePoint(&normal, &normal);
 
-    normalBuffer[O][dim] = n;
-    solid->normals[n] = normal;
-    n++;
+    normalBuffer[O][dim + 3] = *n;
+    solid->normals[*n] = normal;
+    (*n)++;
 
-    normalBuffer[O][3 + dim] = n;
-    setPoint(&solid->normals[n], -normal.x, -normal.y, -normal.z);
-    n++;
+    normalBuffer[O][dim] = *n;
+    setPoint(&solid->normals[*n], -normal.x, -normal.y, -normal.z);
+    (*n)++;
 }
 
 static void setPointFace(Solid *solid, int f, int a, int b, int c)
@@ -153,25 +149,39 @@ static void setNormalFace(Solid *solid, int f, int a, int b, int c)
 }
 
 static void setSquare(Solid *solid, int **normalBuffer, 
-		      int a, int b, int c, int d, int dim)
+		      int a, int b, int c, int d, int dim, int *f)
 {
-    static int f = 0;
-    
-    setPointFace(solid, f, a, b, c);
-    setPositionFace(solid, f, 1, 3, 2);
-    setNormalFace(solid, f, 
+    setPointFace(solid, (*f), a, b, c);
+    setPositionFace(solid, (*f), 1, 3, 2);
+    setNormalFace(solid, (*f), 
 		  normalBuffer[a][dim], 
 		  normalBuffer[b][dim], 
 		  normalBuffer[c][dim]);
-    f++;
+    (*f)++;
 
-    setPointFace(solid, f, a, c, d);
-    setPositionFace(solid, f, 1, 2, 0);
-    setNormalFace(solid, f, 
+    setPointFace(solid, (*f), a, c, b);
+    setPositionFace(solid, (*f), 1, 2, 3);
+    setNormalFace(solid, (*f), 
 		  normalBuffer[a][3 + dim], 
-		  normalBuffer[b][3 + dim], 
+		  normalBuffer[c][3 + dim], 
+		  normalBuffer[b][3 + dim]);
+    (*f)++;
+
+    setPointFace(solid, (*f), a, c, d);
+    setPositionFace(solid, (*f), 1, 2, 0);
+    setNormalFace(solid, (*f), 
+		  normalBuffer[a][dim], 
+		  normalBuffer[c][dim], 
+		  normalBuffer[d][dim]);
+    (*f)++;
+
+    setPointFace(solid, (*f), a, d, c);
+    setPositionFace(solid, (*f), 1, 0, 2);
+    setNormalFace(solid, (*f), 
+		  normalBuffer[a][3 + dim], 
+		  normalBuffer[d][3 + dim], 
 		  normalBuffer[c][3 + dim]);
-    f++;
+    (*f)++;
 }
 
 static void updateInput(float *input, float *min, float *interval, 
@@ -187,36 +197,13 @@ static void mapOutput(float *output, Point *A, int dim)
     A->y = dim >= 2 ? output[1] : 0;
     A->z = dim >= 3 ? output[2] : 0;
 }
-/*
-int calculateBottom(int *precision, int nbInput)
-{
-    if (nbInput >= 2)
-	return (precision[0] - 1) * (precision[1] - 1);
-    return 0;
-}
-
-int calculateSide(int *precision, int nbInput)
-{
-    if (nbInput >= 3)
-	return (precision[1] - 1) * (precision[2] - 1);
-    return 0;
-}
-
-int calculateFront(int *precision, int nbInput)
-{
-    if (nbInput >= 3)
-	return (precision[2] - 1) * (precision[0] - 1);
-    return 0;
-}
-*/
-
 
 Solid *loadEquation(const char *eqName, const char *bmpName)
 {
     float *min = NULL, *max = NULL;
     int *precision = NULL;
-    int nbInput;
-    int nbOutput;
+    int nbInput = 0;
+    int nbOutput = 0;
     
     if (!initEquation(&min, &max, &precision, &nbInput, &nbOutput, eqName)) {
 	fprintf(stderr, "Error loading equation\n");
@@ -228,7 +215,12 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
     float *output = malloc(nbOutput * sizeof(float));
     float *interval = malloc(nbInput * sizeof(float));
     int dim = minimum(nbInput, 3);
-    int a, e = 0;
+
+    int lengths[3] = {1, 1, 1};
+    for (int i = 0; i < dim; i++)
+	lengths[i] = precision[i];
+
+    int a, e = 0, n = 0, f = 0;
     for (int i = 0; i < nbInput; i++) {
 	input[i] = min[i];
 	interval[i] = (max[i] - min[i]) / (precision[i] - 1);
@@ -262,237 +254,88 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
     setPosition(&solid->coords[3], 1., 1.);
 
     for (a = 0; a < solid->numVertices; a++) {
-	getGridFromId(a, solid->numVertices, precision, 
-		      gridBuffer[a].grid, dim);
+	getGridFromId(a, solid->numVertices, lengths, 
+		      gridBuffer[a].grid, 3);
 	updateInput(input, min, interval, gridBuffer[a].grid, dim);
 	getValueFromEquation(input, output);
 	mapOutput(output, &solid->vertices[a], nbOutput);
     }
     
-    // Calcul des normales
-    for (a = 0; a < solid->numVertices; a++) {
-        int *A = gridBuffer[a].grid;
-	if (isOnBorderGrid(A, precision, dim)) {
-	    for (int i = 0; i < dim - 1; i++) {
-		for (int j = i + 1; j < dim; j++) {
-		    int B[3];
-		    int C[3];
-		    int D[3];
-		    int opposed[3];
+    for (int i = 0; i < solid->numVertices; i++) {
+	int *O = gridBuffer[i].grid;
+	for (int j = 0; j < 3; j++) {
+	    if (O[j] == 0 || O[j] == lengths[j] - 1) {
+		int A[3];
+		int B[3];
+		int C[3];
+		int D[3];
 
-		    addGrid(A, 
-			    i == 0 || j == 0,
-			    i == 1 || j == 1, 
-			    i == 2 || j == 2, dim, C);
-		    addGrid(A, 
-			    -(i == 0 || j == 0),
-			    -(i == 1 || j == 1), 
-			    -(i == 2 || j == 2), dim, opposed);
-		    if (isInRangeGrid(C, precision, dim)) {
-			addGrid(A, 
-				i != 1 && j != 1, 
-				i != 2 && j != 2, 
-				i != 0 && j != 0, dim, B);
-			addGrid(A, 
-				i != 2 && j != 2, 
-				i != 0 && j != 0, 
-				i != 1 && j != 1, dim, B);
-		    } else if (isInRangeGrid(opposed, precision, dim)) {
-			addGrid(A, 
-				-(i != 1 && j != 1), 
-				-(i != 2 && j != 2), 
-				-(i != 0 && j != 0), dim, B);
-			addGrid(A, 
-				-(i != 2 && j != 2), 
-				-(i != 0 && j != 0), 
-				-(i != 1 && j != 1), dim, B);
-		    } else {
-			printf("break: a: %d, i: %d, j: %d, C: (%d, %d, %d), opposed: (%d, %d, %d)\n", a, i, j, C[0], C[1], C[2], opposed[0], opposed[1], opposed[2]);
-			break;
-		    }
-		    int b = getIdFromGrid(precision, B, dim);
-		    int d = getIdFromGrid(precision, D, dim);
-		    setNormal(solid, normalBuffer, a, b, d, i);
-		    setNormal(solid, normalBuffer, a, d, b, i);
-		/*printf("%d: (%d, %d, %d)\n", 
-		       a,
-		       gridBuffer[a].grid[0], 
-		       gridBuffer[a].grid[1],
-		       gridBuffer[a].grid[2]);
-		*/
+		setGrid(O, j == 2, j == 0, j == 1, A);
+		setGrid(O, j == 1, j == 2, j == 0, B);		
+		int a = isInRange(A, lengths);
+		int b = isInRange(B, lengths);
+
+		if (a && b) {
+		    setNormal(solid, i, 
+			      getIdFromGrid(lengths, A, 3), 
+			      getIdFromGrid(lengths, B, 3), normalBuffer, j, &n);
+		    continue;
+		}
+		setGrid(O, -(j == 2), -(j == 0), -(j == 1), C);
+		int c = isInRange(C, lengths);
+
+		if (b && c) {
+		    setNormal(solid, i, 
+			      getIdFromGrid(lengths, B, 3),
+			      getIdFromGrid(lengths, C, 3), normalBuffer, j, &n);
+		    continue;
+		}   
+		setGrid(O, -(j == 1), -(j == 2), -(j == 0), D);
+		int d = isInRange(D, lengths);
+
+		if (c && d) {
+		    setNormal(solid, i, 
+			      getIdFromGrid(lengths, C, 3),
+			      getIdFromGrid(lengths, D, 3), normalBuffer, j, &n);
+		    continue;
+		}
+
+		if (d && a) {
+		    setNormal(solid, i,
+			      getIdFromGrid(lengths, D, 3),
+			      getIdFromGrid(lengths, A, 3), normalBuffer, j, &n);
+		    continue;
 		}
 	    }
 	}
     }
-    printf("numNormals: %d\n", solid->numNormals);
-    for (int i = 0; i < solid->numVertices; i++) {
-	for (int j = 0; j < 6; j++) {
-	    printf("i: %d / numVertices, j: %d / 6, normal: %d\n",
-		   i, j,
-		   normalBuffer[i][j]);
-	}
-    }
-      
     for (a = 0; a < solid->numVertices; a++) {
 	int delta = 1;
 	for (int i = 0; i < dim; i++) {
 	    if (gridBuffer[a].grid[i] < precision[i] - 1) {
-	        solid->segments[e].A = a; 
+		solid->segments[e].A = a; 
 		solid->segments[e].B = a + delta; 
 		e++;
 	    }
-	    /*
-	    //Si p est sur la bordure pour la dimension i
-	    if (gridBuffer[p].grid[i] == 0 || gridBuffer[p].grid[i] == (precision[i] - 1)) {
-		if (gridBuffer[p].grid[i] == 0 || gridBuffer[p].grid[i] == (precision[i] - 1)) {
-	    }
-	    */
 	    delta *= precision[i];
 	}
-	
-
-/*
-	addGrid(&gridBuffer[p], 0, 0, 1, &A);
-	addGrid(&gridBuffer[p], 0, 1, 0, &C);
-*/
 	int *A = gridBuffer[a].grid;
 	for (int i = 0; i < 3; i++) {
 	    int C[3];
-	    addGrid(A, i != 0, i != 1, i != 2, dim, C);
-	    if (isInRangeGrid(C, precision, dim) && 
-		(A[i] == 0 || A[i] == precision[i] - 1)) {
+	    setGrid(A, i != 0, i != 1, i != 2, C);
+	    if (isInRange(C, lengths) && 
+		(A[i] == 0 || A[i] == lengths[i] - 1)) {
 		int B[3];
 		int D[3];
-		addGrid(A, i == 1, i == 2, i == 0, dim, B);
-		addGrid(A, i == 2, i == 0, i == 1, dim, D);
+		setGrid(A, i == 1, i == 2, i == 0, B);
+		setGrid(A, i == 2, i == 0, i == 1, D);
 		int b = getIdFromGrid(precision, B, dim);
 		int c = getIdFromGrid(precision, C, dim);
 		int d = getIdFromGrid(precision, D, dim);
-		setSquare(solid, normalBuffer, a, b, c, d, i);		    
+		setSquare(solid, normalBuffer, a, b, c, d, i, &f);    
 	    }
 	}
     }
-
-/*
-	addGrid(&A, 0, 1, 1, &C);
-	if (isInRangeGrid(&C)) {
-	    if (A.grid[0] == 0)
-		setFace(solid, p, getIdFromGrid(&C));
-	    if (A.grid[0] == precision[0] - 1)
-		setFace(solid, getIdFromGrid(&C), p);
-	}
-	addGrid(&A, 1, 0, 1, &C);
-	if (isInRangeGrid(&C)) {
-	    if (A.grid[1] == 0)
-		setFace(solid, p, getIdFromGrid(&C));
-	    if (A.grid[1] == precision[1] - 1)
-		setFace(solid, getIdFromGrid(&C), p);
-	}
-	addGrid(&A, 1, 1, 0, &C);
-	if (isInRangeGrid(&C)) {
-	    if (A.grid[2] == 0)
-		setFace(solid, p, getIdFromGrid(&C));
-	    if (A.grid[2] == precision[2] - 1)
-		setFace(solid, getIdFromGrid(&C), p);
-       }
-
-    int bottom = calculateBottom(precision, nbInput);
-    for (p = 0; p < bottom; p++) {
-	setFace(solid, f, p, p + 1, p + precision[0],
-	solid->faces[f].vertices[0].point = p;
-	solid->faces[f].vertices[1].point = p + 1;
-	solid->faces[f].vertices[2].point = p + precisionS;
-	solid->faces[f].vertices[0].normal = p;
-	solid->faces[f].vertices[1].normal = p + 1;
-	solid->faces[f].vertices[2].normal = p + precisionS;
-	solid->faces[f].vertices[0].coord = 1;
-	solid->faces[f].vertices[1].coord = 3;
-	solid->faces[f].vertices[2].coord = 0;
- 
-    for (p = 0; p < solid->numVertices; p++) {
-	Point *A;
-	Point *B;
-	Point *O = &solid->vertices[p];
-	Point *normal = &solid->normals[p];
-	Point u;
-	Point v;
-
-        if (p == solid->numVertices - 1) { // north-east
-	    A = &solid->vertices[p - 1];
-	    B = &solid->vertices[p - precisionS];
-	} else if (p % precisionS == precisionS - 1) { // east
-	    A = &solid->vertices[p + precisionS];
-	    B = &solid->vertices[p - 1];
-
-	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, A))
-	    solid->segments[e].A = p; 
-	    solid->segments[e].B = p + precisionS; 	    
-	    e++;
-
-	    s = minS;
-	    t += dt;
-	} else if (p >= (solid->numVertices - precisionS)) { // north
-	    A = &solid->vertices[p - precisionS];
-	    B = &solid->vertices[p + 1];
-
-	    solid->segments[e].A = p; 
-	    solid->segments[e].B = p + 1;	    
-	    e++;
-
-	    s += ds;
-	} else { //elsewhere
-	    A = &solid->vertices[p + 1];
-	    B = &solid->vertices[p + precisionS];
-	    
-	    if (p < precisionS) // south
-		HANDLE(getValueFromEquation(x, y, z, s + ds, t, A))
-	    HANDLE(getValueFromEquation(x, y, z, s, t + dt, B))
-	    solid->segments[e].A = p; 
-	    solid->segments[e].B = p + 1; 
-	    e++;
-	    solid->segments[e].A = p; 
-	    solid->segments[e].B = p + precisionS; 
-	    e++;
-	    solid->segments[e].A = p; 
-	    solid->segments[e].B = p + precisionS + 1; 
-	    e++;
-
-	    s += ds;
-	}
-	diffPoint(A, O, &u);
-	diffPoint(B, O, &v);
-	pointProduct(&u, &v, normal);
-	normalizePoint(normal, normal);
-    }
-
-    for (p = 0; f < solid->numFaces; p++) {
-	if (p % precisionS != precisionS - 1) {
-	    solid->faces[f].vertices[0].point = p;
-	    solid->faces[f].vertices[1].point = p + 1;
-	    solid->faces[f].vertices[2].point = p + precisionS;
-	    solid->faces[f].vertices[0].normal = p;
-	    solid->faces[f].vertices[1].normal = p + 1;
-	    solid->faces[f].vertices[2].normal = p + precisionS;
-	    solid->faces[f].vertices[0].coord = 1;
-	    solid->faces[f].vertices[1].coord = 3;
-	    solid->faces[f].vertices[2].coord = 0;
-
-	    f++;
-
-	    solid->faces[f].vertices[0].point = p + precisionS;
-	    solid->faces[f].vertices[1].point = p + 1;
-	    solid->faces[f].vertices[2].point = p + 1 + precisionS;
-	    solid->faces[f].vertices[0].normal = p + precisionS;
-	    solid->faces[f].vertices[1].normal = p + 1;
-	    solid->faces[f].vertices[2].normal = p + 1 + precisionS;
-	    solid->faces[f].vertices[0].coord = 0;
-	    solid->faces[f].vertices[1].coord = 3;
-	    solid->faces[f].vertices[2].coord = 2;
-
-	    f++;
-	}
-    }
-    */
     free(min);
     free(max);
     free(precision);

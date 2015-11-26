@@ -6,7 +6,7 @@ screenHeight 800
 light light/standard.txt
 //light light/opposed.txt
 background 128 128 128
-untextured 256 256 256
+untextured 255 255 255
 //camera cameras/ncurses.txt
 //camera cameras/bicolor.txt
 camera cameras/standard.txt
