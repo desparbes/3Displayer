@@ -1,403 +1,30 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <string.h>
 
 #include "build.h"
 #include "position.h"
 #include "texture.h"
 #include "point.h"
-#include "stack.h"
-#include "state.h"
-#include "array.h"
-#include "equation.h"
+#include "parametric.h"
 
-#define MAXLENGTH 256
-#define NB_FUNCTIONS 4
-#define NB_KEYWORDS 9
-
-
-#define HANDLE(x) if(!x){printf("Equation error\n");freeEquation();return NULL;}
-
-typedef struct ElementEquation {
-    int valueType;
-    union {
-	int function;
-	int operator;
-	float number;
-    } value;
-} ElementEquation;
-
-static struct{
-    State *state;
-    Stack *stack;
-    int input;
-    int output;
-    char **equation;
-} Equation;
-
-enum {
-    FUNCTION, OPERATOR, NUMBER
-};
-
-enum {
-    COS, SIN, SQRT, SQR
-};
-
-enum {
-    PLUS, MINUS, TIMES, OVER
-};
-
-enum {
-    POTENTIAL, ACCEPT, REFUSE
-};
-
-enum {
-    MINS, MAXS, PRECISIONS, MINT, MAXT, PRECISIONT, X, Y, Z
-};
-
-static inline int isNumber(char c)
-{
-    return (c >= '0' && c <= '9');
-}
-
-static inline int charToInt(char c)
-{
-    return c - '0';
-}
-
-static int numberLength(char *number)
-{
-    int i;
-    for (i = 0; isNumber(number[i]); i++);
-    return i;
-}
-
-static int analyseInt(char *xyz, int *i)
-{
-    int number = 0;
-    int pow = 1.;
-    int beginning = *i;
-    int length = numberLength(&xyz[beginning]);
-    int end = beginning + length;
-
-    for (int j = end - 1; j >= beginning; j--) {
-	number += pow * charToInt(xyz[j]);
-	pow *= 10.;
-    }
-    *i = end - 1;
-    return number;
-}
-
-static float analyseFloat(char *xyz, int *i)
-{
-    float number = analyseInt(xyz, i);
-
-    if (xyz[*i + 1] == '.') {
-	float pow = 0.1;
-	int j;
-	for (j = *i + 2; isNumber(xyz[j]); j++) {
-	    number += pow * charToInt(xyz[j]);
-	    pow /= 10.;
-	}
-	*i = j - 1;
-    }
-
-    return number;
-}
-
-
-static inline int isLetter(char c)
-{
-    return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
-}
-
-static float analyseVariable(char *s, int *i, float *input)
-{
-    *i = *i + 1;
-    int variable = analyseInt(s, i);
-
-    if (variable < 0 || variable >= Equation.input) {
-	fprintf(stderr, "Error analyzing variable: index not in range\n");
-	return 0;
-    }
-    return input[variable];
-}
-
-static void handleFunction(int id, char xyz, char f, int fFinalCharId, int j)
-{
-    if ((getState(Equation.state, id) == POTENTIAL && 
-	 j < fFinalCharId && xyz != f) ||
-	(getState(Equation.state, id) == ACCEPT && j > fFinalCharId))
-	setState(Equation.state, REFUSE, id);
-    if (getState(Equation.state, id) == POTENTIAL && 
-	j == fFinalCharId && xyz == f)
-	setState(Equation.state, ACCEPT, id);
-}
-
-
-static int analyseFunction(char *xyz, int *i)
-{
-    int j = 0;
-    char *cos = "cos";
-    char *sin = "sin";
-    char *sqrt = "sqrt";
-    char *sqr = "sqr";
-    resetState(Equation.state, POTENTIAL);
-   
-    while(isLetter(xyz[*i])) {
-	handleFunction(COS, xyz[*i], cos[j], 2, j);
-	handleFunction(SIN, xyz[*i], sin[j], 2, j);
-	handleFunction(SQRT, xyz[*i], sqrt[j], 3, j);
-	handleFunction(SQR, xyz[*i], sqr[j], 2, j);
-	j++;
-	(*i)++;
-    }
-    return analyseState(Equation.state, ACCEPT);
-}
-
-static int isBinaryOperator(char c)
-{
-    return (c == '+' || c == '-' || c == '*' || c == '/');
-}
-
-static int analyseBinaryOperator(char *xyz, int *i)
-{
-    switch (xyz[*i]) {
-    case '+':
-	return PLUS;
-	break;
-    case '-':
-	return MINUS;
-	break;
-    case '*':
-	return TIMES;
-	break;
-    case '/':
-	return OVER;
-	break;
-    default:
-	return -1;
-	break;
-    }
-    return -1;
-}
-
-static float computeOperator(float x, int operator, float y)
-{
-    switch (operator) {
-    case PLUS:
-	return x + y;
-	break;
-    case MINUS:
-	return x - y;
-	break;
-    case TIMES:
-	return x * y;
-	break;
-    case OVER:
-	if (y == 0.) {
-	    fprintf(stderr, "Error parsing equation: division by zero\n");
-	    return 0.;
-	}
-	return x / y;
-	break;
-    default:
-	fprintf(stderr, "Error parsing equation: unknown operator\n");
-	return 0.;
-	break;
-    }
-    return 0.;
-}
-
-static float computeFunction(int function, float x)
-{
-    switch (function) {
-    case COS:
-	return cos(x);
-	break;
-    case SIN:
-	return sin(x);
-	break;
-    case SQRT:
-	return sqrt(x);
-	break;
-    case SQR:
-	return x * x;
-	break;
-    default:
-	fprintf(stderr, "Error parsing equation: unknown function\n");
-	return 0.;
-	break;
-    }
-    return 0.;
-}	
-	    
-static float getValue(float *input, int output)
-{
-    ElementEquation result;
-    resetStack(Equation.stack);
-    char *s = Equation.equation[output];
-
-    for (int i = 0; s[i]; i++) {
-	ElementEquation elmtA;
-	ElementEquation elmtB;
-	ElementEquation elmtC;
-	
-	if (isNumber(s[i])) {
-	    elmtA.value.number = analyseFloat(s, &i);
-	    elmtA.valueType = NUMBER;
-	    addDataStack(Equation.stack, &elmtA);
-	} else if (isLetter(s[i])) {
-	    if ((elmtA.value.function = analyseFunction(s, &i)) != -1) {
-		elmtA.valueType = FUNCTION;
-	    } else {
-		fprintf(stderr, "Error parsing equation: unknown symbol\n");
-		return 0;
-	    }
-	    addDataStack(Equation.stack, &elmtA);
-	} else if (s[i] == '$') {
-	    elmtA.value.number = analyseVariable(s, &i, input);
-	    elmtA.valueType = NUMBER;
-	    addDataStack(Equation.stack, &elmtA);
-	} else if (isBinaryOperator(s[i])) {
-	    elmtA.value.operator = analyseBinaryOperator(s, &i);
-	    elmtA.valueType = OPERATOR;
-	    addDataStack(Equation.stack, &elmtA);
-	} else if (s[i] == ')') {
-	    if (voidStack(Equation.stack)) {
-		fprintf(stderr, "Error parsing equation: expected expression before ')'\n");
-		return 0;
-	    }			
-		
-	    elmtA = *((ElementEquation *)readDataStack(Equation.stack));
-	    removeDataStack(Equation.stack);
-	    if (elmtA.valueType == NUMBER) {
-		if (voidStack(Equation.stack)) {
-		fprintf(stderr, "Error parsing equation: expected expression before number\n");
-		return 0;
-	    }
-		elmtB = *((ElementEquation *)readDataStack(Equation.stack));
-		removeDataStack(Equation.stack);
-	        if (elmtB.valueType == OPERATOR) {
-		    if (voidStack(Equation.stack)) {
-			fprintf(stderr, "Error parsing equation: expecting expression before operator\n");
-			return 0;
-		    }			
-			
-		    elmtC = *((ElementEquation *)readDataStack(Equation.stack));
-		    removeDataStack(Equation.stack);
-		    if (elmtC.valueType != NUMBER) {
-			fprintf(stderr, "Error parsing equation: first argument of operator is not a number\n");
-			return 0;
-		    }			
-		    result.value.number = computeOperator(elmtC.value.number, 
-							  elmtB.value.operator, 
-							  elmtA.value.number);
-		    result.valueType = NUMBER;
-		    addDataStack(Equation.stack, &result);
-		} else if (elmtB.valueType == FUNCTION) {
-		    result.value.number = computeFunction(elmtB.value.function, 
-							  elmtA.value.number);
-		    result.valueType = NUMBER;
-		    addDataStack(Equation.stack, &result);
-		} else {
-		    fprintf(stderr, "Error parsing equation: double number\n");
-		    return 0;
-		}
-	    } else {
-		fprintf(stderr, "Error parsing equation: structural problem\n");
-		return 0;
-	    }
-	}
-    }
-
-    if (voidStack(Equation.stack)) {
-	fprintf(stderr, "Error parsing equation: no result\n");
-	return 0;
-    }
-
-    result = *((ElementEquation *)readDataStack(Equation.stack));
-    removeDataStack(Equation.stack);
-
-    if (result.valueType != NUMBER) {
-	fprintf(stderr, "Error parsing equation: not a number\n");
-	return 0;
-    }
-    return result.value.number;
-}
-
-static void freeEquation()
-{
-    destroyStack(Equation.stack);
-    destroyState(Equation.state);
-    for (int i = 0; i < Equation.output; i++)
-	free(Equation.equation[i]);
-    free(Equation.equation);
-}
-
-static int initEquation(float **min, float **max, int **precision, 
-			int *nbInput, int *nbOutput, const char *eqName) 
-{
-    FILE *file = fopen(eqName, "r");
-    if (file == NULL) {
-	perror(eqName);
-        return 0;
-    }
-    
-    char str[MAXLENGTH];
-    int i = 0, j = 0;
-    Equation.input = 0;
-    Equation.output = 0;
-
-    while (fscanf(file, "%s", str) != EOF) {
-	if (strcmp(str, "input") == 0)
-	    Equation.input++;
-	else if (strcmp(str, "output") == 0)
-	    Equation.output++;
-    }
-    rewind(file);
-
-    *min = malloc(Equation.input * sizeof(float));
-    *max = malloc(Equation.input * sizeof(float));
-    *precision = malloc(Equation.input * sizeof(int));
-    Equation.equation = malloc(Equation.output * sizeof(char *));
-
-    while (fscanf(file, "%s", str) != EOF) {
-	if (strcmp(str, "input") == 0 && 
-	    fscanf(file, "%f %f %d", &((*min)[i]), &((*max)[i]), &((*precision)[i])))
-	    i++;
-	else if (strcmp(str, "output") == 0 && fscanf(file, "%s", str)) {
-	    Equation.equation[j] = malloc((strlen(str) + 1) * sizeof(char));
-	    strcpy(Equation.equation[j], str);
-	    j++;
-	}
-    }
-
-    Equation.state = initState(NB_FUNCTIONS);
-    Equation.stack = initStack(sizeof(ElementEquation));
-    *nbInput = Equation.input;
-    *nbOutput = Equation.output;
-
-    fclose(file);
-    if (i != Equation.input || j != Equation.output) {
-	freeEquation();
-	return 0;
-    }
-    return 1;
-}
-
-static void getValueFromEquation(float *input, float *output)
-{
-    for (int i = 0; i < Equation.output; i++)
-	output[i] = getValue(input, i);
-}
-
-
+typedef struct Grid {
+    int grid[3];
+} Grid;
 
 static int minimum(int a, int b)
 {
     return a < b ? a : b;
+}
+
+static int powi(int n, int dim)
+{
+    if (dim < 0)
+	return 0;
+
+    int r = 1;
+    for (int i = 0; i < dim; i++)
+	r *= n;
+    return r;
 }
 
 static int getNumVertices(int *precision, int size)
@@ -407,6 +34,17 @@ static int getNumVertices(int *precision, int size)
 	r *= precision[i];
     }
     return r;
+}
+
+static int getNumNormals(int *precision, int size)
+{
+    int r = 0;
+    for (int i = 0; i < size - 1; i++) {
+	for (int j = i + 1; j < size; j++) {
+	    r += precision[i] * precision[j];
+	}
+    }
+    return 2 * powi(2, size - 2) * r;
 }
 
 static int getNumSegments(int *precision, int size)
@@ -421,6 +59,17 @@ static int getNumSegments(int *precision, int size)
     return s;
 }
 
+static int getNumFaces(int *precision, int size)
+{
+    int r = 0;
+    for (int i = 0; i < size - 1; i++) {
+	for (int j = i + 1; j < size; j++) {
+	    r += (precision[i] - 1) * (precision[j] - 1);
+	}
+    }
+    return 4 * powi(2, size - 2) * r;
+}
+
 static void getGridFromId(int id, int size, int *precision, int *grid, int dim)
 {
     for (int i = dim - 1; i >= 0; i--) {
@@ -428,6 +77,101 @@ static void getGridFromId(int id, int size, int *precision, int *grid, int dim)
 	grid[i] = id / size;
 	id -= grid[i] * size;
     }
+}
+
+static int getIdFromGrid(int *precision, int *grid, int dim)
+{
+    int r = grid[0];
+    for (int i = 1; i < dim; i++)
+	r += precision[i - 1] * grid[i];
+    return r;
+}
+
+static void addGrid(int *A, int x, int y, int z, int dim, int *result)
+{
+    dim >= 1 ? (result[0] = A[0] + x) : (result[0] = 0); 
+    dim >= 2 ? (result[1] = A[1] + y) : (result[1] = 0); 
+    dim >= 3 ? (result[2] = A[2] + x) : (result[2] = 0); 
+}
+
+static int isInRangeGrid(int *A, int *precision, int dim)
+{
+    for (int i = 0; i < dim; i++) {
+	if (A[i] < 0 || A[i] >= precision[i])
+	    return 0;
+    }
+    return 1;
+}
+
+static int isOnBorderGrid(int *A, int *precision, int dim)
+{
+    for (int i = 0; i < dim; i++) {
+	if (A[i] == 0 || A[i] == precision[i] - 1)
+	    return 1;
+    }
+    return 0;
+}
+
+void setNormal(Solid *solid, int **normalBuffer, int O, int A, int B, int dim)
+{
+    static int n = 0;
+    Point u, v, normal;
+    diffPoint(&solid->vertices[A], &solid->vertices[O], &u);
+    diffPoint(&solid->vertices[B], &solid->vertices[O], &v);
+    pointProduct(&u, &v, &normal);
+    normalizePoint(&normal, &normal);
+
+    normalBuffer[O][dim] = n;
+    solid->normals[n] = normal;
+    n++;
+
+    normalBuffer[O][3 + dim] = n;
+    setPoint(&solid->normals[n], -normal.x, -normal.y, -normal.z);
+    n++;
+}
+
+static void setPointFace(Solid *solid, int f, int a, int b, int c)
+{
+    solid->faces[f].vertices[0].point = a;
+    solid->faces[f].vertices[1].point = b;
+    solid->faces[f].vertices[2].point = c;
+}
+
+
+static void setPositionFace(Solid *solid, int f, int a, int b, int c)
+{
+    solid->faces[f].vertices[0].coord = a;
+    solid->faces[f].vertices[1].coord = b;
+    solid->faces[f].vertices[2].coord = c;
+}
+
+static void setNormalFace(Solid *solid, int f, int a, int b, int c)
+{
+    solid->faces[f].vertices[0].normal = a;
+    solid->faces[f].vertices[1].normal = b;
+    solid->faces[f].vertices[2].normal = c;
+}
+
+static void setSquare(Solid *solid, int **normalBuffer, 
+		      int a, int b, int c, int d, int dim)
+{
+    static int f = 0;
+    
+    setPointFace(solid, f, a, b, c);
+    setPositionFace(solid, f, 1, 3, 2);
+    setNormalFace(solid, f, 
+		  normalBuffer[a][dim], 
+		  normalBuffer[b][dim], 
+		  normalBuffer[c][dim]);
+    f++;
+
+    setPointFace(solid, f, a, c, d);
+    setPositionFace(solid, f, 1, 2, 0);
+    setNormalFace(solid, f, 
+		  normalBuffer[a][3 + dim], 
+		  normalBuffer[b][3 + dim], 
+		  normalBuffer[c][3 + dim]);
+    f++;
 }
 
 static void updateInput(float *input, float *min, float *interval, 
@@ -439,29 +183,33 @@ static void updateInput(float *input, float *min, float *interval,
 
 static void mapOutput(float *output, Point *A, int dim)
 {
-    switch (dim) {
-    case 1:
-	A->x = output[0];
-	A->y = 0;
-	A->z = 0;
-	break;
-    case 2:
-	A->x = output[0];
-	A->y = output[1];
-	A->z = 0;
-	break;
-    case 3:
-	A->x = output[0];
-	A->y = output[1];
-	A->z = output[2];
-	break;
-    default:
-	A->x = 0;
-	A->y = 0;
-	A->z = 0;
-	break;
-    }
+    A->x = dim >= 1 ? output[0] : 0;
+    A->y = dim >= 2 ? output[1] : 0;
+    A->z = dim >= 3 ? output[2] : 0;
 }
+/*
+int calculateBottom(int *precision, int nbInput)
+{
+    if (nbInput >= 2)
+	return (precision[0] - 1) * (precision[1] - 1);
+    return 0;
+}
+
+int calculateSide(int *precision, int nbInput)
+{
+    if (nbInput >= 3)
+	return (precision[1] - 1) * (precision[2] - 1);
+    return 0;
+}
+
+int calculateFront(int *precision, int nbInput)
+{
+    if (nbInput >= 3)
+	return (precision[2] - 1) * (precision[0] - 1);
+    return 0;
+}
+*/
+
 
 Solid *loadEquation(const char *eqName, const char *bmpName)
 {
@@ -479,31 +227,23 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
     float *input = malloc(nbInput * sizeof(float));
     float *output = malloc(nbOutput * sizeof(float));
     float *interval = malloc(nbInput * sizeof(float));
-    int minInput = minimum(nbInput, 3);
-    int p, e = 0;
+    int dim = minimum(nbInput, 3);
+    int a, e = 0;
     for (int i = 0; i < nbInput; i++) {
 	input[i] = min[i];
 	interval[i] = (max[i] - min[i]) / (precision[i] - 1);
     } 
 
-    solid->numVertices = getNumVertices(precision, minInput);
-    solid->numSegments = getNumSegments(precision, minInput);
+    solid->numVertices = getNumVertices(precision, dim);
+    solid->numSegments = getNumSegments(precision, dim);
     solid->numCoords = 4;    
+    solid->numNormals = getNumNormals(precision, dim);
+    solid->numFaces = getNumFaces(precision, dim);
 
-    if (nbInput == 2) {
-	solid->numNormals = solid->numVertices;
-	solid->numFaces = 2 * (precision[0] - 1) * (precision[1] - 1);
-
-	if ((solid->texture = loadTexture(bmpName)))
-	    printf("Texture successfully loaded\n");
-	else
-	    printf("Error loading texture\n");
-
-    } else {
-	solid->numNormals = 0;
-	solid->numFaces = 0;
-	solid->texture = NULL;
-    }
+    if ((solid->texture = loadTexture(bmpName)))
+	printf("Texture successfully loaded\n");
+    else
+	printf("Error loading texture\n");
 
     solid->vertices = malloc(solid->numVertices * sizeof(Point));
     solid->normals = malloc(solid->numNormals * sizeof(Point));
@@ -511,37 +251,164 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
     solid->faces = malloc(solid->numFaces * sizeof(Face));
     solid->coords = malloc(solid->numCoords * sizeof(Position));
 
+    Grid *gridBuffer = malloc(solid->numVertices * sizeof(Grid));
+    int **normalBuffer = malloc(solid->numVertices * sizeof(int *));
+    for (int i = 0; i < solid->numVertices; i++)
+	normalBuffer[i] = malloc(6 * sizeof(int));
+
     setPosition(&solid->coords[0], 0., 0.);
     setPosition(&solid->coords[1], 0., 1.);
     setPosition(&solid->coords[2], 1., 0.);
     setPosition(&solid->coords[3], 1., 1.);
 
-    for (p = 0; p < solid->numVertices; p++) {
-	int grid[3];
-
-	getGridFromId(p, solid->numVertices, precision, grid, minInput);
-	updateInput(input, min, interval, grid, minInput);
+    for (a = 0; a < solid->numVertices; a++) {
+	getGridFromId(a, solid->numVertices, precision, 
+		      gridBuffer[a].grid, dim);
+	updateInput(input, min, interval, gridBuffer[a].grid, dim);
 	getValueFromEquation(input, output);
-	mapOutput(output, &solid->vertices[p], nbOutput);
-	
+	mapOutput(output, &solid->vertices[a], nbOutput);
+    }
+    
+    // Calcul des normales
+    for (a = 0; a < solid->numVertices; a++) {
+        int *A = gridBuffer[a].grid;
+	if (isOnBorderGrid(A, precision, dim)) {
+	    for (int i = 0; i < dim - 1; i++) {
+		for (int j = i + 1; j < dim; j++) {
+		    int B[3];
+		    int C[3];
+		    int D[3];
+		    int opposed[3];
+
+		    addGrid(A, 
+			    i == 0 || j == 0,
+			    i == 1 || j == 1, 
+			    i == 2 || j == 2, dim, C);
+		    addGrid(A, 
+			    -(i == 0 || j == 0),
+			    -(i == 1 || j == 1), 
+			    -(i == 2 || j == 2), dim, opposed);
+		    if (isInRangeGrid(C, precision, dim)) {
+			addGrid(A, 
+				i != 1 && j != 1, 
+				i != 2 && j != 2, 
+				i != 0 && j != 0, dim, B);
+			addGrid(A, 
+				i != 2 && j != 2, 
+				i != 0 && j != 0, 
+				i != 1 && j != 1, dim, B);
+		    } else if (isInRangeGrid(opposed, precision, dim)) {
+			addGrid(A, 
+				-(i != 1 && j != 1), 
+				-(i != 2 && j != 2), 
+				-(i != 0 && j != 0), dim, B);
+			addGrid(A, 
+				-(i != 2 && j != 2), 
+				-(i != 0 && j != 0), 
+				-(i != 1 && j != 1), dim, B);
+		    } else {
+			printf("break: a: %d, i: %d, j: %d, C: (%d, %d, %d), opposed: (%d, %d, %d)\n", a, i, j, C[0], C[1], C[2], opposed[0], opposed[1], opposed[2]);
+			break;
+		    }
+		    int b = getIdFromGrid(precision, B, dim);
+		    int d = getIdFromGrid(precision, D, dim);
+		    setNormal(solid, normalBuffer, a, b, d, i);
+		    setNormal(solid, normalBuffer, a, d, b, i);
+		/*printf("%d: (%d, %d, %d)\n", 
+		       a,
+		       gridBuffer[a].grid[0], 
+		       gridBuffer[a].grid[1],
+		       gridBuffer[a].grid[2]);
+		*/
+		}
+	    }
+	}
+    }
+    printf("numNormals: %d\n", solid->numNormals);
+    for (int i = 0; i < solid->numVertices; i++) {
+	for (int j = 0; j < 6; j++) {
+	    printf("i: %d / numVertices, j: %d / 6, normal: %d\n",
+		   i, j,
+		   normalBuffer[i][j]);
+	}
+    }
+      
+    for (a = 0; a < solid->numVertices; a++) {
 	int delta = 1;
-	for (int i = 0; i < minInput; i++) {
-	    if (grid[i] < precision[i] - 1) {
-	        solid->segments[e].A = p; 
-		solid->segments[e].B = p + delta; 
+	for (int i = 0; i < dim; i++) {
+	    if (gridBuffer[a].grid[i] < precision[i] - 1) {
+	        solid->segments[e].A = a; 
+		solid->segments[e].B = a + delta; 
 		e++;
 	    }
+	    /*
+	    //Si p est sur la bordure pour la dimension i
+	    if (gridBuffer[p].grid[i] == 0 || gridBuffer[p].grid[i] == (precision[i] - 1)) {
+		if (gridBuffer[p].grid[i] == 0 || gridBuffer[p].grid[i] == (precision[i] - 1)) {
+	    }
+	    */
 	    delta *= precision[i];
 	}
 	
-	if (nbInput == 2) {
-	    
 
+/*
+	addGrid(&gridBuffer[p], 0, 0, 1, &A);
+	addGrid(&gridBuffer[p], 0, 1, 0, &C);
+*/
+	int *A = gridBuffer[a].grid;
+	for (int i = 0; i < 3; i++) {
+	    int C[3];
+	    addGrid(A, i != 0, i != 1, i != 2, dim, C);
+	    if (isInRangeGrid(C, precision, dim) && 
+		(A[i] == 0 || A[i] == precision[i] - 1)) {
+		int B[3];
+		int D[3];
+		addGrid(A, i == 1, i == 2, i == 0, dim, B);
+		addGrid(A, i == 2, i == 0, i == 1, dim, D);
+		int b = getIdFromGrid(precision, B, dim);
+		int c = getIdFromGrid(precision, C, dim);
+		int d = getIdFromGrid(precision, D, dim);
+		setSquare(solid, normalBuffer, a, b, c, d, i);		    
+	    }
 	}
-	
     }
 
-    /*
+/*
+	addGrid(&A, 0, 1, 1, &C);
+	if (isInRangeGrid(&C)) {
+	    if (A.grid[0] == 0)
+		setFace(solid, p, getIdFromGrid(&C));
+	    if (A.grid[0] == precision[0] - 1)
+		setFace(solid, getIdFromGrid(&C), p);
+	}
+	addGrid(&A, 1, 0, 1, &C);
+	if (isInRangeGrid(&C)) {
+	    if (A.grid[1] == 0)
+		setFace(solid, p, getIdFromGrid(&C));
+	    if (A.grid[1] == precision[1] - 1)
+		setFace(solid, getIdFromGrid(&C), p);
+	}
+	addGrid(&A, 1, 1, 0, &C);
+	if (isInRangeGrid(&C)) {
+	    if (A.grid[2] == 0)
+		setFace(solid, p, getIdFromGrid(&C));
+	    if (A.grid[2] == precision[2] - 1)
+		setFace(solid, getIdFromGrid(&C), p);
+       }
+
+    int bottom = calculateBottom(precision, nbInput);
+    for (p = 0; p < bottom; p++) {
+	setFace(solid, f, p, p + 1, p + precision[0],
+	solid->faces[f].vertices[0].point = p;
+	solid->faces[f].vertices[1].point = p + 1;
+	solid->faces[f].vertices[2].point = p + precisionS;
+	solid->faces[f].vertices[0].normal = p;
+	solid->faces[f].vertices[1].normal = p + 1;
+	solid->faces[f].vertices[2].normal = p + precisionS;
+	solid->faces[f].vertices[0].coord = 1;
+	solid->faces[f].vertices[1].coord = 3;
+	solid->faces[f].vertices[2].coord = 0;
+ 
     for (p = 0; p < solid->numVertices; p++) {
 	Point *A;
 	Point *B;
@@ -632,7 +499,11 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
     free(interval);
     free(input);
     free(output);
+    free(gridBuffer);
     freeEquation();
+    for (int i = 0; i < solid->numVertices; i++)
+	free(normalBuffer[i]);
+    free(normalBuffer);
     printf("Equation successfully loaded\n");
     return solid;
 }

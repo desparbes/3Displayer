@@ -71,6 +71,7 @@ void scalePoint(Point *A, const Point *O, float scale)
 	     O->y + (A->y - O->y) * scale,
 	     O->z + (A->z - O->z) * scale);
 }
+
 void rotPointXAxis(Point *A, const Point *O, float phi)
 {
     Point OA;

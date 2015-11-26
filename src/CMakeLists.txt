@@ -21,6 +21,8 @@ set(
   object.c
   texture.c
   build.c
+  parametric.c
+  buffer.c
   )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})

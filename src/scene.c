@@ -15,6 +15,7 @@
 #include "multimedia.h"
 #include "array.h"
 #include "light.h"
+#include "buffer.h"
 
 #define MAXLENGTH 128
 #define NB_KEYWORDS 6
@@ -49,30 +50,15 @@ static void remove_space(char *buf)
 
 static void addSolidToScene(Solid *solid)
 {
-    if (!solid)
-	return;
+    addElementToBuffer(solid, scene.solidBuffer,
+		       &scene.solidSize, &scene.nbSolid);
     calculateOriginSolid(solid);
-    if(scene.nbSolid >= scene.solidSize){
-	scene.solidSize *= 2;
-	scene.solidBuffer = realloc(scene.solidBuffer, 
-				    scene.solidSize * 
-				    sizeof(Solid *));
-    }
-    scene.solidBuffer[scene.nbSolid++] = solid;   
 }
 
 static void addLightToScene(Light *light)
 {
-    if (!light)
-	return;
-
-    if(scene.nbLight >= scene.lightSize){
-	scene.lightSize *= 2;
-	scene.lightBuffer = realloc(scene.lightBuffer, 
-				    scene.lightSize * 
-				    sizeof(Light *));
-    }
-    scene.lightBuffer[scene.nbLight++] = light;   
+    addElementToBuffer(light, scene.lightBuffer, 
+		       &scene.lightSize, &scene.nbLight);
 }
 
 static void freeSolidBuffer()
