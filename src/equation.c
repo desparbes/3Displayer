@@ -6,6 +6,7 @@
 #include "texture.h"
 #include "point.h"
 #include "parametric.h"
+#include "hypergrid.h"
 
 typedef struct Grid {
     int grid[3];
@@ -14,81 +15,6 @@ typedef struct Grid {
 static int minimum(int a, int b)
 {
     return a < b ? a : b;
-}
-
-static int powi(int n, int dim)
-{
-    if (dim < 0)
-	return 0;
-
-    int r = 1;
-    for (int i = 0; i < dim; i++)
-	r *= n;
-    return r;
-}
-
-static int getNumVertices(int *precision, int size)
-{
-    int r = 1;
-    for (int i = 0; i < size; i++) {
-	r *= precision[i];
-    }
-    return r;
-}
-
-static int getNumNormals(int *precision, int size)
-{
-    int r = 0;
-    for (int i = 0; i < size - 1; i++) {
-	for (int j = i + 1; j < size; j++) {
-	    r += precision[i] * precision[j];
-	}
-    }
-    return 2 * powi(2, size - 2) * r;
-}
-
-static int getNumSegments(int *precision, int size)
-{
-    int s = 0;
-    for (int i = 0; i < size; i++) {
-	int p = (precision[i] - 1);
-	for (int j = 1; j < size; j++)
-	    p *= precision[(i + j) % size];
-	s += p;
-    }
-    return s;
-}
-
-static int getNumFaces(int *precision, int size)
-{
-    int r = 0;
-    for (int i = 0; i < size - 1; i++) {
-	for (int j = i + 1; j < size; j++) {
-	    r += (precision[i] - 1) * (precision[j] - 1);
-	}
-    }
-    return 4 * powi(2, size - 2) * r;
-}
-
-static void getGridFromId(int id, int size, int *precision, int *grid, int dim)
-{
-    for (int i = dim - 1; i >= 0; i--) {
-	size /= precision[i];
-	grid[i] = id / size;
-	id -= grid[i] * size;
-    }
-}
-
-
-static int getIdFromGrid(int *precision, int *grid, int dim)
-{
-    int scale = 1;
-    int r = 0;
-    for (int i = 0; i < dim; i++) {
-	r += scale * grid[i];
-	scale *= precision[i];
-    }
-    return r;
 }
 
 static void setGrid(int A[3], int x, int y, int z, int result[3])
@@ -229,8 +155,8 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
     solid->numVertices = getNumVertices(precision, dim);
     solid->numSegments = getNumSegments(precision, dim);
     solid->numCoords = 4;    
-    solid->numNormals = getNumNormals(precision, dim);
-    solid->numFaces = getNumFaces(precision, dim);
+    solid->numNormals = 2 * getNumNormals(precision, dim);
+    solid->numFaces = 4 * getNumFaces(precision, dim);
 
     if ((solid->texture = loadTexture(bmpName)))
 	printf("Texture successfully loaded\n");
