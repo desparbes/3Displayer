@@ -153,8 +153,10 @@ void initScene(void)
 
 void removeSolidFromScene()
 {
-    if(scene.nbSolid > 0)
+    if(scene.nbSolid > 0) {
+	printf("Solid successfully removed\n");
 	freeSolid(scene.solidBuffer[--scene.nbSolid]);
+    }
 }
 
 void askSolidForScene(void)
