@@ -6,6 +6,7 @@
 #include "texture.h"
 #include "point.h"
 #include "parametric.h"
+#include "hypergrid.h"
 
 typedef struct Grid {
     int grid[3];
@@ -14,81 +15,6 @@ typedef struct Grid {
 static int minimum(int a, int b)
 {
     return a < b ? a : b;
-}
-
-static int powi(int n, int dim)
-{
-    if (dim < 0)
-	return 0;
-
-    int r = 1;
-    for (int i = 0; i < dim; i++)
-	r *= n;
-    return r;
-}
-
-static int getNumVertices(int *precision, int size)
-{
-    int r = 1;
-    for (int i = 0; i < size; i++) {
-	r *= precision[i];
-    }
-    return r;
-}
-
-static int getNumNormals(int *precision, int size)
-{
-    int r = 0;
-    for (int i = 0; i < size - 1; i++) {
-	for (int j = i + 1; j < size; j++) {
-	    r += precision[i] * precision[j];
-	}
-    }
-    return 2 * powi(2, size - 2) * r;
-}
-
-static int getNumSegments(int *precision, int size)
-{
-    int s = 0;
-    for (int i = 0; i < size; i++) {
-	int p = (precision[i] - 1);
-	for (int j = 1; j < size; j++)
-	    p *= precision[(i + j) % size];
-	s += p;
-    }
-    return s;
-}
-
-static int getNumFaces(int *precision, int size)
-{
-    int r = 0;
-    for (int i = 0; i < size - 1; i++) {
-	for (int j = i + 1; j < size; j++) {
-	    r += (precision[i] - 1) * (precision[j] - 1);
-	}
-    }
-    return 4 * powi(2, size - 2) * r;
-}
-
-static void getGridFromId(int id, int size, int *precision, int *grid, int dim)
-{
-    for (int i = dim - 1; i >= 0; i--) {
-	size /= precision[i];
-	grid[i] = id / size;
-	id -= grid[i] * size;
-    }
-}
-
-
-static int getIdFromGrid(int *precision, int *grid, int dim)
-{
-    int scale = 1;
-    int r = 0;
-    for (int i = 0; i < dim; i++) {
-	r += scale * grid[i];
-	scale *= precision[i];
-    }
-    return r;
 }
 
 static void setGrid(int A[3], int x, int y, int z, int result[3])
@@ -108,21 +34,17 @@ static int isInRange(int M[3], int lengths[3])
 }
 
 void setNormal(Solid *solid, int O, int A, int B, int **normalBuffer, 
-	       int dim, int *n)
+	       int dim, int *n, int side)
 {
     Point u, v, normal;
 
-    diffPoint(&solid->vertices[A], &solid->vertices[O], &u);
-    diffPoint(&solid->vertices[B], &solid->vertices[O], &v);
+    diffPoint(&solid->vertices[side ? B : A], &solid->vertices[O], &u);
+    diffPoint(&solid->vertices[side ? A : B], &solid->vertices[O], &v);
     pointProduct(&u, &v, &normal);
     normalizePoint(&normal, &normal);
 
-    normalBuffer[O][dim + 3] = *n;
-    solid->normals[*n] = normal;
-    (*n)++;
-
     normalBuffer[O][dim] = *n;
-    setPoint(&solid->normals[*n], -normal.x, -normal.y, -normal.z);
+    solid->normals[*n] = normal;
     (*n)++;
 }
 
@@ -132,7 +54,6 @@ static void setPointFace(Solid *solid, int f, int a, int b, int c)
     solid->faces[f].vertices[1].point = b;
     solid->faces[f].vertices[2].point = c;
 }
-
 
 static void setPositionFace(Solid *solid, int f, int a, int b, int c)
 {
@@ -148,41 +69,32 @@ static void setNormalFace(Solid *solid, int f, int a, int b, int c)
     solid->faces[f].vertices[2].normal = c;
 }
 
-static void setSquare(Solid *solid, int **normalBuffer, 
-		      int a, int b, int c, int d, int dim, int *f)
+static void setTriangle(Solid *solid, int **normalBuffer, int dim, int f,
+			int a, int b, int c, int A, int B, int C)
 {
-    setPointFace(solid, (*f), a, b, c);
-    setPositionFace(solid, (*f), 1, 3, 2);
-    setNormalFace(solid, (*f), 
+    setPointFace(solid, f, a, b, c);
+    setPositionFace(solid, f, A, B, C);
+    setNormalFace(solid, f, 
 		  normalBuffer[a][dim], 
 		  normalBuffer[b][dim], 
 		  normalBuffer[c][dim]);
-    (*f)++;
-
-    setPointFace(solid, (*f), a, c, b);
-    setPositionFace(solid, (*f), 1, 2, 3);
-    setNormalFace(solid, (*f), 
-		  normalBuffer[a][3 + dim], 
-		  normalBuffer[c][3 + dim], 
-		  normalBuffer[b][3 + dim]);
-    (*f)++;
-
-    setPointFace(solid, (*f), a, c, d);
-    setPositionFace(solid, (*f), 1, 2, 0);
-    setNormalFace(solid, (*f), 
-		  normalBuffer[a][dim], 
-		  normalBuffer[c][dim], 
-		  normalBuffer[d][dim]);
-    (*f)++;
-
-    setPointFace(solid, (*f), a, d, c);
-    setPositionFace(solid, (*f), 1, 0, 2);
-    setNormalFace(solid, (*f), 
-		  normalBuffer[a][3 + dim], 
-		  normalBuffer[d][3 + dim], 
-		  normalBuffer[c][3 + dim]);
-    (*f)++;
 }
+
+static void setSquare(Solid *solid, int **normalBuffer, 
+		      int a, int b, int c, int d, int dim, int *f, int side)
+{
+    if (side) {
+	setTriangle(solid, normalBuffer, dim, *f, a, b, c, 1, 3, 2);
+	(*f)++;
+	setTriangle(solid, normalBuffer, dim, *f, a, c, d, 1, 2, 0);
+	(*f)++;
+    } else {
+	setTriangle(solid, normalBuffer, dim, *f, a, c, b, 1, 2, 3);
+	(*f)++;
+	setTriangle(solid, normalBuffer, dim, *f, a, d, c, 1, 0, 2);
+	(*f)++;
+    }
+ }      
 
 static void updateInput(float *input, float *min, float *interval, 
 			int *grid, int dim)
@@ -230,7 +142,7 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
     solid->numSegments = getNumSegments(precision, dim);
     solid->numCoords = 4;    
     solid->numNormals = getNumNormals(precision, dim);
-    solid->numFaces = getNumFaces(precision, dim);
+    solid->numFaces = 2 * getNumFaces(precision, dim);
 
     if ((solid->texture = loadTexture(bmpName)))
 	printf("Texture successfully loaded\n");
@@ -246,7 +158,7 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
     Grid *gridBuffer = malloc(solid->numVertices * sizeof(Grid));
     int **normalBuffer = malloc(solid->numVertices * sizeof(int *));
     for (int i = 0; i < solid->numVertices; i++)
-	normalBuffer[i] = malloc(6 * sizeof(int));
+	normalBuffer[i] = malloc(3 * sizeof(int));
 
     setPosition(&solid->coords[0], 0., 0.);
     setPosition(&solid->coords[1], 0., 1.);
@@ -264,12 +176,13 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
     for (int i = 0; i < solid->numVertices; i++) {
 	int *O = gridBuffer[i].grid;
 	for (int j = 0; j < 3; j++) {
-	    if (O[j] == 0 || O[j] == lengths[j] - 1) {
+	    int side = O[j] == 0;
+	    if (side || O[j] == lengths[j] - 1) {
 		int A[3];
 		int B[3];
 		int C[3];
 		int D[3];
-
+		
 		setGrid(O, j == 2, j == 0, j == 1, A);
 		setGrid(O, j == 1, j == 2, j == 0, B);		
 		int a = isInRange(A, lengths);
@@ -278,7 +191,8 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
 		if (a && b) {
 		    setNormal(solid, i, 
 			      getIdFromGrid(lengths, A, 3), 
-			      getIdFromGrid(lengths, B, 3), normalBuffer, j, &n);
+			      getIdFromGrid(lengths, B, 3), 
+			      normalBuffer, j, &n, side);
 		    continue;
 		}
 		setGrid(O, -(j == 2), -(j == 0), -(j == 1), C);
@@ -287,7 +201,8 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
 		if (b && c) {
 		    setNormal(solid, i, 
 			      getIdFromGrid(lengths, B, 3),
-			      getIdFromGrid(lengths, C, 3), normalBuffer, j, &n);
+			      getIdFromGrid(lengths, C, 3), 
+			      normalBuffer, j, &n, side);
 		    continue;
 		}   
 		setGrid(O, -(j == 1), -(j == 2), -(j == 0), D);
@@ -296,14 +211,16 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
 		if (c && d) {
 		    setNormal(solid, i, 
 			      getIdFromGrid(lengths, C, 3),
-			      getIdFromGrid(lengths, D, 3), normalBuffer, j, &n);
+			      getIdFromGrid(lengths, D, 3), 
+			      normalBuffer, j, &n, side);
 		    continue;
 		}
 
 		if (d && a) {
 		    setNormal(solid, i,
 			      getIdFromGrid(lengths, D, 3),
-			      getIdFromGrid(lengths, A, 3), normalBuffer, j, &n);
+			      getIdFromGrid(lengths, A, 3), 
+			      normalBuffer, j, &n, side);
 		    continue;
 		}
 	    }
@@ -323,8 +240,9 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
 	for (int i = 0; i < 3; i++) {
 	    int C[3];
 	    setGrid(A, i != 0, i != 1, i != 2, C);
+	    int side = A[i] == 0;
 	    if (isInRange(C, lengths) && 
-		(A[i] == 0 || A[i] == lengths[i] - 1)) {
+		(side || A[i] == lengths[i] - 1)) {
 		int B[3];
 		int D[3];
 		setGrid(A, i == 1, i == 2, i == 0, B);
@@ -332,7 +250,7 @@ Solid *loadEquation(const char *eqName, const char *bmpName)
 		int b = getIdFromGrid(precision, B, dim);
 		int c = getIdFromGrid(precision, C, dim);
 		int d = getIdFromGrid(precision, D, dim);
-		setSquare(solid, normalBuffer, a, b, c, d, i, &f);    
+		setSquare(solid, normalBuffer, a, b, c, d, i, &f, side);    
 	    }
 	}
     }
