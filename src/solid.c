@@ -21,9 +21,11 @@ static void getExtension(const char *file, char *ext)
     if (!file)
 	return;
     int i;
+    int j;
     for (i = 0; file[i] && file[i] != '.'; i++);
-    for (int j = 0; file[i] && j < MAXLENGTH; i++, j++) 
+    for (j = 0; file[i] && j < MAXLENGTH - 1; i++, j++) 
 	ext[j] = file[i];
+    ext[j] = '\0';
 }
 
 Solid *loadSolid(const char *fileName, const char *bmpName)

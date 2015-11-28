@@ -52,7 +52,8 @@ static void addSolidToScene(Solid *solid)
 {
     addElementToBuffer(solid, scene.solidBuffer,
 		       &scene.solidSize, &scene.nbSolid);
-    calculateOriginSolid(solid);
+    if (solid)
+	calculateOriginSolid(solid);
 }
 
 static void addLightToScene(Light *light)

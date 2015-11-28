@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 
 #include "ncurses.h"
 #include "coord.h"
@@ -9,11 +8,11 @@
 #define RANGENC 1000
 
 static struct {
+    int range1;
+    int range2;
+    short *colorBuffer;
     Color untextured;
-    int background;
-    short nbColor;
-    short range1;
-    short range2;
+    int sup;
 } display;
 
 static inline int min(int a, int b)
@@ -35,79 +34,158 @@ static int getRange(int nbColor)
     int b = nbColor;
     while (b - a > 1) {
 	int c = (a + b) / 2;
-	if (powi(c, 3) > nbColor)
+	if (powi(c, 3) >= nbColor)
 	    b = c;
 	else
 	    a = c;
     }
-    return a;
+    return b;
 }
 
 // 0 <= COLOR <= 1000 et 0 <= r, g et b < range1
-static void getCOLORFromRGB(int *r, int *g, int *b)
+static void getCOLORFromRGB(int R, int G, int B, 
+			    short *r, short *g, short *b)
 {
-    *r = *r * RANGENC / (display.range1 - 1);
-    *g = *g * RANGENC / (display.range1 - 1);
-    *b = *b * RANGENC / (display.range1 - 1);
+    *r = R * RANGENC / (display.range1 - 1);
+    *g = G * RANGENC / (display.range1 - 1);
+    *b = B * RANGENC / (display.range1 - 1);
 }
 
 // 0 <= id < nbColor et 0 <= r, g et b < range1
-static void getRGBFromId(int id, int *r, int *g, int *b)
+static void getRGBFromId(int id, int *R, int *G, int *B)
 {
-    *r = id / display.range2;
-    id -= *r * display.range2;
-    *g = id / display.range1;
-    id -= *g * display.range1;
-    *b = id;
+    *R = id / display.range2;
+    id -= *R * display.range2;
+    *G = id / display.range1;
+    id -= *G * display.range1;
+    *B = id;
 }
 
 // 0 <= id < nbColor et 0 <= r, g et b < range1
 static int getIdFromColor(const Color *c)
 {
-    int r, g, b, id;
-    r = c->r * (display.range1 - 1) / 255;
-    g = c->g * (display.range1 - 1) / 255;
-    b = c->b * (display.range1 - 1) / 255;
-    id = r * display.range2 + g * display.range1 + b;
-    if (id == 0)
-	return display.background;
-    else if (id == display.background)
-	return 0;
-    else
-	return id;
+    int R, G, B;
+    R = c->r * (display.range1 - 1) / 255;
+    G = c->g * (display.range1 - 1) / 255;
+    B = c->b * (display.range1 - 1) / 255;
+    return R * display.range2 + G * display.range1 + B;
 }
 
-static void getCOLORFromId(int id, int *r, int *g, int *b)
+static void getCOLORFromId(int id, short *r, short *g, short *b)
 {
-    getRGBFromId(id, r, g, b);
-    getCOLORFromRGB(r, g, b);
+    int R, G, B;
+    getRGBFromId(id, &R, &G, &B);
+    getCOLORFromRGB(R, G, B, r, g, b);
 }
 
-static void setIdWithCOLOR(int id, int r, int g, int b)
+static void getCOLORFromColor(const Color *c, short *r, short *g, short *b)
 {
-    init_color(id, r, g, b);
-    init_pair(id, id, id);
+    *r = c->r * RANGENC / 255;
+    *g = c->g * RANGENC / 255;
+    *b = c->b * RANGENC / 255;
+}
+/*
+static short distanceCOLOR(short rA, short gA, short bA, 
+			   short rB, short gB, short bB)
+{
+    return abs(rB - rA) + abs(gB - gA) + abs(bB - bA);
+}
+
+static short getPositionOfNearestCOLOR(short r, short g, short b)
+{
+    short minId = -1;
+    short minDist = 3000;
+
+    //endwin();
+    //printf("COLORS: %d\n", COLORS);
+
+    for (short i = 0; i < COLORS; i++) {
+        short ri, gi, bi;
+	color_content(i, &ri, &gi, &bi); //BUG pour xterm-256color
+        short tmp = distanceCOLOR(r, g, b, ri, gi, bi);
+	//printf("(%d %d %d) et (%d, %d, %d): %d\n", r, g, b, ri, gi, bi, tmp);
+        if (tmp < minDist) {
+            minDist = tmp;
+            minId = i;
+        }
+    }
+    //printf("\n");
+    return minId;
+}
+*/
+static short getPositionFromColor(const Color *color)
+{
+    return display.colorBuffer[getIdFromColor(color)];	
+}
+
+static void setPositionWithCOLOR(short p, short r, short g, short b)
+{
+    init_color(p, r, g, b);
+    init_pair(p, p, p);
+}
+
+// COLORS doit etre non nul
+static void initColorBuffer()
+{
+/*
+    endwin();
+*/    
+    int sup = display.range2 * display.range1;
+    display.colorBuffer = malloc(sup * sizeof(short));
+    for (int i = 1, j = 1, I = COLORS, J = sup; i < sup; i++, I += COLORS) {
+	if (J > I - COLORS && J <= I) {
+/*
+	    short r, g, b;
+	    getCOLORFromId(i, &r, &g, &b);
+	    int p = getPositionOfNearestCOLOR(r, g, b);
+*/
+	    short r, g, b;
+	    getCOLORFromId(i, &r, &g, &b);
+	    setPositionWithCOLOR(j, r, g, b);
+	    display.colorBuffer[i] = j;
+	    J += sup;
+	    j++;
+	} else {
+	    display.colorBuffer[i] = display.colorBuffer[i - 1];
+	}
+    }
+    display.sup = sup;
+
+    endwin();
+    for (int i = 0; i < sup; i++) {
+	short r, g, b;
+	color_content(display.colorBuffer[i], &r, &g, &b);
+	mvprintw(i, 0, "id: %d, position: %d, COLOR: (%d, %d, %d)\n", i, display.colorBuffer[i], r, g, b);
+    }
+    refresh();
+    getch();
 }
 
 static int initColor(const Color *background, const Color *untextured)
 {
-    if (has_colors() == FALSE || can_change_color() == FALSE)
-	return 0;
-    int r, g, b;
+    //if (can_change_color() == FALSE)
+//	return 0;
+    short r, g, b;
     start_color();
-    display.untextured = *untextured;
-    display.range1 = getRange(min(COLOR_PAIRS, COLORS));
+    display.range1 = getRange(COLORS);
     display.range2 = display.range1 * display.range1;
-    display.nbColor = display.range2 * display.range1;
+    display.untextured = *untextured;
+    initColorBuffer();
+    int backId = getIdFromColor(background);
+/*
+    endwin();
+    printf("backId: %d\n", backId);
+*/
+    getCOLORFromColor(background, &r, &g, &b);
+    setPositionWithCOLOR(0, r, g, b);
+//  bkgd(COLOR_PAIR(display.colorBuffer[backId]));
+    setPositionWithCOLOR(display.colorBuffer[backId], 0, 0, 0);
 
-    for (int i = 1; i < display.nbColor; i++) {
-	getCOLORFromId(i, &r, &g, &b);
-	setIdWithCOLOR(i, r, g, b);
-    }
-    display.background = getIdFromColor(background);
-    getCOLORFromId(display.background, &r, &g, &b);
-    setIdWithCOLOR(display.background, 0, 0, 0);
-    setIdWithCOLOR(0, r, g, b);
+    display.colorBuffer[0] = display.colorBuffer[backId];
+    display.colorBuffer[backId] = 0;
+    
+    
+    //swap noir et la couleur du background dans le colorBuffer
     return 1;
 }
 
@@ -122,7 +200,7 @@ void initDisplay_(int screenWidth, int screenHeight, const Color *background,
     curs_set(0);
     if(!initColor(background, untextured)) {
 	endwin();
-	printf("Terminal does not support colors\n");
+	printf("Terminal does not support colors. Try <export TERM=xterm-256color>\n");
 	exit(1);
     }	
 }
@@ -145,10 +223,18 @@ void setPixelDisplay_(const Coord *A, const Color *color)
     int maxH = 0;
     getmaxyx(stdscr, maxH, maxW);
     if (A->w >= 0 && A->w < maxW / 2 && A->h >= 0 && A->h < maxH) {
-	int c = getIdFromColor(color);
+	//int id = getIdFromColor(color);
+	short c = getPositionFromColor(color);//id * COLORS / display.sup;
 	attron(COLOR_PAIR(c));
 	mvprintw(A->h, 2 * A->w, "  ");
 	attroff(COLOR_PAIR(c));
+/*
+	endwin();
+	short r, g, b;
+	color_content(c, &r, &g, &b);
+	printf("id: %d, position: %d, COLOR: (%d %d %d), Color: (%d %d %d)\n", getIdFromColor(color), c, r, g, b, color->r, color->g, color->b);
+*/
+
     }
 }
 
@@ -174,6 +260,7 @@ int getHeightDisplay_()
 
 void freeDisplay_()
 {
+    free(display.colorBuffer);
     endwin();
 }
 
