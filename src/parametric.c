@@ -212,6 +212,10 @@ static float computeFunction(int function, float x)
 	return sin(x);
 	break;
     case SQRT:
+	if (x == 0.) {
+	    fprintf(stderr, "Error parsing equation: sqrt of negative\n");
+	    return 0.;
+	}
 	return sqrt(x);
 	break;
     case SQR:
