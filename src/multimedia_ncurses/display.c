@@ -163,7 +163,7 @@ void initDisplay_(int screenWidth, int screenHeight, const Color *background,
     curs_set(0);
     if(!initColor(background, untextured)) {
 	endwin();
-	printf("Terminal does not support colors\n");
+	printf("Unable to change colors. Try <export TERM=xterm-256color\n");
 	exit(1);
     }	
 }
