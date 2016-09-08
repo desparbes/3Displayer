@@ -46,15 +46,13 @@ void initWindow(Config *config)
 bool handleEventWindow(void)
 {
     Event event;
-    bool stop = false;
     while (!window->pollEvent(window, &event))
     { /* WAIT */ }
-    
+
     do {
         switch (event.type) {
         case QUIT:
-            stop = false;
-            break;
+            return true;
         case TRANSLATE:
             translateCameraScene(event.direction);
             break;
@@ -74,7 +72,7 @@ bool handleEventWindow(void)
             removeSolidFromScene();
             break;
         };
-    } while (!stop && window->pollEvent(window, &event));
+    } while (window->pollEvent(window, &event));
     return false;
 }
 

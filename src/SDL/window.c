@@ -16,8 +16,8 @@ typedef struct _3Displayer_SDL_Window_ _3Displayer_SDL_Window;
 struct _3Displayer_SDL_Window_ {
     Window parent;
     SDL_Window *window;
-    SDL_Surface *surface;
-    Uint32 background;
+    SDL_Renderer *renderer;
+    Color bg; // background colour
 };
 
 static Window _win_ops;
@@ -25,7 +25,7 @@ static Window _win_ops;
 static void
 sdl_window_resize(Window *w, int width, int height)
 {
-    SDL_SetWindowSize(SDL_WINDOW(w)->window, width, height);
+    //SDL_SetWindowSize(SDL_WINDOW(w)->window, width, height);
 }
 
 Window* CreateWindow(int width, int height, Color background)
@@ -38,41 +38,49 @@ Window* CreateWindow(int width, int height, Color background)
     w = malloc(sizeof*w);
     w->window = SDL_CreateWindow(
         "3Displayer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_INPUT_FOCUS);
+        width, height, SDL_WINDOW_RESIZABLE);
     if (w->window == NULL) {
         fprintf(stderr, _("Could not create window: %s"), SDL_GetError());
         free(w);
         return NULL;
     }
-    w->surface = SDL_GetWindowSurface(w->window);
-    w->background = SDL_MapRGB(
-        w->surface->format, background.r, background.g, background.b);
+    w->renderer = SDL_CreateRenderer(w->window, -1, SDL_RENDERER_SOFTWARE);
+    w->bg = background;
     w->parent = _win_ops;
     return (Window*) w;
 }
 
 static void
-sdl_window_reset(Window *w)
+sdl_window_reset(Window *win_if)
 {
-    SDL_FillRect(SDL_WINDOW(w)->surface, NULL, SDL_WINDOW(w)->background);
+    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    SDL_SetRenderDrawColor(win->renderer, win->bg.r, win->bg.g, win->bg.b, 255);
+    SDL_RenderClear(win->renderer);
 }
 
 static void
-sdl_window_update(Window *w)
+sdl_window_update(Window *win_if)
 {
-    SDL_UpdateWindowSurface(SDL_WINDOW(w)->window);
+    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    SDL_RenderPresent(win->renderer);
 }
 
 static int
-sdl_window_getWidth(Window *w)
+sdl_window_getWidth(Window *win_if)
 {
-    return SDL_WINDOW(w)->surface->w;
+    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    int width, height;
+    SDL_GetWindowSize(win->window, &width, &height);
+    return width;
 }
 
 static int
-sdl_window_getHeight(Window *w)
+sdl_window_getHeight(Window *win_if)
 {
-    return SDL_WINDOW(w)->surface->h;
+    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    int width, height;
+    SDL_GetWindowSize(win->window, &width, &height);
+    return height;
 }
 
 static void
@@ -82,9 +90,30 @@ sdl_window_free(Window *w)
 }
 
 static void
-sdl_window_set_pixel(Coord pos, Color col)
+sdl_window_set_pixel(Window *win_if, Coord pos, Color c)
 {
+    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    SDL_SetRenderDrawColor(win->renderer, c.r, c.g, c.b, 255);
+    if (SDL_RenderDrawPoint(win->renderer, pos.w, pos.h) < 0)
+        fprintf(stderr, "render draw points failed: %s\n", SDL_GetError());
+}
+
+static Color
+sdl_window_get_pixel(Window *win_if, Coord p)
+{
+    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    Color c;
+    SDL_Rect rect;
+    uint32_t pixel;
     
+    rect.x = p.w; rect.y = p.w;
+    rect.w = 1; rect.h = 1;
+
+    SDL_RenderReadPixels(win->renderer, &rect, SDL_PIXELFORMAT_RGBA8888, &pixel, 0);
+    c.r = (pixel >> 24) & 0xFF;
+    c.g = (pixel >> 16) & 0xFF;
+    c.b = (pixel >> 8) & 0xFF;
+    return c;
 }
 
 static Window _win_ops = {
@@ -96,5 +125,5 @@ static Window _win_ops = {
     .free = sdl_window_free,
     .pollEvent = PollEvent,
     .setPixel = sdl_window_set_pixel,
-    .setPixel = sdl_window_get_pixel,
+    .getPixel = sdl_window_get_pixel,
 };

@@ -16,11 +16,10 @@ int main(int argc, char *argv[])
 
     int stop = 0;
     while (!stop) {
-	stop = handleEventWindow();
-        
         resetWindow();
 	drawScene();
         updateWindow();
+        stop = handleEventWindow();
     }
     freeScene();
     freeWindow();

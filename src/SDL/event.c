@@ -1,4 +1,4 @@
-#include "SDL/SDL.h"
+#include "SDL.h"
 #include "scene.h"
 #include "window.h"
 
@@ -9,7 +9,7 @@ struct sdl_state {
 };
 static struct sdl_state state;
 
-static void handleMouseMotionEvent(Event *event, SDL_Event *sdl_event)
+static bool handleMouseMotionEvent(Event *event, SDL_Event *sdl_event)
 {
     event->type = ROTATE;
     if (state.rightClickDown) {
@@ -24,44 +24,47 @@ static void handleMouseMotionEvent(Event *event, SDL_Event *sdl_event)
     }
     state.mouseX = sdl_event->motion.x;
     state.mouseY = sdl_event->motion.y;
+    return true;
 }
 
-static void handleMouseButtonUpEvent(SDL_Event *sdl_event)
+static bool handleMouseButtonUpEvent(SDL_Event *sdl_event)
 {
     switch (sdl_event->button.button) {
     case SDL_BUTTON_RIGHT:
 	state.rightClickDown = 0;
-	break;
     default:
-	break;
+        return false;
     }
 }
 
-static bool handleMouseButtonDownEvent(Event *event, SDL_Event *sdl_event)
+static bool handleMouseButtonDownEvent(SDL_Event *sdl_event)
 {
-    bool have_event = true;
     switch (sdl_event->button.button) {
     case SDL_BUTTON_RIGHT:
 	state.rightClickDown = 1;
-        have_event = false;
-	break;
-    case SDL_BUTTON_WHEELUP:
-        event->type = TRANSLATE;
-        event->direction = FORWARD;
-	break;
-    case SDL_BUTTON_WHEELDOWN:
-        event->type = TRANSLATE;
-        event->direction = BACKWARD;
-	break;
+        return false;
     default:
-	break;
+        return false;
     }
-    return have_event;
+    return false;
 }
 
-static void handleKeyDownEvent(Event *event, SDL_Event *sdl_event)
+static bool handleMouseWheelEvent(Event *event, SDL_Event *sdl_event)
 {
-    
+    event->type = TRANSLATE;
+    if (sdl_event->wheel.y > 0)
+        event->direction = FORWARD;
+    else if (sdl_event->wheel.y < 0)
+        event->direction = BACKWARD;
+    else
+        return false;
+    return true;
+}
+
+
+static bool handleKeyDownEvent(Event *event, SDL_Event *sdl_event)
+{
+
     switch (sdl_event->key.keysym.sym) {
     case SDLK_q:
         event->type = TRANSLATE;
@@ -107,11 +110,12 @@ static void handleKeyDownEvent(Event *event, SDL_Event *sdl_event)
         event->type = QUIT;
 	break;
     default:
-	break;
+        return false;
     }
+    return true;
 }
 
-static void handleKeyUpEvent(Event *event, SDL_Event *sdl_event)
+static bool handleKeyUpEvent(Event *event, SDL_Event *sdl_event)
 {
     switch (sdl_event->key.keysym.sym) {
     case SDLK_o:
@@ -141,7 +145,21 @@ static void handleKeyUpEvent(Event *event, SDL_Event *sdl_event)
         event->type = UNLOAD;
 	break;
     default:
-	break;
+        return false;
+    }
+    return true;
+}
+
+static bool handleWindowEvent(Event *event, SDL_Event *sdl_event)
+{
+    switch(sdl_event->window.event) {
+    case SDL_WINDOWEVENT_RESIZED:
+        event->type = RESIZE;
+        event->width = sdl_event->window.data1;
+        event->height = sdl_event->window.data2;
+        return true;
+    default:
+        return false;
     }
 }
 
@@ -150,34 +168,31 @@ bool PollEvent(Window *window, Event *event)
     SDL_Event sdl_event;
     if (!SDL_PollEvent(&sdl_event))
         return false;
-    
+
     switch (sdl_event.type) {
     case SDL_QUIT:
         event->type = QUIT;
-        break;
-    case SDL_VIDEORESIZE:
-        event->type = RESIZE;
-        event->width = sdl_event.resize.w;
-        event->height = sdl_event.resize.h;
-        break;
+        return true;
     case SDL_KEYDOWN:
-        handleKeyDownEvent(event, &sdl_event);
-        break;
+        return handleKeyDownEvent(event, &sdl_event);
     case SDL_KEYUP:
-        handleKeyUpEvent(event, &sdl_event);
-        break;
+        return handleKeyUpEvent(event, &sdl_event);
     case SDL_MOUSEMOTION:
-        handleMouseMotionEvent(event, &sdl_event);
-        break;
+        return handleMouseMotionEvent(event, &sdl_event);
     case SDL_MOUSEBUTTONUP:
-        handleMouseButtonUpEvent(&sdl_event);
-        return false;
-        break;
+        return handleMouseButtonUpEvent(&sdl_event);
     case SDL_MOUSEBUTTONDOWN:
-        if (!handleMouseButtonDownEvent(event, &sdl_event))
-            return false;
-        break;
+        return handleMouseButtonDownEvent(&sdl_event);
+    case SDL_MOUSEWHEEL:
+        return handleMouseWheelEvent(event, &sdl_event);
+    case SDL_WINDOWEVENT:
+        return handleWindowEvent(event, &sdl_event);
+    default:
+        return false;
     }
-    return true;
+
+    #ifdef __GNUC__
+    __builtin_unreachable();
+    #endif
 }
 
