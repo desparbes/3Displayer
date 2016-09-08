@@ -8,6 +8,8 @@
 
 typedef struct Lens Lens;
 
+#define DEGREE_TO_RADIAN(x) ((x) * M_PI / 180.)
+
 Lens *initLens(char *fileNames);
 void resetLens(Lens *l);
 void updateLens(Lens *l, Frame *camera);
@@ -17,7 +19,7 @@ int getScreenHeight(Lens *l);
 int getScreenWidth(Lens *l);
 float getWfov(Lens *l);
 float getHfov(Lens *l);
-Color *getFilter(Lens *l);
+Color getFilter(Lens *l);
 int getNearplan(Lens *l);
 int getFarplan(Lens *l);
 Frame *getPosition(Lens *l);

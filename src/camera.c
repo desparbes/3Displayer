@@ -6,16 +6,22 @@
 #include "frame.h"
 #include "coord.h"
 #include "point.h"
-#include "direction.h"
-#include "view.h"
 #include "array.h"
+#include "camera.h"
 
 #define MAXLENGTH 256
-#define NB_KEYWORDS 6
 
-enum {TRANSLATIONSPEED, ROTATIONSPEED, POSITION, THETA, PHI, RHO};
+enum keywords {
+    TRANSLATIONSPEED,
+    ROTATIONSPEED,
+    POSITION,
+    THETA,
+    PHI,
+    RHO,
+    NB_KEYWORDS
+};
 
-typedef struct {
+struct Camera {
     Frame position;
     float theta, phi, rho;
     Lens **lensBuffer;
@@ -24,7 +30,7 @@ typedef struct {
     int state[NB_STATE];
     float rotationSpeed;
     float translationSpeed;
-} Camera;
+};
 
 static void updateCamera(Camera *c)
 {

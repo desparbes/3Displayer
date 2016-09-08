@@ -3,17 +3,13 @@ set(
   main.c
   draw.c
   project.c
-  coord.c
   point.c
   position.c
-  color.c
   solid.c
   scene.c
   frame.c
   camera.c
   lens.c
-  ext.c
-  multimedia.c
   array.c
   equation.c
   light.c
@@ -24,10 +20,21 @@ set(
   parametric.c
   buffer.c
   hypergrid.c
+  window.c
+  config.c
   )
 
 add_executable(3Displayer ${3DISPLAYER_SRC})
-target_link_libraries(3Displayer dl m swap state stack readline SDL)
+target_link_libraries(3Displayer
+  m swap state stack readline
+  ${GLIB_LIBRARIES}
+  ${GLIB_GMODULE_LIBRARIES}
+  ${GLIB_GIO_LIBRARIES}
+  ${GLIB_GOBJECT_LIBRARIES}
+  ${SDL2_LIBRARY})
+
+add_sanitizers(3Displayer)
+
 install(TARGETS 3Displayer DESTINATION .)
-add_subdirectory(multimedia_SDL)
-add_subdirectory(multimedia_ncurses)
+add_subdirectory(SDL)
+add_subdirectory(ncurses)

@@ -93,13 +93,13 @@ void rotSolidZAxis(Solid *solid, const Point *O, float theta)
     rotPointXAxis(&solid->origin, O, theta);
 }
 
-void vertexSolid(Lens *l, const Solid *solid, const Color *color)
+void vertexSolid(Lens *l, const Solid *solid, Color color)
 {
     for (int i = 0; i < solid->numVertices; ++i)
 	projectVertex(l, &solid->vertices[i], color);
 }
   
-void wireframeSolid(Lens *l, const Solid *solid, const Color *color)
+void wireframeSolid(Lens *l, const Solid *solid, Color color)
 {
     for (int i = 0; i < solid->numSegments; i++) {
 	projectSegment(l, 
@@ -109,7 +109,7 @@ void wireframeSolid(Lens *l, const Solid *solid, const Color *color)
     }
 }
 
-void normalSolid(Lens *l, const Solid *solid, const Color *color)
+void normalSolid(Lens *l, const Solid *solid, Color color)
 {
     for (int i = 0; i < solid->numFaces; i++) {
 	Face *f = &solid->faces[i];
@@ -144,10 +144,11 @@ void drawSolid(Lens *l, const Solid * solid)
 
 void drawFrame(Lens *l, Frame *frame)
 {
-    Color color;
-    projectSegment(l, &frame->O, &frame->i, setColor(&color, 255, 0, 0));
-    projectSegment(l, &frame->O, &frame->j, setColor(&color, 0, 255, 0));
-    projectSegment(l, &frame->O, &frame->k, setColor(&color, 0, 0, 255));
+    Color red=COLOR(255,0,0), blue=COLOR(0,255,0), green=COLOR(0,0,255);
+    
+    projectSegment(l, &frame->O, &frame->i, red);
+    projectSegment(l, &frame->O, &frame->j, blue);
+    projectSegment(l, &frame->O, &frame->k, green);
 }
 
 void freeSolid(Solid *solid)

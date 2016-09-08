@@ -1,3 +1,0 @@
-#define NB_DIRECTION 6
-
-enum {FORWARD, BACKWARD, LEFT, RIGHT, DOWN, UP};

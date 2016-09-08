@@ -1,3 +1,0 @@
-#define NB_STATE 5
-
-enum {DRAW, WIREFRAME, NORMAL, VERTEX, FRAME};

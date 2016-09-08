@@ -1,23 +1,28 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <readline/readline.h>
 
 #include "scene.h"
-#include "event.h"
+#include "window.h"
+#include "config.h"
 
 int main(int argc, char *argv[])
 {
-    initScene();
-    initEvent();
-    handleArgumentScene(argc, argv);
-    rl_bind_key('\t', rl_complete);
+    Config c;
+    parseConfig(&c, argc, argv);
     
+    initWindow(&c);
+    initScene(&c);
+    handleArgumentScene(argc, argv);
+
     int stop = 0;
     while (!stop) {
-	handleEvent(&stop);
+	stop = handleEventWindow();
+        
+        resetWindow();
 	drawScene();
+        updateWindow();
     }
-    freeEvent();
     freeScene();
+    freeWindow();
     return EXIT_SUCCESS;
 }

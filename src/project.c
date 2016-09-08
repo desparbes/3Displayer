@@ -44,7 +44,7 @@ static void projectCoord(Lens *l, const Point *OA, float depth, Coord *S)
 	depth + sH / 2;
 }
 
-void projectVertex(Lens *l, const Point *A, const Color *color)
+void projectVertex(Lens *l, const Point *A, Color color)
 {
     Point OA;
     Frame *p = getPosition(l);
@@ -55,10 +55,10 @@ void projectVertex(Lens *l, const Point *A, const Color *color)
     Coord t;
     projectCoord(l, &OA, depthA, &t);
     if (depthA > getNearplan(l))
-	drawPixel(l, &t, depthA, color);
+	drawPixel(l, t, depthA, color);
 }
 
-void projectSegment(Lens *l, const Point *A, const Point *B, const Color *color)
+void projectSegment(Lens *l, const Point *A, const Point *B, Color color)
 {
     Point OA, OB, AB;
     Frame *camera = getPosition(l);
@@ -73,7 +73,7 @@ void projectSegment(Lens *l, const Point *A, const Point *B, const Color *color)
     if (depthA > nearplan && depthB > nearplan) {
 	projectCoord(l, &OA, depthA, &t);
 	projectCoord(l, &OB, depthB, &u);
-	drawSegment(l, &t, &u, depthA, depthB, color);
+	drawSegment(l, t, u, depthA, depthB, color);
     } else if (depthA < nearplan && depthB > nearplan) {
 	projectPoint(l, A, B, &AB);
 	projectCoord(l, &AB, nearplan, &t);
@@ -85,7 +85,7 @@ void projectSegment(Lens *l, const Point *A, const Point *B, const Color *color)
     } else
 	return;
 
-    drawSegment(l, &t, &u, depthA, depthB, color);
+    drawSegment(l, t, u, depthA, depthB, color);
 }
 
 static void cutInOneTriangle(Lens *l,
@@ -153,7 +153,7 @@ static void cutInOneTriangle(Lens *l,
     setPixel(&pB, &bn, (depthB - depthA) * kB + depthA, &lB, &UV);
     setPixel(&pC, &cn, (depthC - depthA) * kC + depthA, &lC, &UW);
   
-    drawTriangle(l, triangle, &pA, &pB, &pC);
+    drawTriangle(l, triangle, pA, pB, pC);
 }
 
 static void cutInTwoTriangles(Lens *l,
@@ -220,8 +220,8 @@ static void cutInTwoTriangles(Lens *l,
     setPixel(&pBn, &opbn, (depthB - depthA) * kB + depthA, &lBn, &VU);
     setPixel(&pCn, &opcn, (depthC - depthA) * kC + depthA, &lCn, &WU);
   
-    drawTriangle(l, triangle, &pBn, &pC, &pCn);
-    drawTriangle(l, triangle, &pBn, &pB, &pC);
+    drawTriangle(l, triangle, pBn, pC, pCn);
+    drawTriangle(l, triangle, pBn, pB, pC);
 }
 
 void projectTriangle(Lens *l, const Point *A, const Point *B, const Point *C,
@@ -258,7 +258,7 @@ void projectTriangle(Lens *l, const Point *A, const Point *B, const Point *C,
 	setPixel(&pB, &b, depthB, &lB, V);
 	setPixel(&pC, &c, depthC, &lC, W);
 
-	drawTriangle(l, triangle, &pA, &pB, &pC);
+	drawTriangle(l, triangle, pA, pB, pC);
     } else if (depthB > nearplan && depthC > nearplan){
 	cutInTwoTriangles(l, A, B, C,
 			  depthA, depthB, depthC,

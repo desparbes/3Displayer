@@ -3,10 +3,10 @@
 #include "position.h"
 #include "pixel.h"
 
-void setPixel(Pixel *pixel, const Coord *c, float depth, const Color *light, 
-	      const Position *p)
+void setPixel(Pixel *pixel, Coord const *c, float depth,
+              Color const *light, Position const *p)
 {
-    pixel->c = *c;
+    pixel->coord = *c;
     pixel->depth = depth;
     pixel->light = *light;
     pixel->p = *p;

@@ -26,14 +26,7 @@ static inline float degreeToRadian(int d)
     return d * M_PI / 180.;
 }
 
-static float formatScale(float scale)
-{
-    if (scale >= 0)
-	return 0;
-    if (scale <= -1)
-	return 1;
-    return -scale;
-}
+#define FORMAT_SCALE(scale) ((scale) >=0 ? 0.f : ((scale)<=-1 ? 1 : -(scale)))
 
 Light *loadLight(char *fileName)
 {
@@ -97,23 +90,22 @@ void calculateLight(const Light *l, const Point *A, const Point *nA, Color *c)
     diffPoint(A, &l->position, &OA);
     float dOA = normPoint(&OA);
     float angle = acos(scalarProduct(&l->direction, &OA) / dOA);
+    float scale;
+    
     if (l->inner < 0) { // infinite
-	scaleColor(c, &l->color, formatScale(l->intensity * 
-					    scalarProduct(&l->direction, nA)));
+        scale = FORMAT_SCALE(l->intensity * scalarProduct(&l->direction, nA));
+	SCALE_COLOR(*c, l->color, scale);
     } else if (angle < l->inner) { // conic
-	scaleColor(c, &l->color, formatScale(l->intensity * 
-					    scalarProduct(&OA, nA) / 
-					    (dOA * dOA * dOA)));
+        scale = FORMAT_SCALE(
+            l->intensity * scalarProduct(&OA, nA) / (dOA * dOA * dOA));
+	SCALE_COLOR(*c, l->color, scale);
     } else if (angle < l->outer) { // conic shade
-	scaleColor(c, 
-		   &l->color, 
-		   formatScale(l->intensity * 
+        scale = FORMAT_SCALE(l->intensity * 
 			       ((angle - l->outer) / (l->inner - l->outer)) * 
-			       scalarProduct(&OA, nA) / 
-			       (dOA * dOA * dOA)));
-    } else {
-	setColor(c, 0, 0, 0);
-    }
+			       scalarProduct(&OA, nA) / (dOA * dOA * dOA));
+        SCALE_COLOR(*c, l->color, scale);
+    } else
+	SET_COLOR(*c, 0, 0, 0);
 }
 
 void freeLight(Light *l)

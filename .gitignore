@@ -1,3 +1,8 @@
 *~
 3Displayer
 build
+\#*#
+*.o
+*.so
+a.out
+

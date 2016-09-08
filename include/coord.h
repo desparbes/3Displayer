@@ -1,16 +1,50 @@
 #ifndef COORD_H
 #define COORD_H
 
+#include <stdint.h>
+
 typedef struct Coord {
-    int w;
-    int h;
+    uint16_t w;
+    uint16_t h;
 } Coord;
 
-void setCoord(Coord *c, int w, int h);
-void translateCoord(Coord *c, int w, int h);
-void diffCoord(const Coord *A, const Coord *B, Coord *S);
-void sumCoord(const Coord *A, const Coord *B, Coord *S);
-int productCoord(const Coord *u, const Coord *v);
-float distanceCoord(const Coord * A, const Coord * B);
+#define SET_COORD(C, w_, h_)                    \
+    do{                                         \
+        (C).w = (w_);                           \
+        (C).h = (h_);                           \
+    }while(0)
+
+#define ADD_COORD(C, A, B)                      \
+    do{                                         \
+        (C).w = (A).w + (B).w;                  \
+        (C).h = (A).h + (B).h;                  \
+    }while(0)
+
+#define DIFF_COORD(C, A, B)                     \
+    do{                                         \
+        (C).w = (A).w - (B).w;                  \
+        (C).h = (A).h - (B).h;                  \
+    }while(0)
+
+#define TRANSLATE_COORD(C, w_, h_)              \
+    do{                                         \
+        (C).w += (w_);                          \
+        (C).h += (h_);                          \
+    }while(0)
+
+#define PRODUCT_COORD(U, V)  ((U).h * (V).w - (U).w * (V).h)
+#define DISTANCE_COORD(U, V)  (sqrt(SQUARE((U).w-(V).w) + SQUARE((U).h-(V).h)))
+
+
+#ifdef MAX
+#undef MAX
+#endif
+#define MAX(x,y) ((x) < (y) ? (y) : (x))
+
+
+#ifdef MIN
+#undef MIN
+#endif
+#define MIN(x,y) ((x) < (y) ? (x) : (y))
 
 #endif // COORD_H

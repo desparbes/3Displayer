@@ -14,9 +14,9 @@ Solid *loadSolid(const char *fileName, const char *bmpName);
 void calculateOriginSolid(Solid *solid);
 Point *getOriginSolid(Solid *solid);
 
-void wireframeSolid(Lens *l, const Solid *solid, const Color *color);
-void vertexSolid(Lens *l, const Solid *solid, const Color *color);
-void normalSolid(Lens *l, const Solid *solid, const Color *color);
+void wireframeSolid(Lens *l, const Solid *solid, Color color);
+void vertexSolid(Lens *l, Solid const *solid, Color color);
+void normalSolid(Lens *l, const Solid *solid, Color color);
 void drawSolid(Lens *l, const Solid *solid);
 void drawFrame(Lens *l, Frame *frame);
 

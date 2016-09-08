@@ -1,21 +1,10 @@
 #include "ncurses.h"
 #include "scene.h"
-#include "direction.h"
+#include "event.h"
 #include "view.h"
 
-static void resize()
-{
-    int screenWidth, screenHeight;
-    getmaxyx(stdscr, screenHeight, screenWidth);
-    resizeCameraScene(screenWidth / 2, screenHeight);
-}
 
-void initEvent_(void)
-{
-    resize();
-}
-
-void handleEvent_(int *stop)
+void PollEvent(int *stop)
 {
     int c;
     while ((c = getch()) == ERR);
@@ -35,9 +24,12 @@ void handleEvent_(int *stop)
 	    rotateCameraScene(DOWN);	
 	    break;
 	case KEY_RESIZE:
-	case 'r':
-	    resize();
-	    break;
+	case 'r': {
+            int screenWidth, screenHeight;
+            getmaxyx(stdscr, screenHeight, screenWidth);
+            resizeCameraScene(screenWidth / 2, screenHeight);
+            break;
+        }
 	case 'q':
 	    translateCameraScene(LEFT);
 	    break;
@@ -88,8 +80,4 @@ void handleEvent_(int *stop)
     } while ((c = getch()) != ERR);
 }
 
-void freeEvent_(void){}
-
-void (*initEvent)() = &initEvent_;
 void (*handleEvent)(int *) = &handleEvent_;
-void (*freeEvent)() = &freeEvent_;

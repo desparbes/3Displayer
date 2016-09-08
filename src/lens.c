@@ -8,17 +8,19 @@
 #include "point.h"
 #include "color.h"
 #include "array.h"
-#include "display.h"
+#include "lens.h"
 
 #define MAXLENGTH 256
-#define NB_KEYWORDS 13
 #define MAXWINDOWS 8
-#define SQRMAXWINDOWS (MAXWINDOWS * MAXWINDOWS)
+#define SQRMAXWINDOWS SQUARE(MAXWINDOWS)
 
-enum {OFFSET, THETA, PHI, RHO, FILTER, WIDTHPOSITION, HEIGHTPOSITION,
-      SCREENWIDTH, SCREENHEIGHT, OVERLAPPING, NEARPLAN, FARPLAN, WFOV};
+enum lens_properties {
+    OFFSET, THETA, PHI, RHO, FILTER, WIDTHPOSITION, HEIGHTPOSITION,
+    SCREENWIDTH, SCREENHEIGHT, OVERLAPPING, NEARPLAN, FARPLAN, WFOV,
+    NB_KEYWORDS
+};
 
-typedef struct {
+struct Lens {
     Frame position; //Absolute
     Point offset; //Relative to camera
     float theta, phi, rho; //Relative to camera
@@ -37,16 +39,11 @@ typedef struct {
     float farplan;
     float wfov; //Absolute
     float hfov; //Relative
-} Lens;
+};
 
 static inline int isInRange(int n)
 {
     return (n <= MAXWINDOWS && n >= 0);
-}
-
-static inline float degreeToRadian(int d)
-{
-    return d * M_PI / 180.;
 }
 
 static void loadDefaultLens(Lens *l)
@@ -56,14 +53,14 @@ static void loadDefaultLens(Lens *l)
     l->theta = 0.;
     l->phi = 0.;
     l->rho = 0.;
-    setColor(&l->filter, 255, 255, 255);
+    SET_COLOR(l->filter, 255, 255, 255);
     l->widthPosition = 0;
     l->heightPosition = 0;
     l->screenWidth = 8;
     l->screenHeight = 8;
     l->nearplan = 1.;
     l->farplan = 20.;
-    l->wfov = degreeToRadian(90);
+    l->wfov = DEGREE_TO_RADIAN(90);
 }
 
 Lens *initLens(char *fileName)
@@ -135,7 +132,7 @@ Lens *initLens(char *fileName)
 	printf("Error parsing lens %s: default lens loaded\n", fileName);
 	loadDefaultLens(l);
     } else {
-	l->wfov = degreeToRadian(tmp);
+	l->wfov = DEGREE_TO_RADIAN(tmp);
 	printf("Lens %s successfully loaded\n", fileName);
     }
     initFrame(&l->position);
@@ -178,9 +175,9 @@ float *getZBuffer(Lens *l)
     return l->zBuffer;
 }
 
-Color *getFilter(Lens *l)
+Color getFilter(Lens *l)
 {
-    return &l->filter;
+    return l->filter;
 }
 
 int getScreenWidth(Lens *l)

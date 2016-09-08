@@ -1,8 +1,7 @@
+#include <glib/gstdio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <readline/readline.h>
-#include <readline/history.h>
 
 #include "scene.h"
 #include "point.h"
@@ -10,19 +9,26 @@
 #include "solid.h"
 #include "color.h"
 #include "camera.h"
-#include "display.h"
-#include "view.h"
-#include "multimedia.h"
+#include "window.h"
 #include "array.h"
 #include "light.h"
 #include "buffer.h"
 
 #define MAXLENGTH 128
-#define NB_KEYWORDS 6
 
-enum {SCREENWIDTH, SCREENHEIGHT, BACKGROUND, UNTEXTURED, MULTIMEDIA, CAMERA};
+enum keywords {
+    SCREENWIDTH,
+    SCREENHEIGHT,
+    BACKGROUND,
+    UNTEXTURED,
+    MULTIMEDIA,
+    CAMERA,
+    NB_KEYWORDS,
+};
 
-static struct {
+typedef struct Scene Scene;
+
+struct Scene {
     Frame origin;
 
     Light **lightBuffer;
@@ -34,10 +40,12 @@ static struct {
     int solidSize;
 
     Camera *camera;
-} scene;
+};
 
 
-static void remove_space(char *buf)
+static Scene scene;
+
+static void removeSpace(char *buf)
 {
     while (*buf) {
 	if (*buf == ' ') {
@@ -62,35 +70,39 @@ static void addLightToScene(Light *light)
 		       &scene.lightSize, &scene.nbLight);
 }
 
-static void freeSolidBuffer()
+static void freeSolidBuffer(void)
 {
     for(int i = 0; i < scene.nbSolid; i++)
 	freeSolid(scene.solidBuffer[i]);
-    free(scene.solidBuffer);
+    g_free(scene.solidBuffer);
 }
 
-static void freeLightBuffer()
+static void freeLightBuffer(void)
 {
     for(int i = 0; i < scene.nbLight; i++)
 	freeLight(scene.lightBuffer[i]);
-    free(scene.lightBuffer);
+    g_free(scene.lightBuffer);
 }
 
-void initScene(void)
+void initScene(Config *config)
 {
     Color background;
     Color untextured;
     int screenWidth, screenHeight;
+    char *fileName = "config/config.cfg";
+
+    memset(&scene, 0, sizeof scene);
+    
     initFrame(&scene.origin);
-    char *fileName = "config/config.txt";
     scene.camera = NULL;
     scene.nbSolid = 0;
     scene.solidSize = 4;
-    scene.solidBuffer = malloc(scene.solidSize * sizeof(Solid*));
+    scene.solidBuffer = g_malloc(scene.solidSize * sizeof scene.solidBuffer[0]);
     scene.nbLight = 0;
     scene.lightSize = 4;
-    scene.lightBuffer = malloc(scene.lightSize * sizeof(Light*));
-    FILE *file = fopen(fileName, "r");
+    scene.lightBuffer = g_malloc(scene.lightSize * sizeof scene.lightBuffer[0]);
+    
+    FILE *file = g_fopen(fileName, "r");
     char camera[MAXLENGTH];
     char multimedia[MAXLENGTH];
     int check[NB_KEYWORDS] = {0};
@@ -134,75 +146,75 @@ void initScene(void)
     }
 
     if (!areEqualsArray(check, template, NB_KEYWORDS)) {
-	printf("Error parsing config.txt: default values loaded\n");
+	printf("Error parsing config.cfg: default values loaded\n");
 	screenWidth = 1200;
 	screenHeight = 800;
-	setColor(&background, 128, 128, 128);
-	setColor(&untextured, 0, 255, 255);
-	initMultimedia("multimedia/libmultimedia_SDL.so");
-	initDisplay(screenWidth, screenHeight, &background, &untextured);
+	SET_COLOR(background, 128, 128, 128);
+	SET_COLOR(untextured, 0, 255, 255);
 	scene.camera = initCamera("cameras/standard.txt");
-	freeLightBuffer();
 	addLightToScene(loadLight("light/standard.txt"));
     } else {
-	initMultimedia(multimedia);
-	initDisplay(screenWidth, screenHeight, &background, &untextured);
 	scene.camera = initCamera(camera);
     }
     refreshCamera(scene.camera, screenWidth, screenHeight);
 }
 
-void removeSolidFromScene()
+void removeSolidFromScene(void)
 {
-    if(scene.nbSolid > 0) {
-	printf("Solid successfully removed\n");
+    if (scene.nbSolid > 0) {
 	freeSolid(scene.solidBuffer[--scene.nbSolid]);
+        printf("Solid successfully removed\n");
     }
 }
 
 void askSolidForScene(void)
 {
-    char *buf, *objstr;
+    char *buf = NULL, *objstr;
+    size_t size = 0;
+
+    printf("Solid path: ");
+    getline(&buf, &size, stdin);
     
-    buf = readline("Solid path: ");
-    remove_space(buf);
+    removeSpace(buf);
     objstr = strdup(buf);
-    add_history(buf);
-    buf = readline("Bitmap path: ");
-    remove_space(buf);    
+    //add_history(buf);
+    //buf = readline("Bitmap path: ");
+    printf("Solid path: ");
+    getline(&buf, &size, stdin);
+
+    removeSpace(buf);    
     addSolidToScene(loadSolid(objstr, buf));
     free(objstr);
-    add_history(buf);
+    //add_history(buf);
 }
     
 void drawScene(void)
 {
     Camera *C = scene.camera;
     int nbLens = getNbLens(C);
-    Color color;
+    Color red=COLOR(255,0,0), blue=COLOR(0,255,0), green=COLOR(0,0,255);
 
     resetCamera(C);
-    resetDisplay();
     for (int j = 0; j < nbLens; j++) {
-	if (getStateCamera(C, DRAW))
+	if (getStateCamera(C, DRAW)) {
 	    for (int i = 0; i < scene.nbSolid; i++)
 		drawSolid(getLensOfCamera(C, j), scene.solidBuffer[i]);
-	if (getStateCamera(C, WIREFRAME))
+        }
+	if (getStateCamera(C, WIREFRAME)) {
 	    for (int i = 0; i < scene.nbSolid; i++)
-		wireframeSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
-			       setColor(&color, 255, 0, 0));
-	if (getStateCamera(C, NORMAL))
+		wireframeSolid(getLensOfCamera(C, j), scene.solidBuffer[i], red);
+        }
+	if (getStateCamera(C, NORMAL)) {
 	    for (int i = 0; i < scene.nbSolid; i++)
-		normalSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
-			    setColor(&color, 0, 255, 0));
-	if (getStateCamera(C, VERTEX))
+		normalSolid(getLensOfCamera(C, j), scene.solidBuffer[i], blue);
+        }
+	if (getStateCamera(C, VERTEX)) {
 	    for (int i = 0; i < scene.nbSolid; i++)
-		vertexSolid(getLensOfCamera(C, j), scene.solidBuffer[i], 
-			    setColor(&color, 0, 0, 255));
+		vertexSolid(getLensOfCamera(C, j), scene.solidBuffer[i], green);
+        }
 	if (getStateCamera(C, FRAME))
 	    drawFrame(getLensOfCamera(C, j), &scene.origin);
     }
-    blitDisplay();
 }
 
 void handleArgumentScene(int argc, char *argv[])
@@ -215,17 +227,17 @@ void handleArgumentScene(int argc, char *argv[])
 
 void calculateLightScene(const Point *A, const Point *nA, Color *c)
 {
-    setColor(c, 0, 0, 0);
+    SET_COLOR(*c, 0, 0, 0);
     for (int i = 0; i < scene.nbLight; i++) {
 	Color tmp;
 	calculateLight(scene.lightBuffer[i], A, nA, &tmp);
-	sumColor(c, &tmp, c);
+	ADD_COLOR(*c, tmp, *c);
     }
 }
 
 void resizeCameraScene(int screenWidth, int screenHeight)
 {
-    resizeDisplay(screenWidth, screenHeight);
+    resizeWindow(screenWidth, screenHeight);
     refreshCamera(scene.camera, screenWidth, screenHeight);
 }
 
@@ -249,6 +261,4 @@ void freeScene(void)
     freeSolidBuffer();
     freeLightBuffer();
     freeCamera(scene.camera);
-    freeDisplay();
-    freeMultimedia();
 }

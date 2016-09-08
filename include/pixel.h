@@ -6,12 +6,13 @@
 #include "position.h"
 
 typedef struct Pixel {
-    Coord c;
-    float depth;
+    Coord coord;
     Color light;
+    float depth;
     Position p;
 } Pixel;
 
-void setPixel(Pixel *pixel, const Coord *c, float depth, const Color *light, 
-	      const Position *p);
+void setPixel(Pixel *pixel, Coord const *c, float depth,
+              Color const *light, Position const *p);
+
 #endif //PIXEL_H

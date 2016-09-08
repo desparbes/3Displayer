@@ -6,52 +6,51 @@
 #include "coord.h"
 #include "color.h"
 #include "lens.h"
-#include "display.h"
 #include "pixel.h"
+#include "window.h"
 
-static inline int min(int a, int b)
-{
-    return (a < b) ? a : b;
-}
+typedef struct Renderer Renderer;
+struct Renderer {
+    Color untextured;
+};
 
-static inline int max(int a, int b)
-{
-    return (a > b) ? a : b;
-}
+static Renderer renderer;
 
-static void translatePixel(Lens *l, const Coord *A, const Color *color)
+static void translatePixel(Lens *l, Coord A, Color filtered)
 {
-    Coord B = *A;
-    Color filtered = *color;
-    translateCoord(&B, getWidthPosition(l), getHeightPosition(l));
-    filterColor(&filtered, getFilter(l));
+    Color filter = getFilter(l);
+    
+    TRANSLATE_COORD(A, getWidthPosition(l), getHeightPosition(l));
+    FILTER_COLOR(filtered, filtered, filter);
+    
     if (getOverlapping(l)) {
 	Color back;
-	getPixelDisplay(&B, &back);
-	averageColor(&filtered, &back, 128);
+	back = getPixelWindow(A);
+	AVERAGE_COLOR(filtered, filtered, back, 128);
     }
-    setPixelDisplay(&B, &filtered);
+    setPixelWindow(A, filtered);
 }
 
-void drawPixel(Lens *l, const Coord *A, float depthA, const Color *color)
+void drawPixel(Lens *l, Coord A, float depthA, Color color)
 {
     int sW = getScreenWidth(l);
     float *zB = getZBuffer(l);
-    int i = A->w + A->h * sW;
-    if (A->h >= 0 && A->h < getScreenHeight(l) && 
-	A->w >= 0 && A->w < sW && 
-	(zB[i] < getNearplan(l) || 
-	 zB[i] > depthA))
+
+    int i = A.w + A.h * sW;
+    if (A.h >= 0 && A.h < getScreenHeight(l) && 
+	A.w >= 0 && A.w < sW &&
+        (zB[i] < getNearplan(l) || zB[i] > depthA))
+    {
 	translatePixel(l, A, color);
+    }
 }
 
-void drawSegment(Lens *l, const Coord *A, const Coord *B,
-		 float depthA, float depthB,
-		 const Color *color)
+void drawSegment(Lens *l, Coord A, Coord B,
+		 float depthA, float depthB, Color color)
 {
-    Coord M = *A;
-    int dx = B->w - A->w;
-    int dy = B->h - A->h;
+    Coord M = A;
+    int dx = B.w - A.w;
+    int dy = B.h - A.h;
     int xIncr = dx > 0 ? 1 : -1;
     int yIncr = dy > 0 ? 1 : -1;
     float alpha, depthM;
@@ -61,11 +60,11 @@ void drawSegment(Lens *l, const Coord *A, const Coord *B,
     int sH = getScreenHeight(l);
     float nearplan = getNearplan(l);
 
-    alpha = (float) (M.w - A->w) / (B->w - A->w);
+    alpha = (float) (M.w - A.w) / (B.w - A.w);
     depthM = depthA * depthB / ((1 - alpha) * depthB + alpha * depthA);
     if (M.h >= 0 && M.h < sH && M.w >= 0 && M.w < sW && 
 	(zB[M.w + M.h * sW] < nearplan || zB[M.w + M.h * sW] > depthM)) {
-	translatePixel(l, &M, color);
+	translatePixel(l, M, color);
 	zB[M.w + M.h * sW] = depthM;
     }
     
@@ -73,9 +72,9 @@ void drawSegment(Lens *l, const Coord *A, const Coord *B,
 	error = dx;
 	dx = 2 * dx;
 	dy = 2 * dy;
-	while (M.w != B->w) {
+	while (M.w != B.w) {
 	    M.w += xIncr;
-	    alpha = (float) (M.w - A->w) / (B->w - A->w);
+	    alpha = (float) (M.w - A.w) / (B.w - A.w);
 	    depthM = depthA * depthB / ((1 - alpha) * depthB + alpha * depthA);
 	    if ((error -= yIncr * dy) <= 0) {
 		M.h += yIncr;
@@ -84,7 +83,7 @@ void drawSegment(Lens *l, const Coord *A, const Coord *B,
 	    if (M.h >= 0 && M.h < sH && M.w >= 0 && M.w < sW && 
 		(zB[M.w + M.h * sW] < nearplan || 
 		 zB[M.w + M.h * sW] > depthM)) {
-		translatePixel(l, &M, color);
+		translatePixel(l, M, color);
 		//setPixel(M, {255 /depthM , 255 /depthM, 255 /depthM});
 		//setPixel(M, {255 * alpha, 0, 0});
 		zB[M.w + M.h * sW] = depthM;
@@ -94,9 +93,9 @@ void drawSegment(Lens *l, const Coord *A, const Coord *B,
 	error = dy;
 	dy = 2 * dy;
 	dx = 2 * dx;
-	while (M.h != B->h) {
+	while (M.h != B.h) {
 	    M.h += yIncr;
-	    alpha = (float) (M.h - A->h) / (B->h - A->h);
+	    alpha = (float) (M.h - A.h) / (B.h - A.h);
 	    depthM = depthA * depthB / ((1 - alpha) * depthB + alpha * depthA);
 	    if ((error -= xIncr * dx) <= 0) {
 		M.w += xIncr;
@@ -105,7 +104,7 @@ void drawSegment(Lens *l, const Coord *A, const Coord *B,
 	    if (M.h >= 0 && M.h < sH && M.w >= 0 && M.w < sW && 
 		(zB[M.w + M.h * sW] < nearplan || 
 		 zB[M.w + M.h * sW] > depthM)) {
-		translatePixel(l, &M, color);
+		translatePixel(l, M, color);
 		//setPixel(M, {255 /depthM , 255 /depthM, 255 /depthM});
 		//setPixel(M, {255 * alpha, 0, 0});
 		zB[M.w + M.h * sW] = depthM;
@@ -114,14 +113,14 @@ void drawSegment(Lens *l, const Coord *A, const Coord *B,
     }
 }
 
-void drawTriangle(Lens *l, Texture *triangle, Pixel *A, Pixel *B, Pixel *C)
+void drawTriangle(Lens *l, Texture *triangle, Pixel A, Pixel B, Pixel C)
 {
     Coord AB, BC, CA;
-    diffCoord(&B->c, &A->c, &AB);
-    diffCoord(&C->c, &B->c, &BC);
-    diffCoord(&A->c, &C->c, &CA);
+    DIFF_COORD(AB, B.coord, A.coord);
+    DIFF_COORD(BC, C.coord, B.coord);
+    DIFF_COORD(CA, A.coord, C.coord);
 
-    if (productCoord(&AB, &BC) <= 0)
+    if (PRODUCT_COORD(AB, BC) <= 0)
 	return;
 
     float *zB = getZBuffer(l);
@@ -129,27 +128,27 @@ void drawTriangle(Lens *l, Texture *triangle, Pixel *A, Pixel *B, Pixel *C)
     int sW = getScreenWidth(l);
     int sH = getScreenHeight(l);
 
-    int minW = max(0, min(min(A->c.w, B->c.w), C->c.w));
-    int maxW = min(sW - 1, max(max(A->c.w, B->c.w), C->c.w));
+    int minW = MAX(0, MIN(MIN(A.coord.w, B.coord.w), C.coord.w));
+    int maxW = MIN(sW - 1, MAX(MAX(A.coord.w, B.coord.w), C.coord.w));
 
-    int minH = max(0, min(min(A->c.h, B->c.h), C->c.h));
-    int maxH = min(sH - 1, max(max(A->c.h, B->c.h), C->c.h));
+    int minH = MAX(0, MIN(MIN(A.coord.h, B.coord.h), C.coord.h));
+    int maxH = MIN(sH - 1, MAX(MAX(A.coord.h, B.coord.h), C.coord.h));
 
-    float depthABC = A->depth * B->depth * C->depth;
+    float depthABC = A.depth * B.depth * C.depth;
 
-    float depthAB = A->depth * B->depth;
-    float depthBC = B->depth * C->depth;
-    float depthCA = C->depth * A->depth;
+    float depthAB = A.depth * B.depth;
+    float depthBC = B.depth * C.depth;
+    float depthCA = C.depth * A.depth;
 
     Position u, v, w;
 
     if (triangle) {
-	setPosition(&u, A->p.x / A->depth, A->p.y / A->depth);
-	setPosition(&v, B->p.x / B->depth, B->p.y / B->depth);
-	setPosition(&w, C->p.x / C->depth, C->p.y / C->depth);
+	setPosition(&u, A.p.x / A.depth, A.p.y / A.depth);
+	setPosition(&v, B.p.x / B.depth, B.p.y / B.depth);
+	setPosition(&w, C.p.x / C.depth, C.p.y / C.depth);
     }
 
-    int det = productCoord(&CA, &AB);
+    int det = PRODUCT_COORD(CA, AB);
     Coord M;
 
     for (M.h = minH; M.h <= maxH; ++M.h) {
@@ -158,19 +157,19 @@ void drawTriangle(Lens *l, Texture *triangle, Pixel *A, Pixel *B, Pixel *C)
 	M.w = minW;
 
 	do {
-	    diffCoord(&M, &A->c, &AM);
-	    diffCoord(&M, &B->c, &BM);
-	    diffCoord(&M, &C->c, &CM);
+	    DIFF_COORD(AM, M, A.coord);
+	    DIFF_COORD(BM, M, B.coord);
+	    DIFF_COORD(CM, M, C.coord);
 	    M.w++;
 	} while (M.w <= maxW && 
-		 (productCoord(&AB, &AM) < 0 ||
-		  productCoord(&BC, &BM) < 0 || 
-		  productCoord(&CA, &CM) < 0));
+		 (PRODUCT_COORD(AB, AM) < 0 ||
+		  PRODUCT_COORD(BC, BM) < 0 || 
+		  PRODUCT_COORD(CA, CM) < 0));
 	M.w--;
 	while (M.w <= maxW && 
-	       (PAlpha = productCoord(&BC, &BM)) >= 0 && 
-	       (PBeta = productCoord(&CA, &CM)) >= 0 && 
-	       (PGamma = productCoord(&AB, &AM)) >= 0) {
+	       (PAlpha = PRODUCT_COORD(BC, BM)) >= 0 && 
+	       (PBeta = PRODUCT_COORD(CA, CM)) >= 0 && 
+	       (PGamma = PRODUCT_COORD(AB, AM)) >= 0) {
 
 	    float alpha = (float) PAlpha / (float) det;
 	    float beta = (float) PBeta / (float) det;
@@ -183,14 +182,14 @@ void drawTriangle(Lens *l, Texture *triangle, Pixel *A, Pixel *B, Pixel *C)
 		zB[M.w + M.h * sW] > depthM) {
 		Color colorM;
 		Color c;
-		interpolateColor(&colorM, 
-				 &A->light, &B->light, &C->light, 
-				 alpha, beta, gamma);
+		INTERPOLATE_COLOR(colorM, 
+                                  A.light, B.light, C.light, 
+                                  alpha, beta, gamma);
 		
 		if (triangle) {
-		    float denominator = (alpha / A->depth + 
-					 beta / B->depth + 
-					 gamma / C->depth);
+		    float denominator = (alpha / A.depth + 
+					 beta / B.depth + 
+					 gamma / C.depth);
 		    Position N;
 		    N.x = (alpha * u.x + beta * v.x + gamma * w.x) / 
 			denominator;
@@ -200,16 +199,16 @@ void drawTriangle(Lens *l, Texture *triangle, Pixel *A, Pixel *B, Pixel *C)
 		    loopPosition(&N);
 		    getPixelTexture(triangle, &N, &c);
 		} else {
-		    getUntexturedDisplay(&c);
+		    c = renderer.untextured;
 		}
-		productColor(&c, &colorM, &c);
-		translatePixel(l, &M, &c);
+		PRODUCT_COLOR(c, colorM, c);
+		translatePixel(l, M, c);
 		zB[M.w + M.h * sW] = depthM;
 	    }
 	    M.w++;
-	    diffCoord(&M, &A->c, &AM);
-	    diffCoord(&M, &B->c, &BM);
-	    diffCoord(&M, &C->c, &CM);
+	    DIFF_COORD(AM, M, A.coord);
+	    DIFF_COORD(BM, M, B.coord);
+	    DIFF_COORD(CM, M, C.coord);
 	}
     }
 }

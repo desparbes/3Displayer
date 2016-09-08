@@ -1,13 +1,34 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+typedef struct Camera Camera;
+typedef enum direction direction_t;
+typedef enum state state_t;
+
 #include "frame.h"
 #include "coord.h"
 #include "point.h"
 #include "lens.h"
 #include "color.h"
 
-typedef struct Camera Camera;
+enum direction {
+    FORWARD,
+    BACKWARD,
+    LEFT,
+    RIGHT,
+    DOWN, 
+    UP,
+    NB_DIRECTION,
+};
+
+enum state {
+    DRAW,
+    WIREFRAME,
+    NORMAL,
+    VERTEX,
+    FRAME,
+    NB_STATE,
+};
 
 Camera *initCamera(char *fileName);
 void resetCamera(Camera *c);

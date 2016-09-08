@@ -9,12 +9,10 @@
 #include "lens.h"
 #include "pixel.h"
 
-void drawPixel(Lens *l, const Coord *A, float depthA, const Color *color);
+void drawPixel(Lens *l, Coord A, float depthA, Color color);
 
-void drawSegment(Lens *l, const Coord *A, const Coord *B,
-		 float depthA, float depthB,
-		 const Color *color);
-
-void drawTriangle(Lens *l, Texture *triangle, Pixel *A, Pixel *B, Pixel *C);
+void drawSegment(Lens *l, Coord A, Coord B,
+                 float depthA, float depthB, Color color);
+void drawTriangle(Lens *l, Texture *triangle, Pixel A, Pixel B, Pixel C);
  
 #endif //DRAW_H
