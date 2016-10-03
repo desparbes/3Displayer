@@ -288,13 +288,13 @@ static float getValue(float *input, int output)
                         return 0;
                     }
                     result.value.number = computeOperator(elmtC.value.number,
-                        				  elmtB.value.operator,
-                        				  elmtA.value.number);
+                                                          elmtB.value.operator,
+                                                          elmtA.value.number);
                     result.valueType = NUMBER;
                     addDataStack(Equation.stack, &result);
                 } else if (elmtB.valueType == FUNCTION) {
                     result.value.number = computeFunction(elmtB.value.function,
-                        				  elmtA.value.number);
+                                                          elmtA.value.number);
                     result.valueType = NUMBER;
                     addDataStack(Equation.stack, &result);
                 } else {

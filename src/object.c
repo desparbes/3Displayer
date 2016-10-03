@@ -165,13 +165,13 @@ Solid *loadObject(const char *fileName, const char *bmpName)
                 solid->faces[d].vertices[2].normal--;
 
                 setSegmentBuild(&u,
-                        	solid->faces[d].vertices[1].point,
-                        	solid->faces[d].vertices[2].point);
+                                solid->faces[d].vertices[1].point,
+                                solid->faces[d].vertices[2].point);
                 addSegmentBuild(solid, &u, &bufferSize);
 
                 setSegmentBuild(&u,
-                        	solid->faces[d].vertices[2].point,
-                        	solid->faces[d].vertices[0].point);
+                                solid->faces[d].vertices[2].point,
+                                solid->faces[d].vertices[0].point);
                 addSegmentBuild(solid, &u, &bufferSize);
 
                 d++;

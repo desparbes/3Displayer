@@ -193,8 +193,8 @@ void drawTriangle(Lens *l, Texture *triangle, Pixel A, Pixel B, Pixel C)
 
                 if (triangle) {
                     float denominator = (alpha / A.depth +
-                        		 beta / B.depth +
-                        		 gamma / C.depth);
+                                         beta / B.depth +
+                                         gamma / C.depth);
                     Position N;
                     N.x = (alpha * u.x + beta * v.x + gamma * w.x) /
                         denominator;

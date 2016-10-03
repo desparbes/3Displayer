@@ -46,7 +46,7 @@ void addSegmentBuild(Solid *solid, const Segment *segment, int *bufferSize)
     if(solid->numSegments >= *bufferSize){
         *bufferSize *= 2;
         solid->segments = realloc(solid->segments,
-                        	  *bufferSize * sizeof(Segment));
+                                  *bufferSize * sizeof(Segment));
     }
     solid->segments[solid->numSegments++] = *segment;
 }

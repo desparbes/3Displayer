@@ -15,28 +15,26 @@
 
 #define MAXLENGTH 256
 #define EPSILON 0.001
+#define min(x, y) ((x) < (y) ? (x) : (y))
 
-static void getExtension(const char *file, char *ext)
+static const char *getExtension(const char *file)
 {
-    if (!file)
-        return;
-    int i;
-    int j;
-    for (i = 0; file[i] && file[i] != '.'; i++);
-    for (j = 0; file[i] && j < MAXLENGTH - 1; i++, j++)
-        ext[j] = file[i];
-    ext[j] = '\0';
+    if (file == NULL)
+        return "";
+    const char *e = strrchr(file, '.');
+    if (e == NULL)
+        e = file;
+    return e;
 }
 
 Solid *loadSolid(const char *fileName, const char *bmpName)
 {
-    char ext[MAXLENGTH] = {0};
-    getExtension(fileName, ext);
+    const char *ext = getExtension(fileName);
     if (strcmp(ext, ".obj") == 0)
         return loadObject(fileName, bmpName);
     else if (strcmp(ext, ".eq") == 0)
         return loadEquation(fileName, bmpName);
-    fprintf(stderr, "Extension non reconnue\n");
+    fprintf(stderr, "Extension non reconnue: '%s'\n", ext);
     return NULL;
 }
 
@@ -51,7 +49,6 @@ void calculateOriginSolid(Solid *solid)
     solid->origin.y /= solid->numVertices;
     solid->origin.z /= solid->numVertices;
 }
-
 
 Point *getOriginSolid(Solid *solid)
 {

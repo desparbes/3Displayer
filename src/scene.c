@@ -47,13 +47,16 @@ static Scene scene;
 
 static void removeSpace(char *buf)
 {
-    while (*buf) {
-        if (*buf == ' ') {
-            *buf = 0;
-            return;
-        }
-        ++buf;
-    }
+    int m = 0;
+    while (buf[m] == ' ')
+        ++ m;
+    memmove(buf, buf+m, strlen(buf));
+
+    char *last;
+    while ((last = strrchr(buf, ' ')) != NULL)
+        *last = 0;
+    while ((last = strrchr(buf, '\n')) != NULL)
+        *last = 0;
 }
 
 static void addSolidToScene(Solid *solid)

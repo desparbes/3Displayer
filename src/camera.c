@@ -43,8 +43,8 @@ static void addLensToCamera(Camera *c, char *fileName)
     if(c->nbLens >= c->bufferSize){
         c->bufferSize *= 2;
         c->lensBuffer = realloc(c->lensBuffer,
-                        	c->bufferSize *
-                        	sizeof(Lens *));
+                                c->bufferSize *
+                                sizeof(Lens *));
     }
     c->lensBuffer[c->nbLens++] = initLens(fileName);
 }
