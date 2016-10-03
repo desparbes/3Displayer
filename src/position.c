@@ -3,9 +3,9 @@
 static float loopFloat(float x)
 {
     if (x < 0.)
-	return x - (int) x + 1.;
+        return x - (int) x + 1.;
     else if (x >= 1)
-	return x - (int) x;
+        return x - (int) x;
     return x;
 }
 

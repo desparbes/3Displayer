@@ -31,7 +31,7 @@ sdl_window_resize(Window *w, int width, int height)
 Window* CreateWindow(int width, int height, Color background)
 {
     if (SDL_Init(SDL_INIT_VIDEO) == -1) {
-	fprintf(stderr, _("SDL_Init error: %s"), SDL_GetError());
+        fprintf(stderr, _("SDL_Init error: %s"), SDL_GetError());
         return NULL;
     }
     _3Displayer_SDL_Window *w;
@@ -105,7 +105,7 @@ sdl_window_get_pixel(Window *win_if, Coord p)
     Color c;
     SDL_Rect rect;
     uint32_t pixel;
-    
+
     rect.x = p.w; rect.y = p.w;
     rect.w = 1; rect.h = 1;
 

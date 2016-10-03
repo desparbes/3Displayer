@@ -13,13 +13,13 @@ static bool handleMouseMotionEvent(Event *event, SDL_Event *sdl_event)
 {
     event->type = ROTATE;
     if (state.rightClickDown) {
-	if (sdl_event->motion.x < state.mouseX)
+        if (sdl_event->motion.x < state.mouseX)
             event->direction = LEFT;
-	else if (sdl_event->motion.x > state.mouseX)
+        else if (sdl_event->motion.x > state.mouseX)
             event->direction = RIGHT;
-	else if (sdl_event->motion.y < state.mouseY)
+        else if (sdl_event->motion.y < state.mouseY)
             event->direction = UP;
-	else if (sdl_event->motion.y > state.mouseY)
+        else if (sdl_event->motion.y > state.mouseY)
             event->direction = DOWN;
     }
     state.mouseX = sdl_event->motion.x;
@@ -31,7 +31,7 @@ static bool handleMouseButtonUpEvent(SDL_Event *sdl_event)
 {
     switch (sdl_event->button.button) {
     case SDL_BUTTON_RIGHT:
-	state.rightClickDown = 0;
+        state.rightClickDown = 0;
     default:
         return false;
     }
@@ -41,7 +41,7 @@ static bool handleMouseButtonDownEvent(SDL_Event *sdl_event)
 {
     switch (sdl_event->button.button) {
     case SDL_BUTTON_RIGHT:
-	state.rightClickDown = 1;
+        state.rightClickDown = 1;
         return false;
     default:
         return false;
@@ -69,46 +69,46 @@ static bool handleKeyDownEvent(Event *event, SDL_Event *sdl_event)
     case SDLK_q:
         event->type = TRANSLATE;
         event->direction = LEFT;
-	break;
+        break;
     case SDLK_d:
         event->type = TRANSLATE;
         event->direction = RIGHT;
-	break;
+        break;
     case SDLK_e:
         event->type = TRANSLATE;
         event->direction = UP;
-	break;
+        break;
     case SDLK_a:
         event->type = TRANSLATE;
         event->direction = DOWN;
-	break;
+        break;
     case SDLK_z:
         event->type = TRANSLATE;
         event->direction = FORWARD;
-	break;
+        break;
     case SDLK_s:
         event->type = TRANSLATE;
         event->direction = BACKWARD;
-	break;
+        break;
     case SDLK_LEFT:
         event->type = ROTATE;
         event->direction = LEFT;
-	break;
+        break;
     case SDLK_RIGHT:
         event->type = ROTATE;
         event->direction = RIGHT;
-	break;
+        break;
     case SDLK_UP:
         event->type = ROTATE;
         event->direction = UP;
-	break;
+        break;
     case SDLK_DOWN:
         event->type = ROTATE;
         event->direction = DOWN;
-	break;
+        break;
     case SDLK_ESCAPE:
         event->type = QUIT;
-	break;
+        break;
     default:
         return false;
     }
@@ -121,29 +121,29 @@ static bool handleKeyUpEvent(Event *event, SDL_Event *sdl_event)
     case SDLK_o:
         event->type = STATE;
         event->state = DRAW;
-	break;
+        break;
     case SDLK_w:
         event->type = STATE;
         event->state = WIREFRAME;
-	break;
+        break;
     case SDLK_n:
         event->type = STATE;
         event->state = NORMAL;
-	break;
+        break;
     case SDLK_v:
         event->type = STATE;
         event->state = VERTEX;
-	break;
+        break;
     case SDLK_f:
         event->type = STATE;
         event->state = FRAME;
-	break;
+        break;
     case SDLK_l:
         event->type = LOAD;
-	break;
+        break;
     case SDLK_u:
         event->type = UNLOAD;
-	break;
+        break;
     default:
         return false;
     }

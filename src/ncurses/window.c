@@ -27,7 +27,7 @@ static inline int powi(int a, int b)
 {
     int p = 1;
     for (int i = 0; i < b; i++)
-	p *= a;
+        p *= a;
     return p;
 }
 
@@ -36,11 +36,11 @@ static int getRange(int nbColor)
     int a = 0;
     int b = nbColor;
     while (b - a > 1) {
-	int c = (a + b) / 2;
-	if (powi(c, 3) > nbColor)
-	    b = c;
-	else
-	    a = c;
+        int c = (a + b) / 2;
+        if (powi(c, 3) > nbColor)
+            b = c;
+        else
+            a = c;
     }
     return a;
 }
@@ -74,11 +74,11 @@ int getIdFromRGB(int r, int g, int b)
 {
     int id = r * window->range2 + g * window->range1 + b;
     if (id == 0)
-	return window->background;
+        return window->background;
     else if (id == window->background)
-	return 0;
+        return 0;
     else
-	return id;
+        return id;
 }
 
 // 0 <= id < nbColor et 0 <= r, g et b < range1
@@ -104,14 +104,14 @@ static void setIdWithCOLOR(int id, int r, int g, int b)
 void getIntervalComponent(int coord, int component, int *downer, int * upper)
 {
     if (coord < DOWNER) {
-	*downer = component;
-	*upper = component;
+        *downer = component;
+        *upper = component;
     } else if (coord >= UPPER) {
-	*downer = component + 1;
-	*upper = component + 1;
+        *downer = component + 1;
+        *upper = component + 1;
     } else {
-	*downer = component;
-	*upper = component + 1;
+        *downer = component;
+        *upper = component + 1;
     }
 }
 
@@ -133,7 +133,7 @@ static void getIntervalId(Color c, int *downer, int *upper)
 static int initColor(Color background)
 {
     if (can_change_color() == FALSE)
-	return 0;
+        return 0;
     int r, g, b;
     start_color();
     window->range1 = getRange(MIN(COLOR_PAIRS, COLORS));
@@ -141,8 +141,8 @@ static int initColor(Color background)
     window->nbColor = window->range2 * window->range1;
 
     for (int i = 1; i < window->nbColor; i++) {
-	getCOLORFromId(i, &r, &g, &b);
-	setIdWithCOLOR(i, r, g, b);
+        getCOLORFromId(i, &r, &g, &b);
+        setIdWithCOLOR(i, r, g, b);
     }
     window->background = getIdFromColor(background);
     getCOLORFromId(window->background, &r, &g, &b);
@@ -163,12 +163,12 @@ Window* CreateWindow(int screenWidth, int screenHeight, Color background)
         fprintf(stderr, "Only one ncurses window is available\n");
         return (Window*) window;
     }
-    
+
     window = malloc(sizeof*window);
     if (!initColor(background)) {
-	endwin();
-	printf("Unable to change colors. Try <export TERM=xterm-256color\n");
-	exit(EXIT_FAILURE);
+        endwin();
+        printf("Unable to change colors. Try <export TERM=xterm-256color\n");
+        exit(EXIT_FAILURE);
     }
     window->parent = _win_ops;
 
@@ -202,17 +202,17 @@ ncurses_window_setPixel(Window *w, Coord A, Color color)
     (void) w;
     int maxW = 0;
     int maxH = 0;
-    
+
     getmaxyx(stdscr, maxH, maxW);
     if (A.w >= 0 && A.w < maxW / 2 && A.h >= 0 && A.h < maxH) {
-	int downer, upper;
-	getIntervalId(color, &downer, &upper);
-	attron(COLOR_PAIR(downer));
-	mvprintw(A.h, 2 * A.w, " ");
-	attroff(COLOR_PAIR(downer));
-	attron(COLOR_PAIR(upper));
-	mvprintw(A.h, 2 * A.w + 1, " ");
-	attroff(COLOR_PAIR(upper));
+        int downer, upper;
+        getIntervalId(color, &downer, &upper);
+        attron(COLOR_PAIR(downer));
+        mvprintw(A.h, 2 * A.w, " ");
+        attroff(COLOR_PAIR(downer));
+        attron(COLOR_PAIR(upper));
+        mvprintw(A.h, 2 * A.w + 1, " ");
+        attroff(COLOR_PAIR(upper));
     }
 }
 

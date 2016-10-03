@@ -8,11 +8,13 @@
 #include "texture.h"
 #include "lens.h"
 #include "pixel.h"
+#include "config.h"
 
+
+void initRenderer(Config *conf);
 void drawPixel(Lens *l, Coord A, float depthA, Color color);
-
+void drawTriangle(Lens *l, Texture *triangle, Pixel A, Pixel B, Pixel C);
 void drawSegment(Lens *l, Coord A, Coord B,
                  float depthA, float depthB, Color color);
-void drawTriangle(Lens *l, Texture *triangle, Pixel A, Pixel B, Pixel C);
- 
+
 #endif //DRAW_H

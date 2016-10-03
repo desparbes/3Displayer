@@ -18,24 +18,26 @@ void initWindow(Config *config)
 
     path = g_module_build_path("multimedia", config->window_backend);
     if (path == NULL) {
-	puts("Could not find window backend");
-	exit(EXIT_FAILURE);
+        puts("Could not find window backend");
+        exit(EXIT_FAILURE);
     }
     sModule = g_module_open(path, G_MODULE_BIND_LOCAL);
     g_free(path);
 
     if (sModule == NULL) {
-	puts(g_module_error());
-	exit(EXIT_FAILURE);
+        puts(g_module_error());
+        exit(EXIT_FAILURE);
     }
 
-    Window *(*CreateWindow)(int,int);
+    Window *(*CreateWindow)(int,int, Color);
     if (!g_module_symbol(sModule, "CreateWindow", (gpointer*) &CreateWindow)) {
-	puts(g_module_error());
-	exit(EXIT_FAILURE);
+        puts(g_module_error());
+        exit(EXIT_FAILURE);
     }
 
-    window = CreateWindow(config->window_width, config->window_height);
+    window = CreateWindow(config->window_width,
+                          config->window_height,
+                          config->window_background);
 
     if (window == NULL) {
         fprintf(stderr, _("Could not create window!! aborting..."));

@@ -17,4 +17,4 @@ void rotateFrame(Frame *frame, float theta, float phi, float rho);
 void translateFrame(Frame *frame, Point *A, float scale);
 void getAbsolutePointFromFrame(const Frame *f, const Point *A, Point *B);
 
-#endif // FRAME_H 
+#endif // FRAME_H

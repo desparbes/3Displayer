@@ -16,7 +16,7 @@ float distancePoint(const Point *u, const Point *v);
 float normPoint(const Point *u);
 void normalizePoint(const Point *u, Point *S);
 void normal(const Point *A, const Point *B, const Point *C,
-	    Point *normal);
+            Point *normal);
 void scalePoint(Point *A, const Point *O, float scale);
 void rotPointXAxis(Point *A, const Point *O, float phi);
 void rotPointYAxis(Point *A, const Point *O, float rho);

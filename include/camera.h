@@ -16,7 +16,7 @@ enum direction {
     BACKWARD,
     LEFT,
     RIGHT,
-    DOWN, 
+    DOWN,
     UP,
     NB_DIRECTION,
 };

@@ -9,7 +9,7 @@ void test_setPosition()
     Position p;
     setPosition(&p, 0.5, 0.);
     assert(p.x == 0.5 && p.y == 0.);
-}    
+}
 
 void test_loopPosition(void)
 {

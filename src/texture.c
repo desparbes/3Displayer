@@ -14,7 +14,7 @@ Texture *loadTexture(char const *fileName)
 {
     SDL_Surface *tmp = SDL_LoadBMP(fileName);
     if (!tmp)
-	return NULL;
+        return NULL;
     Texture *texture = g_malloc0(sizeof*texture);
     texture->surface = tmp;
     return texture;
@@ -38,7 +38,7 @@ void getPixelTexture(Texture const *texture, Position const *p, Color *c)
 void freeTexture(Texture *texture)
 {
     if (texture != NULL) {
-	SDL_FreeSurface(texture->surface);
-	free(texture);
+        SDL_FreeSurface(texture->surface);
+        free(texture);
     }
 }

@@ -26,6 +26,6 @@ Frame *getPosition(Lens *l);
 int getWidthPosition(Lens *l);
 int getHeightPosition(Lens *l);
 int getOverlapping(Lens *l);
-void freeLens(Lens *l);    
-    
+void freeLens(Lens *l);
+
 #endif //LENS_H

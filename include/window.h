@@ -13,17 +13,17 @@ typedef struct Event_ Event;
 
 struct Window_ {
     void (*free)(Window*);
-    
+
     void (*reset)(Window*);
     void (*update)(Window*);
     void (*resize)(Window*, int, int);
-    
+
     int (*getWidth)(Window*);
     int (*getHeight)(Window*);
 
     void (*setPixel)(Window*, Coord, Color);
     Color (*getPixel)(Window*, Coord);
-    
+
     bool (*pollEvent)(Window*, Event *event);
 };
 

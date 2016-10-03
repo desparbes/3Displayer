@@ -75,65 +75,65 @@ Lens *initLens(char *fileName)
     if (file == NULL) {
         printf("File %s not found\n", fileName);
     } else {
-	char str[MAXLENGTH];
-	while (fscanf(file, "%s", str) != EOF) {
-	    if (strcmp(str, "offset") == 0 && 
-		fscanf(file, "%f %f %f", 
-		       &l->offset.x, &l->offset.y, &l->offset.z) == 3)
-		check[OFFSET]++;
-	    else if (strcmp(str, "theta") == 0 &&
-		     fscanf(file, "%f", &l->theta) == 1)
-		check[THETA]++;
-	    else if (strcmp(str, "phi") == 0 &&
-		     fscanf(file, "%f", &l->phi) == 1)
-		check[PHI]++;
-	    else if (strcmp(str, "rho") == 0 &&
-		     fscanf(file, "%f", &l->rho) == 1)	    
-		check[RHO]++;
-	    else if (strcmp(str, "filter") == 0 && 
-		     fscanf(file, "%hhd %hhd %hhd", 
-			    &l->filter.r, 
-			    &l->filter.g, 
-			    &l->filter.b) == 3) {
-		check[FILTER]++;
-	    } else if (strcmp(str, "screenPositionWidth") == 0 &&
-		       fscanf(file, "%d", &l->widthPosition) == 1 &&
-		       isInRange(l->widthPosition)) {
-		check[WIDTHPOSITION]++;
-	    } else if (strcmp(str, "screenPositionHeight") == 0 &&
-		       fscanf(file, "%d", &l->heightPosition) == 1 &&
-		       isInRange(l->heightPosition)) {
-		check[HEIGHTPOSITION]++;
-	    } else if (strcmp(str, "screenWidth") == 0 &&
-		       fscanf(file, "%d", &l->screenWidth) == 1 &&
-		       isInRange(l->screenWidth)) {
-		check[SCREENWIDTH]++;
-	    } else if (strcmp(str, "screenHeight") == 0 &&
-		       fscanf(file, "%d", &l->screenHeight) == 1 &&
-		       isInRange(l->screenHeight)) {
-		check[SCREENHEIGHT]++;
-	    } else if (strcmp(str, "overlapping") == 0 &&
-		       fscanf(file, "%d", &l->overlapping) == 1) {
-		check[OVERLAPPING]++;
-	    } else if (strcmp(str, "nearplan") == 0 &&
-		       fscanf(file, "%f", &l->nearplan) == 1)	    
-		check[NEARPLAN]++;
-	    else if (strcmp(str, "farplan") == 0 &&
-		     fscanf(file, "%f", &l->farplan) == 1)	    
-		check[FARPLAN]++;
-	    else if (strcmp(str, "wfov") == 0 &&
-		     fscanf(file, "%d", &tmp) == 1)	    
-		check[WFOV]++;
-	}
-	fclose(file);
+        char str[MAXLENGTH];
+        while (fscanf(file, "%s", str) != EOF) {
+            if (strcmp(str, "offset") == 0 &&
+                fscanf(file, "%f %f %f",
+                       &l->offset.x, &l->offset.y, &l->offset.z) == 3)
+                check[OFFSET]++;
+            else if (strcmp(str, "theta") == 0 &&
+                     fscanf(file, "%f", &l->theta) == 1)
+                check[THETA]++;
+            else if (strcmp(str, "phi") == 0 &&
+                     fscanf(file, "%f", &l->phi) == 1)
+                check[PHI]++;
+            else if (strcmp(str, "rho") == 0 &&
+                     fscanf(file, "%f", &l->rho) == 1)
+                check[RHO]++;
+            else if (strcmp(str, "filter") == 0 &&
+                     fscanf(file, "%hhd %hhd %hhd",
+                            &l->filter.r,
+                            &l->filter.g,
+                            &l->filter.b) == 3) {
+                check[FILTER]++;
+            } else if (strcmp(str, "screenPositionWidth") == 0 &&
+                       fscanf(file, "%d", &l->widthPosition) == 1 &&
+                       isInRange(l->widthPosition)) {
+                check[WIDTHPOSITION]++;
+            } else if (strcmp(str, "screenPositionHeight") == 0 &&
+                       fscanf(file, "%d", &l->heightPosition) == 1 &&
+                       isInRange(l->heightPosition)) {
+                check[HEIGHTPOSITION]++;
+            } else if (strcmp(str, "screenWidth") == 0 &&
+                       fscanf(file, "%d", &l->screenWidth) == 1 &&
+                       isInRange(l->screenWidth)) {
+                check[SCREENWIDTH]++;
+            } else if (strcmp(str, "screenHeight") == 0 &&
+                       fscanf(file, "%d", &l->screenHeight) == 1 &&
+                       isInRange(l->screenHeight)) {
+                check[SCREENHEIGHT]++;
+            } else if (strcmp(str, "overlapping") == 0 &&
+                       fscanf(file, "%d", &l->overlapping) == 1) {
+                check[OVERLAPPING]++;
+            } else if (strcmp(str, "nearplan") == 0 &&
+                       fscanf(file, "%f", &l->nearplan) == 1)
+                check[NEARPLAN]++;
+            else if (strcmp(str, "farplan") == 0 &&
+                     fscanf(file, "%f", &l->farplan) == 1)
+                check[FARPLAN]++;
+            else if (strcmp(str, "wfov") == 0 &&
+                     fscanf(file, "%d", &tmp) == 1)
+                check[WFOV]++;
+        }
+        fclose(file);
     }
-    
+
     if (!areEqualsArray(check, template, NB_KEYWORDS)) {
-	printf("Error parsing lens %s: default lens loaded\n", fileName);
-	loadDefaultLens(l);
+        printf("Error parsing lens %s: default lens loaded\n", fileName);
+        loadDefaultLens(l);
     } else {
-	l->wfov = DEGREE_TO_RADIAN(tmp);
-	printf("Lens %s successfully loaded\n", fileName);
+        l->wfov = DEGREE_TO_RADIAN(tmp);
+        printf("Lens %s successfully loaded\n", fileName);
     }
     initFrame(&l->position);
     l->zBuffer = NULL;
@@ -151,10 +151,10 @@ void refreshLens(Lens *l, int wD, int hD)
     l->heightPositionA = l->heightPosition * hD / MAXWINDOWS;
     l->screenWidthA = l->screenWidth * wD / MAXWINDOWS;
     l->screenHeightA = l->screenHeight * hD / MAXWINDOWS;
-    l->hfov = 2 * atan(tan(l->wfov / 2.) * 
-		       ((float)l->screenWidthA / l->screenHeightA));
-    l->zBuffer = realloc(l->zBuffer, sizeof(float) * 
-			 l->screenWidthA * l->screenHeightA);
+    l->hfov = 2 * atan(tan(l->wfov / 2.) *
+                       ((float)l->screenWidthA / l->screenHeightA));
+    l->zBuffer = realloc(l->zBuffer, sizeof(float) *
+                         l->screenWidthA * l->screenHeightA);
 }
 
 void updateLens(Lens *l, Frame *camera)
@@ -168,7 +168,7 @@ void updateLens(Lens *l, Frame *camera)
     rotateFrameAroundPoint(&l->position, &camera->j, l->rho);
 
     getAbsolutePointFromFrame(camera, &l->offset, &l->position.O);
-}    
+}
 
 float *getZBuffer(Lens *l)
 {
@@ -229,7 +229,7 @@ int getOverlapping(Lens *l)
 {
     return l->overlapping;
 }
-    
+
 void freeLens(Lens *l)
 {
     free(l->zBuffer);

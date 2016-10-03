@@ -16,14 +16,14 @@ void projectTriangle(Lens *l,
                      const Point *A, // vertex position
                      const Point *B,
                      const Point *C,
-                     
-		     Texture *triangle,
-                     
-		     const Position *U, // vertex texture coords
+
+                     Texture *triangle,
+
+                     const Position *U, // vertex texture coords
                      const Position *V,
                      const Position *W,
-                     
-		     const Point *normalA, // vertex normals
+
+                     const Point *normalA, // vertex normals
                      const Point *normalB,
                      const Point *normalC);
 

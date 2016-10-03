@@ -35,16 +35,16 @@ struct Camera {
 static void updateCamera(Camera *c)
 {
     for (int i = 0; i < c->nbLens; i++)
-	updateLens(c->lensBuffer[i], &c->position);
+        updateLens(c->lensBuffer[i], &c->position);
 }
 
 static void addLensToCamera(Camera *c, char *fileName)
 {
     if(c->nbLens >= c->bufferSize){
-	c->bufferSize *= 2;
-	c->lensBuffer = realloc(c->lensBuffer, 
-				c->bufferSize * 
-				sizeof(Lens *));
+        c->bufferSize *= 2;
+        c->lensBuffer = realloc(c->lensBuffer,
+                        	c->bufferSize *
+                        	sizeof(Lens *));
     }
     c->lensBuffer[c->nbLens++] = initLens(fileName);
 }
@@ -52,7 +52,7 @@ static void addLensToCamera(Camera *c, char *fileName)
 static void removeLensFromCamera(Camera *c)
 {
     if (c->nbLens > 0)
-	freeLens(c->lensBuffer[--c->nbLens]);
+        freeLens(c->lensBuffer[--c->nbLens]);
 }
 
 static void initStateCamera(Camera *c)
@@ -73,7 +73,7 @@ static void loadDefaultCamera(Camera *c)
     c->rho = 0.;
     int initialNbLens = c->nbLens;
     for (int i = 0; i < initialNbLens; i++)
-	removeLensFromCamera(c);
+        removeLensFromCamera(c);
     addLensToCamera(c, "cameras/standard/standard.txt");
 }
 
@@ -93,41 +93,41 @@ Camera *initCamera(char *fileName)
     if (file == NULL) {
         printf("File %s not found\n", fileName);
     } else {
-	char str[MAXLENGTH];
-	while (fscanf(file, "%s", str) != EOF) {
-	    if (strcmp(str, "translationSpeed") == 0 &&
-		     fscanf(file, "%f", &c->translationSpeed) == 1)
-		check[TRANSLATIONSPEED]++;
-	    else if (strcmp(str, "rotationSpeed") == 0 &&
-		     fscanf(file, "%f", &c->rotationSpeed) == 1)
-		check[ROTATIONSPEED]++;
-	    else if (strcmp(str, "position") == 0 && 
-		 fscanf(file, "%f %f %f", 
-			&c->position.O.x, 
-			&c->position.O.y,
-			&c->position.O.z) == 3)
-		check[POSITION]++;
-	    else if (strcmp(str, "theta") == 0 &&
-		     fscanf(file, "%f", &c->theta) == 1)
-		check[THETA]++;
-	    else if (strcmp(str, "phi") == 0 &&
-		 fscanf(file, "%f", &c->phi) == 1)
-		check[PHI]++;
-	    else if (strcmp(str, "rho") == 0 &&
-		     fscanf(file, "%f", &c->rho) == 1)	    
-		check[RHO]++;
-	    else if (strcmp(str, "lens") == 0 &&
-		     fscanf(file, "%s", str) == 1)	    
-		addLensToCamera(c, str);
-	}
-	fclose(file);
+        char str[MAXLENGTH];
+        while (fscanf(file, "%s", str) != EOF) {
+            if (strcmp(str, "translationSpeed") == 0 &&
+                     fscanf(file, "%f", &c->translationSpeed) == 1)
+                check[TRANSLATIONSPEED]++;
+            else if (strcmp(str, "rotationSpeed") == 0 &&
+                     fscanf(file, "%f", &c->rotationSpeed) == 1)
+                check[ROTATIONSPEED]++;
+            else if (strcmp(str, "position") == 0 &&
+                 fscanf(file, "%f %f %f",
+                        &c->position.O.x,
+                        &c->position.O.y,
+                        &c->position.O.z) == 3)
+                check[POSITION]++;
+            else if (strcmp(str, "theta") == 0 &&
+                     fscanf(file, "%f", &c->theta) == 1)
+                check[THETA]++;
+            else if (strcmp(str, "phi") == 0 &&
+                 fscanf(file, "%f", &c->phi) == 1)
+                check[PHI]++;
+            else if (strcmp(str, "rho") == 0 &&
+                     fscanf(file, "%f", &c->rho) == 1)
+                check[RHO]++;
+            else if (strcmp(str, "lens") == 0 &&
+                     fscanf(file, "%s", str) == 1)
+                addLensToCamera(c, str);
+        }
+        fclose(file);
     }
 
     if (!areEqualsArray(check, template, NB_KEYWORDS)) {
-	printf("Error parsing camera %s: default camera loaded\n", fileName);
+        printf("Error parsing camera %s: default camera loaded\n", fileName);
         loadDefaultCamera(c);
     } else {
-	printf("Camera %s successfully loaded\n", fileName);
+        printf("Camera %s successfully loaded\n", fileName);
     }
     rotateFrame(&c->position, c->theta, c->phi, c->rho);
     updateCamera(c);
@@ -137,30 +137,30 @@ Camera *initCamera(char *fileName)
 void resetCamera(Camera *c)
 {
     for (int i = 0; i < c->nbLens; i++)
-	resetLens(c->lensBuffer[i]);
+        resetLens(c->lensBuffer[i]);
 }
 
 void translateCamera(Camera *c, int direction)
 {
     switch(direction) {
     case BACKWARD:
-	translateFrame(&c->position, &c->position.j, -c->translationSpeed);
-	break; 
+        translateFrame(&c->position, &c->position.j, -c->translationSpeed);
+        break;
     case FORWARD:
-	translateFrame(&c->position, &c->position.j, c->translationSpeed);
-	break;
+        translateFrame(&c->position, &c->position.j, c->translationSpeed);
+        break;
     case LEFT:
-	translateFrame(&c->position, &c->position.i, -c->translationSpeed);
-	break;
+        translateFrame(&c->position, &c->position.i, -c->translationSpeed);
+        break;
     case RIGHT:
-	translateFrame(&c->position, &c->position.i, c->translationSpeed);
-	break;
+        translateFrame(&c->position, &c->position.i, c->translationSpeed);
+        break;
     case DOWN:
-	translateFrame(&c->position, &c->position.k, -c->translationSpeed);
-	break;
+        translateFrame(&c->position, &c->position.k, -c->translationSpeed);
+        break;
     case UP:
-	translateFrame(&c->position, &c->position.k, c->translationSpeed);
-	break;
+        translateFrame(&c->position, &c->position.k, c->translationSpeed);
+        break;
     }
     updateCamera(c);
 }
@@ -169,26 +169,26 @@ void rotateCamera(Camera *c, int direction)
 {
     switch(direction) {
     case LEFT:
-	c->theta -= c->rotationSpeed;
-	break;
+        c->theta -= c->rotationSpeed;
+        break;
     case RIGHT:
-	c->theta += c->rotationSpeed;
-	break;
+        c->theta += c->rotationSpeed;
+        break;
     case DOWN:
-	c->phi -= c->rotationSpeed;
-	break;
+        c->phi -= c->rotationSpeed;
+        break;
     case UP:
-	c->phi += c->rotationSpeed;
-	break;
-    }	
+        c->phi += c->rotationSpeed;
+        break;
+    }
     rotateFrame(&c->position, c->theta, c->phi, c->rho);
     updateCamera(c);
 }
 
 void refreshCamera(Camera *c, int screenWidth, int screenHeight)
 {
-    for (int i = 0; i < c->nbLens; i++)	
-	refreshLens(c->lensBuffer[i], screenWidth, screenHeight);
+    for (int i = 0; i < c->nbLens; i++)
+        refreshLens(c->lensBuffer[i], screenWidth, screenHeight);
 }
 
 void switchStateCamera(Camera *c, int state)
@@ -213,8 +213,8 @@ int getNbLens(Camera *c)
 
 void freeCamera(Camera *c)
 {
-    for (int i = 0; i < c->nbLens; i++)	
-	freeLens(c->lensBuffer[i]);
+    for (int i = 0; i < c->nbLens; i++)
+        freeLens(c->lensBuffer[i]);
     free(c->lensBuffer);
     free(c);
 }

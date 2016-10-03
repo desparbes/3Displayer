@@ -4,15 +4,15 @@
 void addElementToBuffer(void *element, void **buffer, int *sizeB, int *nbE)
 {
     if (!element)
-	return;
+        return;
     if(*nbE >= *sizeB){
-	(*sizeB) *= 2;
-	buffer = realloc(buffer, (*sizeB) * sizeof(void *));
+        (*sizeB) *= 2;
+        buffer = realloc(buffer, (*sizeB) * sizeof(void *));
     }
     buffer[(*nbE)++] = element;
 }
 
 void removeElementFromBuffer(void *buffer, int *nbE)
 {
-    *nbE > 0 ? (*nbE--) : (*nbE = 0);    
+    *nbE > 0 ? (*nbE--) : (*nbE = 0);
 }
