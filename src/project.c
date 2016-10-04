@@ -17,8 +17,8 @@ static void projectPoint(Lens *l, const Point *A, const Point *B, Point *S)
     Point AB, d;
     diffPoint(B, A, &AB);
     diffPoint(A, &p->O, &d);
-    float k = (getNearplan(l) - scalarProduct(&p->j, &d)) /
-        scalarProduct(&p->j, &AB);
+    float k = ((getNearplan(l) - scalarProduct(&p->j, &d))
+               / scalarProduct(&p->j, &AB));
 
     setPoint(S,
              A->x + k * AB.x - p->O.x,
@@ -127,11 +127,11 @@ static void cutInOneTriangle(Lens *l,
 
     Position UV, UW;
     setPosition(&UV,
-               (V->x - U->x) * kB + U->x,
-               (V->y - U->y) * kB + U->y);
+                (V->x - U->x) * kB + U->x,
+                (V->y - U->y) * kB + U->y);
     setPosition(&UW,
-               (W->x - U->x) * kC + U->x,
-               (W->y - U->y) * kC + U->y);
+                (W->x - U->x) * kC + U->x,
+                (W->y - U->y) * kC + U->y);
 
     Point nAB, nAC;
     setPoint(&nAB,
@@ -224,7 +224,8 @@ static void cutInTwoTriangles(Lens *l,
     drawTriangle(l, triangle, pBn, pB, pC);
 }
 
-void projectTriangle(Lens *l, const Point *A, const Point *B, const Point *C,
+void projectTriangle(Lens *l,
+                     const Point *A, const Point *B, const Point *C,
                      Texture *triangle,
                      const Position *U, const Position *V, const Position *W,
                      const Point *normalA,
@@ -282,11 +283,11 @@ void projectTriangle(Lens *l, const Point *A, const Point *B, const Point *C,
                           normalC, normalA, normalB);
     } else if (depthA > nearplan){
         cutInOneTriangle(l, A, B, C,
-                          depthA, depthB, depthC,
-                          &OA,
-                          triangle,
-                          U, V, W,
-                          normalA, normalB, normalC);
+                         depthA, depthB, depthC,
+                         &OA,
+                         triangle,
+                         U, V, W,
+                         normalA, normalB, normalC);
     } else if (depthB > nearplan){
         cutInOneTriangle(l, B, C, A,
                          depthB, depthC, depthA,

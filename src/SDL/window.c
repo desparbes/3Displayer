@@ -7,13 +7,15 @@
 #include "color.h"
 #include "window.h"
 
-#define SDL_WINDOW(win)  ((_3Displayer_SDL_Window*)(win))
+#define SDL_BACKEND(win)  ((sdl_backend*)(win))
 
 
-bool PollEvent(Window *window, Event *event);
-typedef struct _3Displayer_SDL_Window_ _3Displayer_SDL_Window;
+void sdl_window_waitevent(Window *window, Event *event);
+bool sdl_window_pollevent(Window *window, Event *event);
 
-struct _3Displayer_SDL_Window_ {
+typedef struct sdl_backend_ sdl_backend;
+
+struct sdl_backend_ {
     Window parent;
     SDL_Window *window;
     SDL_Renderer *renderer;
@@ -22,19 +24,13 @@ struct _3Displayer_SDL_Window_ {
 
 static Window _win_ops;
 
-static void
-sdl_window_resize(Window *w, int width, int height)
-{
-    //SDL_SetWindowSize(SDL_WINDOW(w)->window, width, height);
-}
-
 Window* CreateWindow(int width, int height, Color background)
 {
     if (SDL_Init(SDL_INIT_VIDEO) == -1) {
         fprintf(stderr, _("SDL_Init error: %s"), SDL_GetError());
         return NULL;
     }
-    _3Displayer_SDL_Window *w;
+    sdl_backend *w;
     w = malloc(sizeof*w);
     w->window = SDL_CreateWindow(
         "3Displayer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
@@ -53,7 +49,7 @@ Window* CreateWindow(int width, int height, Color background)
 static void
 sdl_window_reset(Window *win_if)
 {
-    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    sdl_backend *win = SDL_BACKEND(win_if);
     SDL_SetRenderDrawColor(win->renderer, win->bg.r, win->bg.g, win->bg.b, 255);
     SDL_RenderClear(win->renderer);
 }
@@ -61,14 +57,14 @@ sdl_window_reset(Window *win_if)
 static void
 sdl_window_update(Window *win_if)
 {
-    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    sdl_backend *win = SDL_BACKEND(win_if);
     SDL_RenderPresent(win->renderer);
 }
 
 static int
 sdl_window_getWidth(Window *win_if)
 {
-    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    sdl_backend *win = SDL_BACKEND(win_if);
     int width, height;
     SDL_GetWindowSize(win->window, &width, &height);
     return width;
@@ -77,7 +73,7 @@ sdl_window_getWidth(Window *win_if)
 static int
 sdl_window_getHeight(Window *win_if)
 {
-    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    sdl_backend *win = SDL_BACKEND(win_if);
     int width, height;
     SDL_GetWindowSize(win->window, &width, &height);
     return height;
@@ -86,13 +82,13 @@ sdl_window_getHeight(Window *win_if)
 static void
 sdl_window_free(Window *w)
 {
-    SDL_DestroyWindow(SDL_WINDOW(w)->window);
+    SDL_DestroyWindow(SDL_BACKEND(w)->window);
 }
 
 static void
 sdl_window_set_pixel(Window *win_if, Coord pos, Color c)
 {
-    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    sdl_backend *win = SDL_BACKEND(win_if);
     SDL_SetRenderDrawColor(win->renderer, c.r, c.g, c.b, 255);
     if (SDL_RenderDrawPoint(win->renderer, pos.w, pos.h) < 0)
         fprintf(stderr, "render draw points failed: %s\n", SDL_GetError());
@@ -101,7 +97,7 @@ sdl_window_set_pixel(Window *win_if, Coord pos, Color c)
 static Color
 sdl_window_get_pixel(Window *win_if, Coord p)
 {
-    _3Displayer_SDL_Window *win = SDL_WINDOW(win_if);
+    sdl_backend *win = SDL_BACKEND(win_if);
     Color c;
     SDL_Rect rect;
     uint32_t pixel;
@@ -117,13 +113,13 @@ sdl_window_get_pixel(Window *win_if, Coord p)
 }
 
 static Window _win_ops = {
-    .resize = sdl_window_resize,
     .reset = sdl_window_reset,
     .update = sdl_window_update,
     .getWidth = sdl_window_getWidth,
     .getHeight = sdl_window_getHeight,
     .free = sdl_window_free,
-    .pollEvent = PollEvent,
+    .pollEvent = sdl_window_pollevent,
+    .waitEvent = sdl_window_waitevent,
     .setPixel = sdl_window_set_pixel,
     .getPixel = sdl_window_get_pixel,
 };

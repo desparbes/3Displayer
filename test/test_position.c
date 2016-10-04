@@ -28,7 +28,7 @@ void test_loopPosition(void)
     assert(p.x == 0. && p.y == 0.);
 }
 
-int main(int argc, char *argv[])
+int main()
 {
     test_setPosition();
     test_loopPosition();

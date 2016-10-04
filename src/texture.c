@@ -21,18 +21,25 @@ Texture *loadTexture(char const *fileName)
 }
 
 #define PIXEL_OFFSET(format, w, h, x, y)                        \
-    (((format)->BitsPerPixel/8) * ((int)(x)*(w) + (int)(y)*(h)*(w)))
+    (((format)->BitsPerPixel/8) * ((int)((x)*(w)) + (int)(y)*(h)*(w)))
 
 #define SURFACE_PIXEL_OFFSET(s, x, y)                   \
     PIXEL_OFFSET((s)->format, (s)->w, (s)->h, x, y)
 
-void getPixelTexture(Texture const *texture, Position const *p, Color *c)
+Color getPixelTexture(Texture const *texture, Position const *P)
 {
-    Uint32 *pixel;
+    Color c;
+    Uint32 pixel = 0, *pPixel;
     SDL_Surface *s = texture->surface;
+    int pitch = s->pitch;
+    int bpp = s->format->BytesPerPixel;
 
-    pixel = (Uint32*)s->pixels + SURFACE_PIXEL_OFFSET(s, p->x, p->y);
-    SDL_GetRGB(*pixel, s->format, &c->r, &c->g, &c->b);
+    pPixel = (Uint32*)((char*) s->pixels
+                       + (int)(P->x*s->w)*bpp
+                       + (int)(P->y*s->h)*pitch);
+    memcpy(&pixel, pPixel, bpp);
+    SDL_GetRGB(pixel, s->format, &c.r, &c.g, &c.b);
+    return c;
 }
 
 void freeTexture(Texture *texture)

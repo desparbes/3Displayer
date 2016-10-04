@@ -7,7 +7,7 @@
 typedef struct Texture Texture;
 
 Texture *loadTexture(const char *fileName);
-void getPixelTexture(const Texture *texture, const Position *p, Color *c);
+Color getPixelTexture(const Texture *texture, const Position *p);
 void freeTexture(Texture *texture);
 
 #endif //TEXTURE_H

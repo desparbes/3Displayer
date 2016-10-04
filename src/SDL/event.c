@@ -9,7 +9,8 @@ struct sdl_state {
 };
 static struct sdl_state state;
 
-static bool handleMouseMotionEvent(Event *event, SDL_Event *sdl_event)
+static void
+handleMouseMotionEvent(Event *event, SDL_Event *sdl_event)
 {
     event->type = ROTATE;
     if (state.rightClickDown) {
@@ -24,32 +25,28 @@ static bool handleMouseMotionEvent(Event *event, SDL_Event *sdl_event)
     }
     state.mouseX = sdl_event->motion.x;
     state.mouseY = sdl_event->motion.y;
-    return true;
 }
 
-static bool handleMouseButtonUpEvent(SDL_Event *sdl_event)
+static void
+handleMouseButtonUpEvent(SDL_Event *sdl_event)
 {
     switch (sdl_event->button.button) {
-    case SDL_BUTTON_RIGHT:
-        state.rightClickDown = 0;
-    default:
-        return false;
+    case SDL_BUTTON_RIGHT:   state.rightClickDown = 0; break;
+    default: break;
     }
 }
 
-static bool handleMouseButtonDownEvent(SDL_Event *sdl_event)
+static void
+handleMouseButtonDownEvent(SDL_Event *sdl_event)
 {
     switch (sdl_event->button.button) {
-    case SDL_BUTTON_RIGHT:
-        state.rightClickDown = 1;
-        return false;
-    default:
-        return false;
+    case SDL_BUTTON_RIGHT:  state.rightClickDown = 1; break;
+    default: break;
     }
-    return false;
 }
 
-static bool handleMouseWheelEvent(Event *event, SDL_Event *sdl_event)
+static void
+handleMouseWheelEvent(Event *event, SDL_Event *sdl_event)
 {
     event->type = TRANSLATE;
     if (sdl_event->wheel.y > 0)
@@ -57,14 +54,11 @@ static bool handleMouseWheelEvent(Event *event, SDL_Event *sdl_event)
     else if (sdl_event->wheel.y < 0)
         event->direction = BACKWARD;
     else
-        return false;
-    return true;
+        event->type = NO_EVENT;
 }
 
-
-static bool handleKeyDownEvent(Event *event, SDL_Event *sdl_event)
+static void handleKeyDownEvent(Event *event, SDL_Event *sdl_event)
 {
-
     switch (sdl_event->key.keysym.sym) {
     case SDLK_q:
         event->type = TRANSLATE;
@@ -109,13 +103,12 @@ static bool handleKeyDownEvent(Event *event, SDL_Event *sdl_event)
     case SDLK_ESCAPE:
         event->type = QUIT;
         break;
-    default:
-        return false;
+    default: break;
     }
-    return true;
 }
 
-static bool handleKeyUpEvent(Event *event, SDL_Event *sdl_event)
+static void
+handleKeyUpEvent(Event *event, SDL_Event *sdl_event)
 {
     switch (sdl_event->key.keysym.sym) {
     case SDLK_o:
@@ -144,55 +137,63 @@ static bool handleKeyUpEvent(Event *event, SDL_Event *sdl_event)
     case SDLK_u:
         event->type = UNLOAD;
         break;
-    default:
-        return false;
+    default: break;
     }
-    return true;
 }
 
-static bool handleWindowEvent(Event *event, SDL_Event *sdl_event)
+static void
+handleWindowEvent(Event *event, SDL_Event *sdl_event)
 {
     switch(sdl_event->window.event) {
     case SDL_WINDOWEVENT_RESIZED:
         event->type = RESIZE;
         event->width = sdl_event->window.data1;
         event->height = sdl_event->window.data2;
-        return true;
-    default:
-        return false;
+        break;
+    case SDL_WINDOWEVENT_EXPOSED: event->type = EXPOSED; break;
+    default:  break;
     }
 }
 
-bool PollEvent(Window *window, Event *event)
+static void
+parse_event(SDL_Event *sdl_event, Event *event)
+{
+    event->type = NO_EVENT;
+
+    switch (sdl_event->type) {
+    case SDL_QUIT: event->type = QUIT; break;
+    case SDL_KEYDOWN: handleKeyDownEvent(event, sdl_event); break;
+    case SDL_KEYUP: handleKeyUpEvent(event, sdl_event); break;
+    case SDL_MOUSEMOTION: handleMouseMotionEvent(event, sdl_event); break;
+    case SDL_MOUSEBUTTONUP: handleMouseButtonUpEvent(sdl_event); break;
+    case SDL_MOUSEBUTTONDOWN: handleMouseButtonDownEvent(sdl_event); break;
+    case SDL_MOUSEWHEEL: handleMouseWheelEvent(event, sdl_event); break;
+    case SDL_WINDOWEVENT: handleWindowEvent(event, sdl_event); break;
+    default: break;
+    }
+}
+
+void sdl_window_waitevent(Window *window, Event *event)
+{
+    (void) window;
+
+    do {
+        SDL_Event sdl_event;
+        SDL_WaitEvent(&sdl_event);
+        parse_event(&sdl_event, event);
+    } while (event->type == NO_EVENT);
+}
+
+bool sdl_window_pollevent(Window *window, Event *event)
 {
     SDL_Event sdl_event;
+    (void) window;
+
     if (!SDL_PollEvent(&sdl_event))
         return false;
+    parse_event(&sdl_event, event);
 
-    switch (sdl_event.type) {
-    case SDL_QUIT:
-        event->type = QUIT;
-        return true;
-    case SDL_KEYDOWN:
-        return handleKeyDownEvent(event, &sdl_event);
-    case SDL_KEYUP:
-        return handleKeyUpEvent(event, &sdl_event);
-    case SDL_MOUSEMOTION:
-        return handleMouseMotionEvent(event, &sdl_event);
-    case SDL_MOUSEBUTTONUP:
-        return handleMouseButtonUpEvent(&sdl_event);
-    case SDL_MOUSEBUTTONDOWN:
-        return handleMouseButtonDownEvent(&sdl_event);
-    case SDL_MOUSEWHEEL:
-        return handleMouseWheelEvent(event, &sdl_event);
-    case SDL_WINDOWEVENT:
-        return handleWindowEvent(event, &sdl_event);
-    default:
+    if (event->type == NO_EVENT)
         return false;
-    }
-
-    #ifdef __GNUC__
-    __builtin_unreachable();
-    #endif
+    return true;
 }
-

@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 typedef struct Coord {
-    uint16_t w;
-    uint16_t h;
+    int16_t w;
+    int16_t h;
 } Coord;
 
 #define SET_COORD(C, w_, h_)                    \

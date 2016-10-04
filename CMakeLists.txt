@@ -2,8 +2,12 @@ cmake_minimum_required(VERSION 2.8)
 project(3Displayer C)
 
 set(CMAKE_MODULE_PATH ${3Displayer_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
-set(CMAKE_C_FLAGS "-std=gnu99 -Wall -g -pg") 
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
+set(CMAKE_C_FLAGS "-std=gnu99 -Wall -Wextra -g -pg")
+
+if (UNIX)
+  set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined")
+  set(CMAKE_MODULE_LINKER_FLAGS "-Wl,--no-undefined")
+endif(UNIX)
 
 find_package(Sanitizers)
 find_package(SDL2)

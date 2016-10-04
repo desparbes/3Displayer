@@ -33,16 +33,16 @@ typedef struct Color {
 
 #define PRODUCT_COLOR(c, A, B)                                  \
     do {                                                        \
-        ((c).r = (unsigned)(A).r * (unsigned)(B).r / 255);      \
-        ((c).g = (unsigned)(A).g * (unsigned)(B).g / 255);      \
-        ((c).b = (unsigned)(A).b * (unsigned)(B).b / 255);      \
+        ((c).r = ((unsigned)(A).r) * ((unsigned)(B).r) / 255);  \
+        ((c).g = ((unsigned)(A).g) * ((unsigned)(B).g) / 255);  \
+        ((c).b = ((unsigned)(A).b) * ((unsigned)(B).b) / 255);  \
     }while(0)
 
 #define ADD_COLOR(c, A, B)                      \
     do {                                        \
-        (c).r = MAX((A).r + (B).r, 255);        \
-        (c).g = MAX((A).g + (B).g, 255);        \
-        (c).b = MAX((A).b + (B).b, 255);        \
+        (c).r = MIN((A).r + (B).r, 255);        \
+        (c).g = MIN((A).g + (B).g, 255);        \
+        (c).b = MIN((A).b + (B).b, 255);        \
     }while(0)
 
 #define INTERPOLATE_COLOR(c, A, B, C, alpha, beta, gamma)       \

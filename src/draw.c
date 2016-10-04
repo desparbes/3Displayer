@@ -180,8 +180,10 @@ void drawTriangle(Lens *l, Texture *triangle, Pixel A, Pixel B, Pixel C)
             float beta = (float) PBeta / (float) det;
             float gamma = (float) PGamma / (float) det;
 
-            float depthM = depthABC /
-                (alpha * depthBC + beta * depthCA + gamma * depthAB);
+            float depthM = (depthABC
+                            / (alpha * depthBC
+                               + beta * depthCA
+                               + gamma * depthAB));
 
             if (zB[M.w + M.h * sW] < nearplan ||
                 zB[M.w + M.h * sW] > depthM) {
@@ -192,17 +194,14 @@ void drawTriangle(Lens *l, Texture *triangle, Pixel A, Pixel B, Pixel C)
                                   alpha, beta, gamma);
 
                 if (triangle) {
-                    float denominator = (alpha / A.depth +
-                                         beta / B.depth +
-                                         gamma / C.depth);
+                    float denominator = (alpha / A.depth
+                                         + beta / B.depth
+                                         + gamma / C.depth);
                     Position N;
-                    N.x = (alpha * u.x + beta * v.x + gamma * w.x) /
-                        denominator;
-                    N.y = (alpha * u.y + beta * v.y + gamma * w.y) /
-                        denominator;
-
+                    N.x = (alpha * u.x + beta * v.x + gamma * w.x) / denominator;
+                    N.y = (alpha * u.y + beta * v.y + gamma * w.y) / denominator;
                     loopPosition(&N);
-                    getPixelTexture(triangle, &N, &c);
+                    c = getPixelTexture(triangle, &N);
                 } else {
                     c = renderer.untextured;
                 }

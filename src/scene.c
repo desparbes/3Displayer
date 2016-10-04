@@ -179,7 +179,7 @@ void calculateLightScene(const Point *A, const Point *nA, Color *c)
 
 void resizeCameraScene(int screenWidth, int screenHeight)
 {
-    resizeWindow(screenWidth, screenHeight);
+    //resizeWindow(screenWidth, screenHeight);
     refreshCamera(scene.camera, screenWidth, screenHeight);
 }
 

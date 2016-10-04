@@ -11,6 +11,9 @@
 #define DOWNER 64
 #define UPPER 192
 
+bool ncurses_window_pollEvent(Window *w, Event *event);
+void ncurses_window_waitEvent(Window *w, Event *event);
+
 typedef struct ncurses_Window ncurses_Window;
 struct ncurses_Window {
     Window parent;
@@ -151,8 +154,11 @@ static int initColor(Color background)
     return 1;
 }
 
-Window* CreateWindow(int screenWidth, int screenHeight, Color background)
+Window* CreateWindow(int width, int height, Color background)
 {
+    (void) width;
+    (void) height;
+
     initscr();
     keypad(stdscr, TRUE);
     noecho();
@@ -173,13 +179,6 @@ Window* CreateWindow(int screenWidth, int screenHeight, Color background)
     window->parent = _win_ops;
 
     return (Window*) window;
-}
-
-static void
-ncurses_window_resize(Window *w, int screenWidth, int screenHeight)
-{
-    (void) w;
-    resize_term(screenHeight, 2 * screenWidth);
 }
 
 static void ncurses_window_reset(Window *w)
@@ -245,7 +244,6 @@ ncurses_window_free(Window *w)
 }
 
 static Window _win_ops = {
-    .resize = ncurses_window_resize,
     .reset = ncurses_window_reset,
     .update = ncurses_window_flip,
     .getWidth = ncurses_window_getWidth,
@@ -253,4 +251,6 @@ static Window _win_ops = {
     .getPixel = ncurses_window_getPixel,
     .setPixel = ncurses_window_setPixel,
     .free = ncurses_window_free,
+    .pollEvent = ncurses_window_pollEvent,
+    .waitEvent = ncurses_window_waitEvent,
 };

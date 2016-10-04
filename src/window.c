@@ -48,31 +48,19 @@ void initWindow(Config *config)
 bool handleEventWindow(void)
 {
     Event event;
-    while (!window->pollEvent(window, &event))
-    { /* WAIT */ }
+    window->waitEvent(window, &event);
 
     do {
         switch (event.type) {
-        case QUIT:
-            return true;
-        case TRANSLATE:
-            translateCameraScene(event.direction);
-            break;
-        case ROTATE:
-            rotateCameraScene(event.direction);
-            break;
-        case STATE:
-            switchStateCameraScene(event.state);
-            break;
-        case RESIZE:
-            resizeCameraScene(event.width, event.height);
-            break;
-        case LOAD:
-            askSolidForScene();
-            break;
-        case UNLOAD:
-            removeSolidFromScene();
-            break;
+        case QUIT:    return true;
+        case TRANSLATE: translateCameraScene(event.direction);     break;
+        case ROTATE: rotateCameraScene(event.direction);           break;
+        case STATE:  switchStateCameraScene(event.state);          break;
+        case RESIZE: resizeCameraScene(event.width, event.height); break;
+        case LOAD: askSolidForScene();       break;
+        case UNLOAD: removeSolidFromScene(); break;
+        case EXPOSED: break;
+        default:      break;
         };
     } while (window->pollEvent(window, &event));
     return false;
@@ -105,7 +93,3 @@ Color getPixelWindow(Coord coord)
     return window->getPixel(window, coord);
 }
 
-void resizeWindow(int width, int height)
-{
-    window->resize(window, width, height);
-}

@@ -16,7 +16,6 @@ struct Window_ {
 
     void (*reset)(Window*);
     void (*update)(Window*);
-    void (*resize)(Window*, int, int);
 
     int (*getWidth)(Window*);
     int (*getHeight)(Window*);
@@ -25,6 +24,7 @@ struct Window_ {
     Color (*getPixel)(Window*, Coord);
 
     bool (*pollEvent)(Window*, Event *event);
+    void (*waitEvent)(Window*, Event *event);
 };
 
 typedef enum event_type {
@@ -35,6 +35,8 @@ typedef enum event_type {
     RESIZE,
     LOAD,
     UNLOAD,
+    EXPOSED,
+    NO_EVENT,
 } event_type;
 
 struct Event_ {
@@ -52,6 +54,5 @@ Color getPixelWindow(Coord pos);
 void resetWindow(void);
 void updateWindow(void);
 void setPixelWindow(Coord coord, Color color);
-void resizeWindow(int width, int height);
 
 #endif //WINDOW_H

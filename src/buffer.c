@@ -14,5 +14,6 @@ void addElementToBuffer(void *element, void **buffer, int *sizeB, int *nbE)
 
 void removeElementFromBuffer(void *buffer, int *nbE)
 {
+    (void) buffer;
     *nbE > 0 ? (*nbE--) : (*nbE = 0);
 }

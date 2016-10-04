@@ -3,12 +3,9 @@
 #include "window.h"
 
 
-bool PollEvent(Event *event)
+static void parse_event(Event *event, int c)
 {
-    int c;
-    if ((c = getch()) == ERR)
-        return false;
-
+    event->type = NO_EVENT;
     switch (c) {
     case KEY_LEFT:
         event->type = ROTATE;
@@ -30,6 +27,7 @@ bool PollEvent(Event *event)
     case 'r':{
         event->type = RESIZE;
         getmaxyx(stdscr, event->height, event->width);
+        resize_term(event->height, event->width);
         event->width /= 2;
         break;
     }
@@ -80,16 +78,35 @@ bool PollEvent(Event *event)
         event->type = STATE;
         event->state = FRAME;
         break;
-    case 'l':
-        event->type = LOAD;
-        break;
-    case 'u':
-        event->type = UNLOAD;
-        break;
+    case 'l': event->type = LOAD;     break;
+    case 'u': event->type = UNLOAD;   break;
     default:
-        return false;
         break;
     }
-    return true;
+}
+
+bool ncurses_window_pollEvent(Window *w, Event *event)
+{
+    int c;
+    (void) w;
+
+    if ((c = getch()) == ERR)
+        return false;
+    parse_event(event, c);
+    return event->type != NO_EVENT;
+}
+
+void ncurses_window_waitEvent(Window *w, Event *event)
+{
+    int c;
+    (void) w;
+
+    nodelay(stdscr, FALSE);
+    do {
+        event->type = NO_EVENT;
+        if ((c = getch()) != ERR)
+            parse_event(event, c);
+    } while (event->type == NO_EVENT);
+    nodelay(stdscr, TRUE);
 }
 
